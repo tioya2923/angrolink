@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;500;600;700;800&family=Roboto+Flex:opsz,wght@8..144,300;8..144,400;8..144,500;8..144,600;8..144,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * ========================================
+ * SISTEMA DE DESIGN — TERRA CRUA
+ * ========================================
+ * Paleta inspirada na terra angolana.
+ * Todas as cores em HSL.
+ * Sem gradientes. Sem sombras suaves. Limites definidos.
+ */
+
+@layer base {
+  :root {
+    /* — Fundos — */
+    --background: 47 44% 91%;          /* #F4F1DE — Branco Casca de Ovo */
+    --foreground: 200 37% 24%;         /* #264653 — Azul Petróleo Escuro */
+
+    --card: 47 44% 91%;
+    --card-foreground: 200 37% 24%;
+
+    --popover: 47 44% 91%;
+    --popover-foreground: 200 37% 24%;
+
+    /* — Primária (Ação) — */
+    --primary: 142 72% 29%;            /* #2A9D8F — Verde Sálvia Intenso */
+    --primary-foreground: 47 44% 91%;
+
+    /* — Secundária (Destaque) — */
+    --secondary: 42 72% 66%;           /* #E9C46A — Amarelo Milho Queimado */
+    --secondary-foreground: 200 37% 24%;
+
+    /* — Muted — */
+    --muted: 43 30% 82%;              /* #D8D0B3 — Bege Arenoso */
+    --muted-foreground: 200 20% 40%;
+
+    /* — Accent — */
+    --accent: 42 72% 66%;
+    --accent-foreground: 200 37% 24%;
+
+    /* — Destructive — */
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 47 44% 91%;
+
+    /* — Utilidades — */
+    --border: 43 30% 82%;             /* Bege Arenoso para bordas */
+    --input: 43 30% 82%;
+    --ring: 142 72% 29%;
+
+    --radius: 0.375rem;
+
+    /* — Sidebar — */
+    --sidebar-background: 200 37% 24%;
+    --sidebar-foreground: 47 44% 91%;
+    --sidebar-primary: 142 72% 29%;
+    --sidebar-primary-foreground: 47 44% 91%;
+    --sidebar-accent: 200 37% 30%;
+    --sidebar-accent-foreground: 47 44% 91%;
+    --sidebar-border: 200 30% 30%;
+    --sidebar-ring: 142 72% 29%;
+
+    /* — Tokens Personalizados — */
+    --verde-whatsapp: 142 70% 45%;     /* Verde WhatsApp */
+    --destaque-bg: 142 70% 38%;        /* Fundo da secção destaque */
+    --verificado: 142 72% 29%;        /* Selo verificado */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Roboto Flex', sans-serif;
+  }
+
+  /* Tipografia — Roboto Slab para títulos */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto Slab', serif;
+    font-weight: 700;
+    color: hsl(var(--foreground));
+  }
+}
+
+/* 
+ * Utilitários globais 
+ */
+@layer utilities {
+  /* Borda estilo Terra Crua — limites definidos, sem sombras */
+  .borda-terra {
+    @apply border-2 border-border;
+  }
+
+  /* Card de produto */
+  .card-produto {
+  @apply border-2 border-border bg-card transition-all duration-200 rounded-2xl;
+}
+  .card-produto:hover {
+  border-color: rgb(21 128 61); /* green-700 */
+}
+
+  /* Selo verificado */
+  .selo-verificado {
+    @apply inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 bg-primary text-primary-foreground;
+  }
+
+  /* Botão WhatsApp */
+  .btn-whatsapp {
+    background-color: hsl(var(--verde-whatsapp));
+    color: hsl(var(--primary-foreground));
+    @apply font-semibold py-3 px-6 text-base transition-colors duration-150;
+  }
+  .btn-whatsapp:hover {
+    background-color: hsl(142 70% 38%);
+  }
+
+  /* Secção destaque com fundo amarelo milho */
+  .secao-destaque {
+    background-color: hsl(var(--destaque-bg));
+  }
+}
