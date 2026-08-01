@@ -32,6 +32,7 @@ import Cabecalho from '@/componentes/Cabecalho';
 import Rodape from '@/componentes/Rodape';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
 import RequisitosDocumentos from '@/componentes/RequisitosDocumentos';
+import SeletorFotoPerfil from '@/componentes/SeletorFotoPerfil';
 import { documentosObrigatoriosEmFalta } from '@/dados/documentosVendedor';
 
 import {
@@ -1068,72 +1069,20 @@ export default function PaginaAnunciar() {
                       </p>
                     </div>
 
-                    {/* Upload foto — placeholder */}
-                    <div className="space-y-3">
-                      <Label className="font-corpo text-sm font-medium">
-                        Foto de perfil ou logótipo
-                      </Label>
-
-                      {previewFoto && (
-                        <div className="flex flex-col items-center gap-3">
-                          <img
-                            src={previewFoto}
-                            alt="Preview"
-                            className="w-28 h-28 rounded-full object-cover border"
-                          />
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFotoPerfil(null);
-                              setPreviewFoto('');
-                            }}
-                            className="text-red-600 text-sm hover:underline"
-                          >
-                            Remover foto
-                          </button>
-                        </div>
-                      )}
-
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const ficheiro = e.target.files?.[0];
-
-                          if (!ficheiro) return;
-
-                          if (
-                            !ficheiro.type.startsWith('image/')
-                          ) {
-                            toast.error(
-                              'Escolha uma imagem.'
-                            );
-                            return;
-                          }
-
-                          if (
-                            ficheiro.size >
-                            5 * 1024 * 1024
-                          ) {
-                            toast.error(
-                              'A imagem deve ter menos de 5MB.'
-                            );
-                            return;
-                          }
-
-                          if (!ficheiro) return;
-
-                          setFotoPerfil(ficheiro);
-                          setPreviewFoto(
-                            URL.createObjectURL(ficheiro)
-                          );
-                        }}
-                        className="block w-full text-sm"
-                      />
-                    </div>
                   </div>
                 )}
+
+                <SeletorFotoPerfil
+                  preview={previewFoto}
+                  onSelecionar={ficheiro => {
+                    setFotoPerfil(ficheiro);
+                    setPreviewFoto(URL.createObjectURL(ficheiro));
+                  }}
+                  onRemover={() => {
+                    setFotoPerfil(null);
+                    setPreviewFoto('');
+                  }}
+                />
 
                 <Button type="submit" disabled={carregando} className="w-full font-corpo font-semibold mt-2">
                   {carregando ? 'A criar...' : 'Criar conta de comprador'}
@@ -1595,73 +1544,21 @@ export default function PaginaAnunciar() {
                         <span className="font-corpo text-sm">Entrega disponível</span>
                       </label>
 
-                      {/* Upload fotos — placeholder */}
-                      <div className="space-y-3">
-                        <Label className="font-corpo text-sm font-medium">
-                          Foto de perfil ou logótipo
-                        </Label>
-
-                        {previewFoto && (
-                          <div className="flex flex-col items-center gap-3">
-                            <img
-                              src={previewFoto}
-                              alt="Preview"
-                              className="w-28 h-28 rounded-full object-cover border"
-                            />
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setFotoPerfil(null);
-                                setPreviewFoto('');
-                              }}
-                              className="text-red-600 text-sm hover:underline"
-                            >
-                              Remover foto
-                            </button>
-                          </div>
-                        )}
-
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            const ficheiro = e.target.files?.[0];
-
-                            if (!ficheiro) return;
-
-                            if (
-                              !ficheiro.type.startsWith('image/')
-                            ) {
-                              toast.error(
-                                'Escolha uma imagem.'
-                              );
-                              return;
-                            }
-
-                            if (
-                              ficheiro.size >
-                              5 * 1024 * 1024
-                            ) {
-                              toast.error(
-                                'A imagem deve ter menos de 5MB.'
-                              );
-                              return;
-                            }
-
-                            if (!ficheiro) return;
-
-                            setFotoPerfil(ficheiro);
-                            setPreviewFoto(
-                              URL.createObjectURL(ficheiro)
-                            );
-                          }}
-                          className="block w-full text-sm"
-                        />
-                      </div>
                     </div>
                   )}
                 </div>
+
+                <SeletorFotoPerfil
+                  preview={previewFoto}
+                  onSelecionar={ficheiro => {
+                    setFotoPerfil(ficheiro);
+                    setPreviewFoto(URL.createObjectURL(ficheiro));
+                  }}
+                  onRemover={() => {
+                    setFotoPerfil(null);
+                    setPreviewFoto('');
+                  }}
+                />
 
                 {/* Campos específicos por tipo de vendedor */}
                 {/*<CamposPorTipo tipo={tipoVendedorSelecionado as TipoVendedor} form={formPerfil} setForm={setFormPerfil} />*/}
