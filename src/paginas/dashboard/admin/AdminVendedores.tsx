@@ -6,8 +6,9 @@
 import { useEffect, useState } from 'react';
 import { ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
 
-import { Vendedor, PlanoVendedor } from '@/tipos';
+import { Vendedor, PlanoVendedor, TipoVendedor } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
+import { CATALOGO_DOCUMENTOS, obterRequisitosDocumentos } from '@/dados/documentosVendedor';
 
 import {
   fetchVendedoresAdmin,
@@ -246,6 +247,24 @@ export default function AdminVendedores() {
                   {v.email || 'Sem email'} ·{' '}
                   {v.telefone_whatsapp || v.whatsapp || 'Sem telefone'}
                 </p>
+
+                {(() => {
+                  const requisitos = obterRequisitosDocumentos(
+                    v.tipo_vendedor as TipoVendedor
+                  );
+
+                  if (!requisitos) return null;
+
+                  return (
+                    <p className="font-corpo text-xs text-muted-foreground">
+                      Documentos obrigatórios ({requisitos.rotuloNivel}):{' '}
+                      {requisitos.obrigatorios
+                        .map(id => CATALOGO_DOCUMENTOS[id]?.nome)
+                        .filter(Boolean)
+                        .join(', ')}
+                    </p>
+                  );
+                })()}
 
                 {/* Ações */}
                 <div className="flex flex-wrap gap-2">

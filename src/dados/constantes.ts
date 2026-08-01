@@ -413,8 +413,9 @@ export const CATEGORIAS: Categoria[] = [
   { id: 'alimentos', nome_categoria: 'Alimentos', icone: 'UtensilsCrossed', ordem_exibicao: 5 },
 ];
 
-// --- Tipos de vendedor (6 tipos) ---
 // --- Tipos de vendedor ---
+// Reflete os vários níveis do comércio angolano, do informal ao grande retalho.
+// Os documentos exigidos por tipo estão definidos em @/dados/documentosVendedor.
 export const TIPOS_VENDEDOR: {
   valor: TipoVendedor;
   rotulo: string;
@@ -423,6 +424,27 @@ export const TIPOS_VENDEDOR: {
   exemplos: string;
 }[] = [
   {
+    valor: 'ambulante',
+    rotulo: 'Vendedora Ambulante / Zungueira',
+    icone: '🧺',
+    descricao: 'Vende de forma ambulante, na rua ou de porta em porta, sem local fixo.',
+    exemplos: 'Zungueiras, vendedores de rua, venda ambulante de produtos',
+  },
+  {
+    valor: 'quitandeira',
+    rotulo: 'Quitandeira',
+    icone: '🥬',
+    descricao: 'Vende produtos frescos ou variados numa banca informal, dentro ou fora de um mercado.',
+    exemplos: 'Banca de fruta e verdura, quitanda de bairro',
+  },
+  {
+    valor: 'taxista',
+    rotulo: 'Taxista / Transportador',
+    icone: '🚖',
+    descricao: 'Oferece serviços de transporte de pessoas ou mercadorias.',
+    exemplos: 'Táxi, candongueiro, moto-táxi, transporte de carga',
+  },
+  {
     valor: 'produtor',
     rotulo: 'Produtor',
     icone: '🌾',
@@ -430,11 +452,32 @@ export const TIPOS_VENDEDOR: {
     exemplos: 'Milho, hortaliças, frutas, gado, galinhas, quintas e fazendas',
   },
   {
-    valor: 'revendedor',
-    rotulo: 'Revendedor',
-    icone: '🔁',
-    descricao: 'Compra produtos para revender, em lojas parceiras, mercados ou bancadas.',
-    exemplos: 'Revenda em mercados, lojas parceiras, bancada no mercado, venda ambulante',
+    valor: 'mini_mercado',
+    rotulo: 'Mini Mercado / Mercearia',
+    icone: '🏪',
+    descricao: 'Loja pequena e fixa, geralmente de bairro, com produtos variados.',
+    exemplos: 'Mercearia, loja de bairro, mini-mercado',
+  },
+  {
+    valor: 'mercado',
+    rotulo: 'Banca de Mercado',
+    icone: '🥕',
+    descricao: 'Tem uma banca fixa dentro de um mercado municipal ou informal.',
+    exemplos: 'Banca no mercado do bairro, banca de talho ou de secos e molhados',
+  },
+  {
+    valor: 'supermercado',
+    rotulo: 'Supermercado',
+    icone: '🛒',
+    descricao: 'Loja de médio ou grande porte, formalizada, com várias secções de produtos.',
+    exemplos: 'Supermercados de bairro ou de cadeia local',
+  },
+  {
+    valor: 'hipermercado',
+    rotulo: 'Hipermercado / Grande Distribuidor',
+    icone: '🏬',
+    descricao: 'Grande superfície comercial ou cadeia de distribuição em várias províncias.',
+    exemplos: 'Hipermercados, grandes cadeias de distribuição',
   },
   {
     valor: 'grossista',
@@ -444,18 +487,11 @@ export const TIPOS_VENDEDOR: {
     exemplos: 'Paletes de bebidas, sacos de arroz, caixas de frango',
   },
   {
-    valor: 'loja',
-    rotulo: 'Loja',
-    icone: '🏪',
-    descricao: 'Mini-mercados, mercearias ou lojas que vendem ao consumidor final.',
-    exemplos: 'Mercearia, mini-mercado, loja de bairro',
-  },
-  {
     valor: 'prestador_servico',
     rotulo: 'Prestador de Serviços',
     icone: '🛠️',
-    descricao: 'Oferece serviços locais ligados ao transporte, entrega, reparação, mão de obra ou apoio ao comércio.',
-    exemplos: 'Transporte, entregas, mecânica, trator, mão de obra',
+    descricao: 'Oferece serviços locais ligados a entrega, reparação, mão de obra ou apoio ao comércio.',
+    exemplos: 'Entregas, mecânica, trator, mão de obra',
   },
 ];
 
@@ -468,10 +504,15 @@ export function obterBadgeVendedor(tipo: TipoVendedor): { icone: string; rotulo:
   }
 
   const rotuloCurto: Record<TipoVendedor, string> = {
+    ambulante: 'Ambulante',
+    quitandeira: 'Quitandeira',
+    taxista: 'Taxista',
     produtor: 'Produtor',
+    mini_mercado: 'Mini Mercado',
+    mercado: 'Mercado',
+    supermercado: 'Supermercado',
+    hipermercado: 'Hipermercado',
     grossista: 'Grosso',
-    loja: 'Loja',
-    revendedor: 'Revendedor',
     prestador_servico: 'Serviços',
   };
 

@@ -9,10 +9,15 @@
 // =======================
 
 export type TipoVendedor =
+  | 'ambulante'
+  | 'quitandeira'
+  | 'taxista'
   | 'produtor'
+  | 'mini_mercado'
+  | 'mercado'
+  | 'supermercado'
+  | 'hipermercado'
   | 'grossista'
-  | 'loja'
-  | 'revendedor'
   | 'prestador_servico';
 
 export type StatusVendedorAprovacao =

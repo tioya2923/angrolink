@@ -49,7 +49,8 @@ import {
 
 import { supabase } from '@/services/supabase';
 
-import { Vendedor } from '@/tipos';
+import { Vendedor, TipoVendedor } from '@/tipos';
+import RequisitosDocumentos from '@/componentes/RequisitosDocumentos';
 
 export default function VendedorPerfil() {
   const { utilizador, logout } = useAuth();
@@ -121,10 +122,14 @@ export default function VendedorPerfil() {
   const contaSuspensa = statusAprovacao === 'suspenso';
 
   const isProdutor = tipoVendedor === 'produtor';
-  const isRevendedor = tipoVendedor === 'revendedor';
+  const isRevendedor = tipoVendedor === 'ambulante' || tipoVendedor === 'quitandeira';
   const isDistribuidor = tipoVendedor === 'grossista';
-  const isLoja = tipoVendedor === 'loja';
-  const isPrestadorServico = tipoVendedor === 'prestador_servico';
+  const isLoja =
+    tipoVendedor === 'mini_mercado' ||
+    tipoVendedor === 'mercado' ||
+    tipoVendedor === 'supermercado' ||
+    tipoVendedor === 'hipermercado';
+  const isPrestadorServico = tipoVendedor === 'prestador_servico' || tipoVendedor === 'taxista';
 
   useEffect(() => {
     async function carregarVendedor() {
@@ -687,6 +692,8 @@ export default function VendedorPerfil() {
               Para alterar o tipo de conta, contacte a equipa Angrolink.
             </p>
           </div>
+
+          <RequisitosDocumentos tipo={tipoVendedor as TipoVendedor | ''} />
         </CardInformacaoPrincipal>
 
         {/* Localização */}

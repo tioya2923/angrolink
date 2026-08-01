@@ -70,7 +70,7 @@ export const VENDEDORES_MOCK: Vendedor[] = [
     provincia: 'Luanda',
     municipio: 'Belas',
     mercado_bairro: 'Talatona',
-    tipo_vendedor: 'loja',
+    tipo_vendedor: 'mini_mercado',
     descricao: 'Sumos de frutas naturais sem conservantes. Manga, goiaba, maracujá e mais.',
     foto_perfil: '/placeholder.svg',
     verificado: true,
