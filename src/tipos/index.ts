@@ -12,6 +12,7 @@ export type TipoVendedor =
   | 'ambulante'
   | 'quitandeira'
   | 'taxista'
+  | 'moto_taxista'
   | 'produtor'
   | 'mini_mercado'
   | 'mercado'

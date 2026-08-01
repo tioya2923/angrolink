@@ -32,6 +32,7 @@ import Cabecalho from '@/componentes/Cabecalho';
 import Rodape from '@/componentes/Rodape';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
 import RequisitosDocumentos from '@/componentes/RequisitosDocumentos';
+import { documentosObrigatoriosEmFalta } from '@/dados/documentosVendedor';
 
 import {
   verificarDuplicados,
@@ -144,7 +145,8 @@ export default function PaginaAnunciar() {
   // ===== FORM VENDEDOR (Etapa 1: Conta) =====
   const [formVendedor, setFormVendedor] = useState({
     nome_responsavel: '', telefone: '', indicativo: '244', email: '', senha: '', confirmarSenha: '',
-    provincia: '', municipio: '', termos: false, declaracaoDocumentos: false,
+    provincia: '', municipio: '', termos: false,
+    documentos: {} as Record<string, Record<string, string>>,
   });
 
   // ===== FORM PERFIL COMERCIAL (Etapa 2) =====
@@ -316,9 +318,14 @@ export default function PaginaAnunciar() {
       return;
     }
 
-    if (!formVendedor.declaracaoDocumentos) {
+    const documentosEmFalta = documentosObrigatoriosEmFalta(
+      tipoVendedorSelecionado,
+      formVendedor.documentos
+    );
+
+    if (documentosEmFalta.length > 0) {
       toast.error(
-        'Confirme que possui os documentos exigidos para o seu tipo de conta.'
+        `Indique o número do(s) seguinte(s) documento(s): ${documentosEmFalta.join(', ')}.`
       );
       return;
     }
@@ -1253,17 +1260,22 @@ export default function PaginaAnunciar() {
                   />
                 </div>
 
-                <RequisitosDocumentos tipo={tipoVendedorSelecionado} />
-
-                {/* Declaração de documentos */}
-                <label className="flex items-start gap-3 cursor-pointer py-2">
-                  <input type="checkbox" checked={formVendedor.declaracaoDocumentos}
-                    onChange={e => setFormVendedor(p => ({ ...p, declaracaoDocumentos: e.target.checked }))}
-                    className="mt-0.5 w-4 h-4 accent-primary" />
-                  <span className="font-corpo text-xs text-muted-foreground leading-relaxed">
-                    Declaro que possuo os documentos obrigatórios indicados acima para o tipo de conta selecionado. *
-                  </span>
-                </label>
+                <RequisitosDocumentos
+                  tipo={tipoVendedorSelecionado}
+                  valores={formVendedor.documentos}
+                  onChange={(documentoId, campoId, valor) =>
+                    setFormVendedor(p => ({
+                      ...p,
+                      documentos: {
+                        ...p.documentos,
+                        [documentoId]: {
+                          ...p.documentos[documentoId],
+                          [campoId]: valor,
+                        },
+                      },
+                    }))
+                  }
+                />
 
                 {/* Termos */}
                 <label className="flex items-start gap-3 cursor-pointer py-2">
