@@ -8,9 +8,11 @@ import Rodape from '@/componentes/Rodape';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import SeletorTelefone from '@/componentes/SeletorTelefone';
 
 import { PROVINCIAS, MUNICIPIOS } from '@/dados/constantes';
 import { useToast } from '@/hooks/use-toast';
+import { telefoneCompleto } from '@/lib/verificacoesConta';
 
 import {
   criarServico,
@@ -40,6 +42,7 @@ export default function PaginaAnunciarServico() {
 
   const [nomePrestador, setNomePrestador] = useState('');
   const [telefoneWhatsapp, setTelefoneWhatsapp] = useState('');
+  const [indicativoWhatsapp, setIndicativoWhatsapp] = useState('244');
 
   const [provincia, setProvincia] = useState('');
   const [municipio, setMunicipio] = useState('');
@@ -128,7 +131,7 @@ export default function PaginaAnunciarServico() {
         imagem_url,
 
         nome_prestador: nomePrestador,
-        telefone_whatsapp: telefoneWhatsapp,
+        telefone_whatsapp: telefoneCompleto(telefoneWhatsapp, indicativoWhatsapp),
 
         // Serviço público não precisa estar ligado a vendedor.
         vendedor_id: undefined,
@@ -237,10 +240,13 @@ export default function PaginaAnunciarServico() {
 
             <div className="space-y-2">
               <Label>WhatsApp *</Label>
-              <Input
-                value={telefoneWhatsapp}
-                onChange={e => setTelefoneWhatsapp(e.target.value)}
-                placeholder="Ex: +244 923 000 000"
+              <SeletorTelefone
+                indicativo={indicativoWhatsapp}
+                onIndicativoChange={setIndicativoWhatsapp}
+                valor={telefoneWhatsapp}
+                onValorChange={setTelefoneWhatsapp}
+                placeholder="923000000"
+                maxLength={indicativoWhatsapp === '244' ? 9 : 14}
                 required
               />
             </div>

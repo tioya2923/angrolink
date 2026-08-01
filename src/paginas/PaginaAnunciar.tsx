@@ -30,6 +30,7 @@ import { TipoVendedor, TipoComprador } from '@/tipos';
 import { toast } from 'sonner';
 import Cabecalho from '@/componentes/Cabecalho';
 import Rodape from '@/componentes/Rodape';
+import SeletorTelefone from '@/componentes/SeletorTelefone';
 
 import {
   verificarDuplicados,
@@ -132,7 +133,7 @@ export default function PaginaAnunciar() {
 
   // ===== FORM COMPRADOR =====
   const [formComprador, setFormComprador] = useState({
-    nome: '', telefone: '', email: '', senha: '', confirmarSenha: '',
+    nome: '', telefone: '', indicativo: '244', email: '', senha: '', confirmarSenha: '',
     provincia: '', municipio: '', termos: false,
     // Opcionais
     bairro: '', endereco: '', whatsapp: '',
@@ -141,7 +142,7 @@ export default function PaginaAnunciar() {
 
   // ===== FORM VENDEDOR (Etapa 1: Conta) =====
   const [formVendedor, setFormVendedor] = useState({
-    nome_responsavel: '', telefone: '', email: '', senha: '', confirmarSenha: '',
+    nome_responsavel: '', telefone: '', indicativo: '244', email: '', senha: '', confirmarSenha: '',
     provincia: '', municipio: '', termos: false,
   });
 
@@ -187,7 +188,8 @@ export default function PaginaAnunciar() {
     console.log('DADOS COMPRADOR:', formComprador);
 
     const erroTelefone = validarTelefone(
-      formComprador.telefone
+      formComprador.telefone,
+      formComprador.indicativo
     );
 
     if (erroTelefone) {
@@ -198,6 +200,7 @@ export default function PaginaAnunciar() {
     const erroDuplicados =
       await validarDuplicados(
         formComprador.telefone,
+        formComprador.indicativo,
         formComprador.email
       );
 
@@ -207,7 +210,7 @@ export default function PaginaAnunciar() {
     }
 
     const telefoneUtilizador =
-      telefoneCompleto(formComprador.telefone);
+      telefoneCompleto(formComprador.telefone, formComprador.indicativo);
 
     const erroSenha = validarSenha(
       formComprador.senha,
@@ -222,15 +225,6 @@ export default function PaginaAnunciar() {
     if (!formComprador.termos) {
       toast.error(
         'Deve aceitar os termos da plataforma.'
-      );
-      return;
-    }
-
-    if (
-      formComprador.telefone.length !== 9
-    ) {
-      toast.error(
-        'Número de telefone inválido.'
       );
       return;
     }
@@ -302,7 +296,8 @@ export default function PaginaAnunciar() {
     e.preventDefault();
 
     const erroTelefone = validarTelefone(
-      formVendedor.telefone
+      formVendedor.telefone,
+      formVendedor.indicativo
     );
 
     if (erroTelefone) {
@@ -330,6 +325,7 @@ export default function PaginaAnunciar() {
     const erroDuplicados =
       await validarDuplicados(
         formVendedor.telefone,
+        formVendedor.indicativo,
         formVendedor.email
       );
 
@@ -462,10 +458,10 @@ export default function PaginaAnunciar() {
       setCarregando(true);
 
       const telefone =
-        telefoneCompleto(formVendedor.telefone);
+        telefoneCompleto(formVendedor.telefone, formVendedor.indicativo);
 
       const emailLogin =
-        gerarEmailInterno(formVendedor.telefone);
+        gerarEmailInterno(telefone);
 
       const emailOpcional =
         normalizarEmail(formPerfil.email);
@@ -487,6 +483,7 @@ export default function PaginaAnunciar() {
       const erroDuplicados =
         await validarDuplicados(
           formVendedor.telefone,
+          formVendedor.indicativo,
           formPerfil.email
         );
 
@@ -517,7 +514,7 @@ export default function PaginaAnunciar() {
         options: {
           data: {
             nome: formVendedor.nome_responsavel,
-            telefone: formVendedor.telefone,
+            telefone,
             provincia: provinciaContaNome,
             municipio: municipioAtividadeNome,
             papel: 'vendedor',
@@ -904,31 +901,19 @@ export default function PaginaAnunciar() {
                     Número de telefone *
                   </Label>
 
-                  <div className="flex">
-                    <div className="flex items-center px-3 border-2 border-r-0 border-border rounded-l-md bg-muted text-sm text-muted-foreground">
-                      +244
-                    </div>
-
-                    <Input
-                      type="tel"
-                      value={formComprador.telefone}
-                      onChange={e => {
-                        const valor = e.target.value.replace(
-                          /\D/g,
-                          ''
-                        );
-
-                        setFormComprador(p => ({
-                          ...p,
-                          telefone: valor,
-                        }));
-                      }}
-                      placeholder="923456789"
-                      className="rounded-l-none border-2 border-border"
-                      maxLength={9}
-                      required
-                    />
-                  </div>
+                  <SeletorTelefone
+                    indicativo={formComprador.indicativo}
+                    onIndicativoChange={indicativo =>
+                      setFormComprador(p => ({ ...p, indicativo }))
+                    }
+                    valor={formComprador.telefone}
+                    onValorChange={telefone =>
+                      setFormComprador(p => ({ ...p, telefone }))
+                    }
+                    placeholder="923456789"
+                    maxLength={formComprador.indicativo === '244' ? 9 : 14}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -1212,28 +1197,19 @@ export default function PaginaAnunciar() {
                     Número de telefone *
                   </Label>
 
-                  <div className="flex">
-                    <div className="flex items-center px-3 border-2 border-r-0 border-border rounded-l-md bg-muted text-sm text-muted-foreground">
-                      +244
-                    </div>
-
-                    <Input
-                      type="tel"
-                      value={formVendedor.telefone}
-                      onChange={e => {
-                        const valor = e.target.value.replace(/\D/g, '');
-
-                        setFormVendedor(p => ({
-                          ...p,
-                          telefone: valor,
-                        }));
-                      }}
-                      placeholder="923456789"
-                      className="rounded-l-none border-2 border-border"
-                      maxLength={9}
-                      required
-                    />
-                  </div>
+                  <SeletorTelefone
+                    indicativo={formVendedor.indicativo}
+                    onIndicativoChange={indicativo =>
+                      setFormVendedor(p => ({ ...p, indicativo }))
+                    }
+                    valor={formVendedor.telefone}
+                    onValorChange={telefone =>
+                      setFormVendedor(p => ({ ...p, telefone }))
+                    }
+                    placeholder="923456789"
+                    maxLength={formVendedor.indicativo === '244' ? 9 : 14}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">

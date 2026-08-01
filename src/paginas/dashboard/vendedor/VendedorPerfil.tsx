@@ -18,6 +18,9 @@ import { useAuth } from '@/contextos/AuthContexto';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import SeletorTelefone from '@/componentes/SeletorTelefone';
+import { separarIndicativo } from '@/dados/paises';
+import { telefoneCompleto } from '@/lib/verificacoesConta';
 import PerfilResumoCard from "@/componentes/perfil/PerfilResumoCard";
 import CardInformacaoPrincipal from "@/componentes/perfil/CardInformacaoPrincipal";
 import { Textarea } from "@/components/ui/textarea";
@@ -77,6 +80,7 @@ export default function VendedorPerfil() {
   const [bairro, setBairro] = useState('');
   const [enderecoDetalhado, setEnderecoDetalhado] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
+  const [indicativoWhatsapp, setIndicativoWhatsapp] = useState('244');
   const [dataInicioAtividade, setDataInicioAtividade] = useState('');
   const [entregaDisponivel, setEntregaDisponivel] = useState(false);
 
@@ -156,11 +160,11 @@ export default function VendedorPerfil() {
         setBairro(data.bairro || '');
         setEnderecoDetalhado(data.endereco_detalhado || '');
 
-        const whatsappLimpo = String(data.telefone_whatsapp || data.whatsapp || '')
-          .replace('+244', '')
-          .replace(/\D/g, '')
-          .slice(0, 9);
+        const { indicativo: indicativoCarregado, numero: whatsappLimpo } = separarIndicativo(
+          String(data.telefone_whatsapp || data.whatsapp || '')
+        );
 
+        setIndicativoWhatsapp(indicativoCarregado);
         setWhatsapp(whatsappLimpo);
 
         setDataInicioAtividade((data as any).data_inicio_atividade || '');
@@ -291,7 +295,7 @@ export default function VendedorPerfil() {
       const horarioAtendimento = `${diasAtendimento}, ${horaAbertura} - ${horaFecho}`;
 
       const telefoneWhatsappFinal = whatsapp
-        ? `+244${whatsapp.replace(/\D/g, '').slice(0, 9)}`
+        ? telefoneCompleto(whatsapp, indicativoWhatsapp)
         : '';
 
       const dadosAtualizados = {
@@ -577,7 +581,7 @@ export default function VendedorPerfil() {
         nomeComercial={nomeComercial}
         nomeResponsavel={nomeResponsavel}
         email={email}
-        whatsapp={whatsapp ? `+244 ${whatsapp}` : ""}
+        whatsapp={whatsapp ? `+${indicativoWhatsapp} ${whatsapp}` : ""}
         plano={vendedor?.plano}
         verificado={vendedor?.verificado}
         statusAprovacao={statusAprovacao}
@@ -764,22 +768,18 @@ export default function VendedorPerfil() {
 
           <div className="space-y-2">
             <Label className="font-corpo text-sm">WhatsApp</Label>
-            <div className="flex">
-              <span className="border-2 border-r-0 border-border px-3 py-2 bg-muted text-sm flex items-center">
-                +244
-              </span>
-
-              <Input
-                value={whatsapp}
-                onChange={e =>
-                  setWhatsapp(e.target.value.replace(/\D/g, '').slice(0, 9))
-                }
-                className="border-2 border-border rounded-l-none"
-                placeholder="923000000"
-              />
-            </div>
+            <SeletorTelefone
+              indicativo={indicativoWhatsapp}
+              onIndicativoChange={setIndicativoWhatsapp}
+              valor={whatsapp}
+              onValorChange={setWhatsapp}
+              placeholder="923000000"
+              maxLength={indicativoWhatsapp === '244' ? 9 : 14}
+            />
             <p className="font-corpo text-xs text-muted-foreground">
-              Coloque apenas os 9 dígitos do número angolano.
+              {indicativoWhatsapp === '244'
+                ? 'Coloque apenas os 9 dígitos do número angolano.'
+                : 'Coloque o número local, sem o indicativo do país.'}
             </p>
           </div>
 

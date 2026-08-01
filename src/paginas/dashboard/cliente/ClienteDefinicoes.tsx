@@ -9,16 +9,12 @@ import { useAuth } from '@/contextos/AuthContexto';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import SeletorTelefone from '@/componentes/SeletorTelefone';
 import { PROVINCIAS, MUNICIPIOS } from '@/dados/constantes';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/services/supabase';
-
-function normalizarTelefoneAngola(valor?: string | null) {
-  return String(valor || '')
-    .replace('+244', '')
-    .replace(/\D/g, '')
-    .slice(0, 9);
-}
+import { separarIndicativo } from '@/dados/paises';
+import { telefoneCompleto } from '@/lib/verificacoesConta';
 
 export default function ClienteDefinicoes() {
   const { utilizador, logout } = useAuth();
@@ -33,6 +29,7 @@ export default function ClienteDefinicoes() {
 
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [indicativo, setIndicativo] = useState('244');
   const [email, setEmail] = useState('');
   const [provincia, setProvincia] = useState('');
   const [municipio, setMunicipio] = useState('');
@@ -64,8 +61,10 @@ export default function ClienteDefinicoes() {
     if (error) {
       console.error('Erro ao carregar cliente:', error);
 
+      const { indicativo: ind, numero } = separarIndicativo(utilizador?.telefone || '');
       setNome(utilizador?.nome || '');
-      setTelefone(normalizarTelefoneAngola(utilizador?.telefone));
+      setIndicativo(ind);
+      setTelefone(numero);
       setEmail(utilizador?.email || '');
       setProvincia(utilizador?.provincia || '');
       setMunicipio(utilizador?.municipio || '');
@@ -74,8 +73,10 @@ export default function ClienteDefinicoes() {
       return;
     }
 
+    const { indicativo: indCarregado, numero } = separarIndicativo(data.telefone || '');
     setNome(data.nome || '');
-    setTelefone(normalizarTelefoneAngola(data.telefone) || '');
+    setIndicativo(indCarregado);
+    setTelefone(numero);
     setEmail(data.email || utilizador.email || '');
     setProvincia(data.provincia || '');
     setMunicipio(data.municipio || '');
@@ -159,7 +160,7 @@ export default function ClienteDefinicoes() {
         .upsert({
           id: utilizador.id,
           nome,
-          telefone: telefone ? `+244${telefone}` : '',
+          telefone: telefone ? telefoneCompleto(telefone, indicativo) : '',
           email,
           provincia,
           municipio,
@@ -377,23 +378,19 @@ export default function ClienteDefinicoes() {
         <div className="space-y-2">
           <Label className="font-corpo text-sm">Telefone</Label>
 
-          <div className="flex">
-            <span className="border-2 border-r-0 border-border px-3 py-2 bg-muted text-sm flex items-center">
-              +244
-            </span>
-
-            <Input
-              value={telefone}
-              onChange={e =>
-                setTelefone(e.target.value.replace(/\D/g, '').slice(0, 9))
-              }
-              className="border-2 border-border rounded-l-none"
-              placeholder="923000000"
-            />
-          </div>
+          <SeletorTelefone
+            indicativo={indicativo}
+            onIndicativoChange={setIndicativo}
+            valor={telefone}
+            onValorChange={setTelefone}
+            placeholder="923000000"
+            maxLength={indicativo === '244' ? 9 : 14}
+          />
 
           <p className="font-corpo text-xs text-muted-foreground">
-            Coloca apenas os 9 dígitos do número angolano.
+            {indicativo === '244'
+              ? 'Coloca apenas os 9 dígitos do número angolano.'
+              : 'Coloca o número local, sem o indicativo do país.'}
           </p>
         </div>
 

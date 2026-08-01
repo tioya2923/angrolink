@@ -7,9 +7,10 @@ export function normalizarTelefone(
 }
 
 export function telefoneCompleto(
-  telefone: string
+  telefone: string,
+  indicativo: string = '244'
 ) {
-  return `+244${normalizarTelefone(telefone)}`;
+  return `+${indicativo}${normalizarTelefone(telefone)}`;
 }
 
 export function gerarEmailInterno(
@@ -36,11 +37,12 @@ export function normalizarEmail(
 
 export async function verificarDuplicados(
   telefone: string,
+  indicativo: string = '244',
   email?: string | null
 ) {
 
   const telefoneFormatado =
-    telefoneCompleto(telefone);
+    telefoneCompleto(telefone, indicativo);
 
   console.log('Telefone recebido:', telefone);
   console.log('Telefone formatado:', telefoneFormatado);
