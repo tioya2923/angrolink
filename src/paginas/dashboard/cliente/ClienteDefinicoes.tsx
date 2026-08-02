@@ -215,8 +215,8 @@ export default function ClienteDefinicoes() {
 
     if (!senhaAtual) {
       toast({
-        title: 'Password atual obrigatória',
-        description: 'Insere a tua password atual para confirmar a alteração.',
+        title: 'Palavra-passe atual obrigatória',
+        description: 'Insere a tua palavra-passe atual para confirmar a alteração.',
         variant: 'destructive',
       });
       return;
@@ -224,8 +224,8 @@ export default function ClienteDefinicoes() {
 
     if (!novaSenha || novaSenha.length < 6) {
       toast({
-        title: 'Nova password inválida',
-        description: 'A nova password deve ter pelo menos 6 caracteres.',
+        title: 'Nova palavra-passe inválida',
+        description: 'A nova palavra-passe deve ter pelo menos 6 caracteres.',
         variant: 'destructive',
       });
       return;
@@ -234,7 +234,7 @@ export default function ClienteDefinicoes() {
     if (novaSenha !== confirmarSenha) {
       toast({
         title: 'Passwords diferentes',
-        description: 'A confirmação não corresponde à nova password.',
+        description: 'A confirmação não corresponde à nova palavra-passe.',
         variant: 'destructive',
       });
       return;
@@ -250,8 +250,8 @@ export default function ClienteDefinicoes() {
 
       if (loginError) {
         toast({
-          title: 'Password atual incorreta',
-          description: 'Confirma a tua password atual e tenta novamente.',
+          title: 'Palavra-passe atual incorreta',
+          description: 'Confirma a tua palavra-passe atual e tenta novamente.',
           variant: 'destructive',
         });
         return;
@@ -264,8 +264,8 @@ export default function ClienteDefinicoes() {
       if (error) throw error;
 
       toast({
-        title: 'Password alterada!',
-        description: 'A tua password foi atualizada com sucesso.',
+        title: 'Palavra-passe alterada!',
+        description: 'A tua palavra-passe foi atualizada com sucesso.',
       });
 
       setSenhaAtual('');
@@ -275,8 +275,8 @@ export default function ClienteDefinicoes() {
       console.error('Erro ao alterar password:', error);
 
       toast({
-        title: 'Erro ao alterar password',
-        description: 'Não foi possível alterar a password.',
+        title: 'Erro ao alterar palavra-passe',
+        description: 'Não foi possível alterar a palavra-passe.',
         variant: 'destructive',
       });
     } finally {
@@ -464,12 +464,12 @@ export default function ClienteDefinicoes() {
         <div className="space-y-3">
           <h2 className="font-titulo text-lg font-semibold flex items-center gap-2">
             <Lock size={18} />
-            Alterar Password
+            Alterar palavra-passe
           </h2>
 
           <Input
             type="password"
-            placeholder="Password atual"
+            placeholder="Palavra-passe atual"
             value={senhaAtual}
             onChange={e => setSenhaAtual(e.target.value)}
             className="border-2 border-border"
@@ -477,7 +477,7 @@ export default function ClienteDefinicoes() {
 
           <Input
             type="password"
-            placeholder="Nova password"
+            placeholder="Nova palavra-passe"
             value={novaSenha}
             onChange={e => setNovaSenha(e.target.value)}
             className="border-2 border-border"
@@ -485,7 +485,7 @@ export default function ClienteDefinicoes() {
 
           <Input
             type="password"
-            placeholder="Confirmar nova password"
+            placeholder="Confirmar nova palavra-passe"
             value={confirmarSenha}
             onChange={e => setConfirmarSenha(e.target.value)}
             className="border-2 border-border"
@@ -506,7 +506,7 @@ export default function ClienteDefinicoes() {
             ) : (
               <>
                 <Lock className="w-4 h-4 mr-2" />
-                Alterar Password
+                Alterar palavra-passe
               </>
             )}
           </Button>

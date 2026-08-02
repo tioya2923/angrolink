@@ -47,10 +47,6 @@ if(!autenticado || !utilizador){
  return <Navigate to="/login" replace />;
 }
 
-const vendedorAprovado =
-  utilizador.papel === 'vendedor' &&
-  utilizador.status_aprovacao === 'aprovado';
-  
 return(
 <DashboardLayout>
 
@@ -72,19 +68,11 @@ return(
 <Route index element={<VendedorResumo/>}/>
 <Route
   path="produtos"
-  element={
-    utilizador.status_aprovacao === 'aprovado'
-      ? <VendedorProdutos />
-      : <Navigate to="/dashboard/perfil" replace />
-  }
+  element={<VendedorProdutos />}
 />
 <Route
   path="servicos"
-  element={
-    utilizador.status_aprovacao === 'aprovado'
-      ? <VendedorServicos />
-      : <Navigate to="/dashboard/perfil" replace />
-  }
+  element={<VendedorServicos />}
 />
 <Route
   path="favoritos"

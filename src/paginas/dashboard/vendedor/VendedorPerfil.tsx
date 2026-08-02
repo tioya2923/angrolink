@@ -126,7 +126,6 @@ export default function VendedorPerfil() {
   const isDistribuidor = tipoVendedor === 'grossista';
   const isLoja =
     tipoVendedor === 'mini_mercado' ||
-    tipoVendedor === 'mercado' ||
     tipoVendedor === 'supermercado' ||
     tipoVendedor === 'hipermercado';
   const isPrestadorServico =
@@ -392,8 +391,8 @@ export default function VendedorPerfil() {
 
     if (!senhaAtual) {
       toast({
-        title: 'Password atual obrigatória',
-        description: 'Insere a tua password atual para confirmar a alteração.',
+        title: 'Palavra-passe atual obrigatória',
+        description: 'Insere a tua palavra-passe atual para confirmar a alteração.',
         variant: 'destructive',
       });
       return;
@@ -401,8 +400,8 @@ export default function VendedorPerfil() {
 
     if (!novaSenha || novaSenha.length < 6) {
       toast({
-        title: 'Nova password inválida',
-        description: 'A nova password deve ter pelo menos 6 caracteres.',
+        title: 'Nova palavra-passe inválida',
+        description: 'A nova palavra-passe deve ter pelo menos 6 caracteres.',
         variant: 'destructive',
       });
       return;
@@ -411,7 +410,7 @@ export default function VendedorPerfil() {
     if (novaSenha !== confirmarSenha) {
       toast({
         title: 'Passwords diferentes',
-        description: 'A confirmação não corresponde à nova password.',
+        description: 'A confirmação não corresponde à nova palavra-passe.',
         variant: 'destructive',
       });
       return;
@@ -427,8 +426,8 @@ export default function VendedorPerfil() {
 
       if (loginError) {
         toast({
-          title: 'Password atual incorreta',
-          description: 'Confirma a tua password atual e tenta novamente.',
+          title: 'Palavra-passe atual incorreta',
+          description: 'Confirma a tua palavra-passe atual e tenta novamente.',
           variant: 'destructive',
         });
         return;
@@ -441,8 +440,8 @@ export default function VendedorPerfil() {
       if (error) throw error;
 
       toast({
-        title: 'Password alterada!',
-        description: 'A tua password foi atualizada com sucesso.',
+        title: 'Palavra-passe alterada!',
+        description: 'A tua palavra-passe foi atualizada com sucesso.',
       });
 
       setSenhaAtual('');
@@ -452,8 +451,8 @@ export default function VendedorPerfil() {
       console.error('Erro ao alterar password:', error);
 
       toast({
-        title: 'Erro ao alterar password',
-        description: 'Não foi possível alterar a password.',
+        title: 'Erro ao alterar palavra-passe',
+        description: 'Não foi possível alterar a palavra-passe.',
         variant: 'destructive',
       });
     } finally {
@@ -512,16 +511,16 @@ export default function VendedorPerfil() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="painel-dashboard-cabecalho flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
         <div>
-          <h1 className="font-titulo text-3xl font-bold tracking-tight">
+          <h1 className="relative z-10 font-titulo text-3xl font-bold tracking-tight text-primary-foreground">
             {isPrestadorServico
               ? "Perfil do Prestador"
               : "Perfil do Negócio"}
           </h1>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="relative z-10 mt-1 text-sm text-primary-foreground/80">
             Atualize as informações que serão apresentadas aos clientes da ANGROLINK.
           </p>
         </div>
@@ -530,7 +529,7 @@ export default function VendedorPerfil() {
           type="submit"
           form="form-perfil-vendedor"
           disabled={guardando}
-          className="bg-green-700 hover:bg-green-800"
+          className="relative z-10 bg-secondary text-secondary-foreground hover:bg-secondary/90"
         >
           <Save className="mr-2 h-4 w-4" />
 
@@ -1038,7 +1037,7 @@ export default function VendedorPerfil() {
 
           <Input
             type="password"
-            placeholder="Password atual"
+            placeholder="Palavra-passe atual"
             value={senhaAtual}
             onChange={e => setSenhaAtual(e.target.value)}
             className="border-2 border-border"
@@ -1046,7 +1045,7 @@ export default function VendedorPerfil() {
 
           <Input
             type="password"
-            placeholder="Nova password"
+            placeholder="Nova palavra-passe"
             value={novaSenha}
             onChange={e => setNovaSenha(e.target.value)}
             className="border-2 border-border"
@@ -1054,7 +1053,7 @@ export default function VendedorPerfil() {
 
           <Input
             type="password"
-            placeholder="Confirmar nova password"
+            placeholder="Confirmar nova palavra-passe"
             value={confirmarSenha}
             onChange={e => setConfirmarSenha(e.target.value)}
             className="border-2 border-border"
@@ -1075,7 +1074,7 @@ export default function VendedorPerfil() {
             ) : (
               <>
                 <Lock className="w-4 h-4 mr-2" />
-                Alterar Password
+                Alterar palavra-passe
               </>
             )}
           </Button>

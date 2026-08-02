@@ -106,6 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     verificado: vendedor?.verificado || false,
     pode_destacar: vendedor?.pode_destacar || false,
     conta_ativa: vendedor?.conta_ativa !== false,
+    plano: vendedor?.plano || 'gratuito',
   });
 
   const carregarPerfilSupabase = async (authUser: any): Promise<boolean> => {
@@ -153,16 +154,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 🔥 ALTERAÇÃO AQUI (segura e mínima)
     if (vendedor) {
-      if (
-        vendedor.conta_ativa === false ||
-        vendedor.status_aprovacao === 'suspenso'
-      ) {
+      if (vendedor.conta_ativa === false) {
         await supabase.auth.signOut();
 
         setUtilizador(null);
         localStorage.removeItem(STORAGE_KEY);
 
-        console.warn('Conta de vendedor desativada ou suspensa.');
+        console.warn('Conta de vendedor desativada.');
         return false;
       }
 
@@ -369,6 +367,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Mantém o estado administrativo (aprovação, suspensão e plano) atualizado
+  // enquanto o vendedor tem o painel aberto. Realtime atualiza de imediato;
+  // a verificação periódica é uma salvaguarda caso Realtime não esteja ativo.
+  useEffect(() => {
+    if (utilizador?.papel !== 'vendedor' || !utilizador.id) return;
+
+    let ativo = true;
+    const sincronizarPerfil = async () => {
+      const { data } = await supabase.auth.getUser();
+      if (ativo && data.user) await carregarPerfilSupabase(data.user);
+    };
+
+    const canal = supabase
+      .channel(`perfil-vendedor-${utilizador.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'vendedores', filter: `user_id=eq.${utilizador.id}` },
+        sincronizarPerfil
+      )
+      .subscribe();
+
+    const intervalo = window.setInterval(sincronizarPerfil, 30000);
+    window.addEventListener('focus', sincronizarPerfil);
+
+    return () => {
+      ativo = false;
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus', sincronizarPerfil);
+      supabase.removeChannel(canal);
+    };
+  }, [utilizador?.id, utilizador?.papel]);
 
   useEffect(() => {
     if (!pronto) return;

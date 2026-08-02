@@ -116,7 +116,7 @@ const normalizarVendedor = (v: any): Vendedor => {
     provincia: v.provincia || "",
     municipio: v.municipio || "",
 
-    tipo_vendedor: v.tipo_vendedor || "produtor",
+    tipo_vendedor: normalizarTipoVendedor(v.tipo_vendedor),
     plano: v.plano || "gratuito",
 
     verificado: toBool(v.verificado, false),
@@ -1320,6 +1320,10 @@ export async function fetchHistoricoContactosVendedor(
       *,
       clientes (
         nome,
+        telefone,
+        email,
+        municipio,
+        provincia,
         foto_perfil
       ),
       produtos (
@@ -1354,6 +1358,10 @@ export async function fetchHistoricoContactosServicosVendedor(
       *,
       clientes (
         nome,
+        telefone,
+        email,
+        municipio,
+        provincia,
         foto_perfil
       ),
       servicos (
@@ -1870,4 +1878,73 @@ export async function atualizarPermissaoDestaqueVendedor(
   }
 
   return normalizarVendedor(data);
+}
+
+export async function fetchResumoCliente(clienteId: string) {
+  const [produtos, servicos, contactosProdutos, contactosServicos] = await Promise.all([
+    supabase.from('visualizacoes_produtos').select('produto_id').eq('cliente_id', clienteId),
+    supabase.from('visualizacoes_servicos').select('servico_id').eq('cliente_id', clienteId),
+    supabase.from('historico_contactos').select('id').eq('cliente_id', clienteId),
+    supabase.from('historico_contactos_servicos').select('id').eq('cliente_id', clienteId),
+  ]);
+
+  for (const resultado of [produtos, servicos, contactosProdutos, contactosServicos]) {
+    if (resultado.error) throw resultado.error;
+  }
+
+  return {
+    produtosVisualizados: new Set((produtos.data || []).map(item => item.produto_id).filter(Boolean)).size,
+    servicosVisualizados: new Set((servicos.data || []).map(item => item.servico_id).filter(Boolean)).size,
+    contactosFeitos: (contactosProdutos.data?.length || 0) + (contactosServicos.data?.length || 0),
+  };
+}
+
+export type SugestaoPesquisa = {
+  id: string;
+  nome: string;
+  tipo: 'produto' | 'servico';
+};
+
+const TIPOS_VENDEDOR_LEGADOS: Record<string, Vendedor['tipo_vendedor']> = {
+  fazenda: 'produtor',
+  mercado: 'revendedor',
+  loja: 'mini_mercado',
+};
+
+function normalizarTipoVendedor(tipo: unknown): Vendedor['tipo_vendedor'] {
+  const valor = String(tipo || 'produtor').trim();
+  return TIPOS_VENDEDOR_LEGADOS[valor] || valor as Vendedor['tipo_vendedor'];
+}
+
+/** Sugestões públicas, limitadas e já filtradas a vendedores aprovados. */
+export async function fetchSugestoesPesquisa(termo: string): Promise<SugestaoPesquisa[]> {
+  const pesquisa = termo.trim();
+  if (!pesquisa) return [];
+
+  const [produtosRes, servicosRes] = await Promise.all([
+    supabase
+      .from('produtos')
+      .select('id, nome_produto, vendedor:vendedores!inner(status_aprovacao)')
+      .ilike('nome_produto', `%${pesquisa}%`)
+      .eq('disponivel', true)
+      .eq('publicado', true)
+      .eq('vendedor.status_aprovacao', 'aprovado')
+      .limit(5),
+    supabase
+      .from('servicos')
+      .select('id, nome_servico, vendedor:vendedores!inner(status_aprovacao)')
+      .ilike('nome_servico', `%${pesquisa}%`)
+      .eq('disponivel', true)
+      .eq('publicado', true)
+      .eq('vendedor.status_aprovacao', 'aprovado')
+      .limit(5),
+  ]);
+
+  if (produtosRes.error) throw produtosRes.error;
+  if (servicosRes.error) throw servicosRes.error;
+
+  return [
+    ...(produtosRes.data || []).map((produto: any) => ({ id: produto.id, nome: produto.nome_produto, tipo: 'produto' as const })),
+    ...(servicosRes.data || []).map((servico: any) => ({ id: servico.id, nome: servico.nome_servico, tipo: 'servico' as const })),
+  ].slice(0, 8);
 }

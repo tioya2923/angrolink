@@ -179,19 +179,19 @@ export default function VendedorEstatisticas() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-titulo text-2xl font-bold">
+      <div className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">
           Estatísticas
         </h1>
 
-        <p className="font-corpo text-sm text-muted-foreground mt-1">
+        <p className="relative z-10 font-corpo text-sm text-primary-foreground/80 mt-1">
           Acompanha o desempenho dos teus produtos e serviços no marketplace.
         </p>
       </div>
 
       {/* RESUMO GERAL */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-metrica">
           <Eye size={20} className="text-green-700 mb-2" />
           <p className="font-titulo text-2xl">
             {resumo.visualizacoesTotais}
@@ -201,7 +201,7 @@ export default function VendedorEstatisticas() {
           </p>
         </div>
 
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-metrica">
           <MessageSquare size={20} className="text-green-700 mb-2" />
           <p className="font-titulo text-2xl">
             {resumo.cliquesTotais}
@@ -211,7 +211,7 @@ export default function VendedorEstatisticas() {
           </p>
         </div>
 
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-metrica">
           <TrendingUp size={20} className="text-green-700 mb-2" />
           <p className="font-titulo text-2xl">
             {resumo.taxaConversao}%
@@ -221,7 +221,7 @@ export default function VendedorEstatisticas() {
           </p>
         </div>
 
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-metrica">
           <Package size={20} className="text-green-700 mb-2" />
           <p className="font-titulo text-2xl">
             {resumo.produtosAtivos}
@@ -231,7 +231,7 @@ export default function VendedorEstatisticas() {
           </p>
         </div>
 
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-metrica">
           <Wrench size={20} className="text-green-700 mb-2" />
           <p className="font-titulo text-2xl">
             {resumo.servicosAtivos}
@@ -241,7 +241,7 @@ export default function VendedorEstatisticas() {
           </p>
         </div>
 
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-metrica">
           <BarChart3 size={20} className="text-green-700 mb-2" />
           <p className="font-titulo text-2xl">
             {resumo.totalAnuncios}
@@ -278,7 +278,7 @@ export default function VendedorEstatisticas() {
                     </div>
 
                     <span className="font-corpo text-xs text-muted-foreground shrink-0">
-                      {item.visualizacoes} views
+                      {item.visualizacoes} visualizações
                     </span>
                   </div>
 

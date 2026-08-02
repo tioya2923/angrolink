@@ -9,7 +9,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { PlusCircle } from 'lucide-react';
+import { BriefcaseBusiness, CircleDollarSign, ImagePlus, MapPin, PlusCircle } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,6 +59,7 @@ export default function VendedorAdicionarServico() {
 
   const vendedorBloqueado =
     utilizador?.papel === 'vendedor' && !vendedorAprovado;
+  const contaSuspensa = utilizador?.status_aprovacao === 'suspenso';
 
   const [nome, setNome] = useState('');
   const [tipoServico, setTipoServico] = useState('');
@@ -134,9 +135,11 @@ export default function VendedorAdicionarServico() {
 
     if (vendedorBloqueado) {
       toast({
-        title: 'Conta em análise',
+        title: contaSuspensa ? 'Conta suspensa' : 'Conta em análise',
         description:
-          'Aguarde aprovação da equipa ANGROLINK para adicionar ou alterar imagens de serviços.',
+          contaSuspensa
+            ? 'A sua conta está suspensa. Não pode alterar imagens até à reativação.'
+            : 'Aguarde aprovação da equipa ANGROLINK para adicionar ou alterar imagens de serviços.',
         variant: 'destructive',
       });
       return;
@@ -177,9 +180,11 @@ export default function VendedorAdicionarServico() {
 
     if (vendedorBloqueado) {
       toast({
-        title: 'Conta em análise',
+        title: contaSuspensa ? 'Conta suspensa' : 'Conta em análise',
         description:
-          'Pode completar o seu perfil, mas só poderá publicar ou editar serviços quando a sua conta for aprovada pela equipa ANGROLINK.',
+          contaSuspensa
+            ? 'A sua conta está suspensa. Não é possível publicar ou editar serviços até à reativação.'
+            : 'Pode completar o seu perfil, mas só poderá publicar ou editar serviços quando a sua conta for aprovada pela equipa ANGROLINK.',
         variant: 'destructive',
       });
       return;
@@ -292,24 +297,34 @@ export default function VendedorAdicionarServico() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="font-titulo text-2xl font-bold">
-        {isEdit ? 'Editar Serviço' : 'Adicionar Serviço'}
-      </h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <header className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">{isEdit ? 'Editar serviço' : 'Adicionar serviço'}</h1>
+        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">{isEdit ? 'Atualiza os dados do serviço e guarda as alterações.' : 'Apresenta o teu serviço aos clientes da ANGROLINK.'}</p>
+      </header>
 
       {vendedorBloqueado && (
-        <div className="border-2 border-yellow-500/40 bg-yellow-500/10 p-4 rounded-md">
+        <div className={`border-2 p-4 rounded-md ${contaSuspensa ? 'border-red-300 bg-red-50' : 'border-yellow-500/40 bg-yellow-500/10'}`}>
           <p className="font-corpo text-sm font-semibold">
-            Conta em análise
+            {contaSuspensa ? 'Conta suspensa' : 'Conta em análise'}
           </p>
           <p className="font-corpo text-xs text-muted-foreground mt-1">
-            Pode completar o seu perfil, mas só poderá publicar ou editar
-            serviços quando a sua conta for aprovada pela equipa ANGROLINK.
+            {contaSuspensa
+              ? 'Não é possível publicar nem editar serviços até a conta ser reativada.'
+              : 'Pode completar o seu perfil, mas só poderá publicar ou editar serviços quando a sua conta for aprovada pela equipa ANGROLINK.'}
           </p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="painel-dashboard-form formulario-publicacao">
+        <div className="formulario-publicacao-titulo">
+          <span className="formulario-publicacao-icone"><BriefcaseBusiness className="size-5" /></span>
+          <div>
+            <h2 className="font-titulo text-base font-bold">Informações do serviço</h2>
+            <p className="font-corpo text-xs text-muted-foreground">Mostra aos clientes o que fazes e como podem encontrar-te.</p>
+          </div>
+          <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 1 de 3</span>
+        </div>
         {/* NOME */}
         <div className="space-y-2">
           <Label className="font-corpo text-sm">
@@ -347,6 +362,11 @@ export default function VendedorAdicionarServico() {
           </select>
         </div>
 
+        <div className="formulario-publicacao-titulo pt-2">
+          <span className="formulario-publicacao-icone"><CircleDollarSign className="size-5" /></span>
+          <div><h2 className="font-titulo text-base font-bold">Preço e apresentação</h2><p className="font-corpo text-xs text-muted-foreground">Define uma estimativa e adiciona uma imagem representativa.</p></div>
+          <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 2 de 3</span>
+        </div>
         {/* PREÇO */}
         <div className="space-y-2">
           <Label>Preço estimado (Kz) *</Label>
@@ -378,7 +398,7 @@ export default function VendedorAdicionarServico() {
         <div className="space-y-2">
           <Label>Imagem do serviço</Label>
 
-          <div className="border-2 border-dashed p-4 text-center">
+          <div className="area-imagem-publicacao">
             {imagemPreview ? (
               <>
                 <img
@@ -392,9 +412,11 @@ export default function VendedorAdicionarServico() {
                   onClick={() => {
                     if (vendedorBloqueado) {
                       toast({
-                        title: 'Conta em análise',
+                        title: contaSuspensa ? 'Conta suspensa' : 'Conta em análise',
                         description:
-                          'Aguarde aprovação para remover ou alterar imagens.',
+                          contaSuspensa
+                            ? 'Não pode remover nem alterar imagens enquanto a conta estiver suspensa.'
+                            : 'Aguarde aprovação para remover ou alterar imagens.',
                         variant: 'destructive',
                       });
                       return;
@@ -410,15 +432,34 @@ export default function VendedorAdicionarServico() {
                 </button>
               </>
             ) : (
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleImagemChange}
-              />
+              <div className="flex flex-col items-center gap-2">
+                <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary"><ImagePlus className="size-5" /></span>
+                <input
+                  id="imagem-servico"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImagemChange}
+                  className="sr-only"
+                />
+                <label
+                  htmlFor="imagem-servico"
+                  className="cursor-pointer rounded-md border-2 border-primary bg-primary px-4 py-2 font-corpo text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Escolher imagem
+                </label>
+                <p className="font-corpo text-xs text-muted-foreground">
+                  Nenhuma imagem selecionada · JPG, PNG ou WEBP (máximo 3 MB)
+                </p>
+              </div>
             )}
           </div>
         </div>
 
+        <div className="formulario-publicacao-titulo pt-2">
+          <span className="formulario-publicacao-icone"><MapPin className="size-5" /></span>
+          <div><h2 className="font-titulo text-base font-bold">Área de atuação</h2><p className="font-corpo text-xs text-muted-foreground">Indica onde o serviço está disponível.</p></div>
+          <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 3 de 3</span>
+        </div>
         {/* LOCALIZAÇÃO */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
@@ -479,7 +520,7 @@ export default function VendedorAdicionarServico() {
         </div>
 
         {/* DISPONÍVEL */}
-        <label className="flex items-center gap-2 font-corpo text-sm">
+        <label className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-3 font-corpo text-sm font-medium">
           <input
             type="checkbox"
             checked={disponivel}
@@ -491,7 +532,7 @@ export default function VendedorAdicionarServico() {
 
         <Button
           type="submit"
-          className="w-full bg-green-700 hover:bg-green-800 text-white border-2 border-green-700 transition-colors"
+          className="w-full rounded-lg bg-green-700 py-6 text-white shadow-sm hover:bg-green-800"
           disabled={vendedorBloqueado}
         >
           <PlusCircle className="mr-2" />

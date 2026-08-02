@@ -13,7 +13,7 @@ export default function CardSeguranca({
     <CardSecaoPerfil
       icon={Lock}
       titulo="Segurança"
-      descricao="Altere a password da sua conta."
+      descricao="Altere a palavra-passe da sua conta."
     >
       {children}
     </CardSecaoPerfil>

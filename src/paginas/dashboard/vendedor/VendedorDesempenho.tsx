@@ -13,7 +13,7 @@ import {
   fetchServicosPorVendedor,
 } from '@/services/api';
 
-export default function VendedorContactos() {
+export default function VendedorDesempenho() {
 
 const { utilizador } = useAuth();
 
@@ -95,13 +95,13 @@ const maisContactadosServicos=
 return (
 <div className="space-y-6">
 
-<div className="mb-8">
+<div className="painel-dashboard-cabecalho mb-8">
 
-  <h1 className="font-titulo text-4xl font-bold text-slate-800">
-    Contactos
+  <h1 className="relative z-10 font-titulo text-3xl font-bold text-primary-foreground">
+    Desempenho
   </h1>
 
-  <p className="font-corpo mt-2 text-muted-foreground text-base">
+  <p className="relative z-10 font-corpo mt-2 text-primary-foreground/80 text-base">
     Veja quais produtos e serviços despertaram mais interesse dos clientes através do WhatsApp.
   </p>
 
@@ -110,7 +110,7 @@ return (
 
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-<div className="rounded-2xl border bg-card shadow-sm p-6">
+<div className="painel-dashboard-metrica">
 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
 
   <MessageSquare
@@ -129,7 +129,7 @@ Cliques totais
 </p>
 </div>
 
-<div className="rounded-2xl border bg-card shadow-sm p-6">
+<div className="painel-dashboard-metrica">
 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
 
   <Package
@@ -148,7 +148,7 @@ Contactos em produtos
 </p>
 </div>
 
-<div className="rounded-2xl border bg-card shadow-sm p-6">
+<div className="painel-dashboard-metrica">
 <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4">
 
   <Wrench

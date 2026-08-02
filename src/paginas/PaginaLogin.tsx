@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
-import { supabase } from '@/services/supabase';
+import { enviarRecuperacaoSenha } from '@/services/auth';
 
 export default function PaginaLogin() {
   const navigate = useNavigate();
@@ -97,12 +97,10 @@ export default function PaginaLogin() {
     try {
       setCarregando(true);
 
-      const { error } =
-        await supabase.auth.resetPasswordForEmail(identificador.trim(), {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-
-      if (error) throw error;
+      await enviarRecuperacaoSenha(
+        identificador,
+        `${window.location.origin}/reset-password`,
+      );
 
       toast({
         title: 'Email enviado!',

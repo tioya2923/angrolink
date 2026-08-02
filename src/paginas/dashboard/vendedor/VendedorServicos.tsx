@@ -34,6 +34,10 @@ export default function VendedorServicos() {
   const vendedorPendente =
     utilizador?.papel === 'vendedor' &&
     utilizador?.status_aprovacao !== 'aprovado';
+  const contaSuspensa = utilizador?.status_aprovacao === 'suspenso';
+  const textoBloqueio = contaSuspensa
+    ? 'A sua conta está suspensa. Pode consultar os serviços, mas não pode criar, editar, remover ou alterar anúncios até à reativação.'
+    : 'A sua conta está em análise. Poderá gerir serviços após a aprovação da equipa ANGROLINK.';
 
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,9 +74,8 @@ export default function VendedorServicos() {
   const irAdicionarServico = () => {
     if (vendedorPendente) {
       toast({
-        title: 'Conta em análise',
-        description:
-          'Só poderá publicar serviços quando a sua conta for aprovada pela equipa ANGROLINK.',
+        title: contaSuspensa ? 'Conta suspensa' : 'Conta em análise',
+        description: textoBloqueio,
         variant: 'destructive',
       });
       return;
@@ -252,14 +255,14 @@ export default function VendedorServicos() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-6">
+      <div className="painel-dashboard-cabecalho flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-titulo text-2xl font-bold">
+          <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">
             Meus Serviços
           </h1>
 
-          <p className="font-corpo text-sm text-muted-foreground mt-1">
+          <p className="relative z-10 font-corpo text-sm text-primary-foreground/80 mt-1">
             Gere os teus serviços, disponibilidade, destaques e desempenho.
           </p>
         </div>
@@ -269,18 +272,17 @@ export default function VendedorServicos() {
           className="flex items-center gap-2 font-corpo text-sm bg-green-700 text-white px-4 py-2 border-2 border-green-700 hover:bg-green-800 transition-colors shrink-0 rounded-md"
         >
           <PlusCircle size={16} />
-          {vendedorPendente ? 'Aguardar aprovação' : 'Adicionar Serviço'}
+          {vendedorPendente ? (contaSuspensa ? 'Conta suspensa' : 'Aguardar aprovação') : 'Adicionar Serviço'}
         </button>
       </div>
 
       {vendedorPendente && (
-        <div className="border-2 border-yellow-500/40 bg-yellow-500/10 p-4 rounded-md">
+        <div className={`border-2 p-4 rounded-md ${contaSuspensa ? 'border-red-300 bg-red-50' : 'border-yellow-500/40 bg-yellow-500/10'}`}>
           <p className="font-corpo text-sm font-semibold">
-            Conta em análise
+            {contaSuspensa ? 'Conta suspensa' : 'Conta em análise'}
           </p>
           <p className="font-corpo text-xs text-muted-foreground mt-1">
-            Pode completar o seu perfil, mas só poderá publicar serviços quando
-            a sua conta for aprovada pela equipa ANGROLINK.
+            {textoBloqueio}
           </p>
         </div>
       )}
@@ -289,7 +291,7 @@ export default function VendedorServicos() {
         <div className="border-2 border-dashed border-border p-6 text-center space-y-3">
           <p className="font-corpo text-sm text-muted-foreground">
             {vendedorPendente
-              ? 'A sua conta ainda está em análise. Assim que for aprovada, poderá publicar serviços no marketplace.'
+              ? textoBloqueio
               : 'Ainda não publicaste nenhum serviço.'}
           </p>
 
@@ -298,7 +300,7 @@ export default function VendedorServicos() {
             className="inline-flex items-center gap-2 font-corpo text-sm bg-green-700 text-white px-4 py-2 border-2 border-green-700 hover:bg-green-800 transition-colors rounded-md"
           >
             <PlusCircle size={16} />
-            {vendedorPendente ? 'Aguardar aprovação' : 'Publicar primeiro serviço'}
+            {vendedorPendente ? (contaSuspensa ? 'Conta suspensa' : 'Aguardar aprovação') : 'Publicar primeiro serviço'}
           </button>
         </div>
       ) : (
@@ -310,7 +312,7 @@ export default function VendedorServicos() {
             return (
               <div
                 key={servico.id}
-                className="border-2 border-border p-3 flex flex-col sm:flex-row gap-3"
+                className="painel-dashboard-item p-4 flex flex-col sm:flex-row gap-3"
               >
                 <div className="w-full sm:w-24 h-20 bg-muted shrink-0">
                   <img

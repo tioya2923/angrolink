@@ -36,6 +36,22 @@ import {
 
 export default function VendedorResumo() {
   const { utilizador } = useAuth();
+  const estadoConta = utilizador?.status_aprovacao || 'pendente';
+  const vendedorAprovado = estadoConta === 'aprovado';
+  const estadoContaTexto =
+    estadoConta === 'aprovado'
+      ? 'Conta aprovada'
+      : estadoConta === 'suspenso'
+        ? 'Conta suspensa'
+        : estadoConta === 'rejeitado'
+          ? 'Conta rejeitada'
+          : 'Conta em análise';
+  const estadoContaClasse =
+    estadoConta === 'aprovado'
+      ? 'bg-green-100 text-green-700'
+      : estadoConta === 'suspenso' || estadoConta === 'rejeitado'
+        ? 'bg-red-100 text-red-700'
+        : 'bg-yellow-100 text-yellow-800';
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
@@ -215,12 +231,12 @@ export default function VendedorResumo() {
 
               <div className="flex flex-wrap gap-2 mt-4">
 
-                <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700 font-medium">
-                  ✓ Conta aprovada
+                <span className={`rounded-full px-3 py-1 text-sm font-medium ${estadoContaClasse}`}>
+                  {estadoConta === 'aprovado' ? '✓ ' : ''}{estadoContaTexto}
                 </span>
 
                 <span className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700 font-medium">
-                  Plano Gratuito
+                  Plano {(utilizador?.plano || 'gratuito').replace(/^./, letra => letra.toUpperCase())}
                 </span>
 
               </div>
@@ -229,27 +245,17 @@ export default function VendedorResumo() {
 
             <div className="grid grid-cols-2 gap-3">
 
-              <button
-                className="rounded-lg bg-green-700 px-4 py-3 text-white hover:bg-green-800 transition"
-              >
-                <Link
-                  to="/dashboard/produtos/novo"
-                  className="rounded-lg bg-green-700 px-4 py-3 text-white hover:bg-green-800 transition text-center"
-                >
-                  + Produto
-                </Link>
-              </button>
+              {vendedorAprovado ? (
+                <Link to="/dashboard/produtos/novo" className="rounded-lg bg-green-700 px-4 py-3 text-center text-white transition hover:bg-green-800">+ Produto</Link>
+              ) : (
+                <span className="cursor-not-allowed rounded-lg bg-muted px-4 py-3 text-center text-muted-foreground">+ Produto indisponível</span>
+              )}
 
-              <button
-                className="rounded-lg bg-green-700 px-4 py-3 text-white hover:bg-green-800 transition"
-              >
-                <Link
-                  to="/dashboard/servicos/novo"
-                  className="rounded-lg bg-green-700 px-4 py-3 text-white hover:bg-green-800 transition text-center"
-                >
-                  + Serviço
-                </Link>
-              </button>
+              {vendedorAprovado ? (
+                <Link to="/dashboard/servicos/novo" className="rounded-lg bg-green-700 px-4 py-3 text-center text-white transition hover:bg-green-800">+ Serviço</Link>
+              ) : (
+                <span className="cursor-not-allowed rounded-lg bg-muted px-4 py-3 text-center text-muted-foreground">+ Serviço indisponível</span>
+              )}
 
               <button
                 className="rounded-lg border px-4 py-3 hover:bg-gray-50 transition"
@@ -273,13 +279,17 @@ export default function VendedorResumo() {
         </CardContent>
       </Card>
 
-      {/* Alerta motivacional */}
-      <div className="border-2 border-green-700 bg-green-50 p-4 rounded-md">
-        <p className="font-corpo text-sm text-green-900">
+      {/* Estado da conta / resumo de atividade */}
+      <div className={`border-2 p-4 rounded-md ${vendedorAprovado ? 'border-green-700 bg-green-50' : estadoConta === 'suspenso' ? 'border-red-300 bg-red-50' : 'border-yellow-400 bg-yellow-50'}`}>
+        <p className={`font-corpo text-sm ${vendedorAprovado ? 'text-green-900' : estadoConta === 'suspenso' ? 'text-red-900' : 'text-yellow-900'}`}>
           <UserCircle size={16} className="inline mr-1" />
-          Os teus anúncios já somam{' '}
-          <strong>{stats.visualizacoes}</strong> visualizações e{' '}
-          <strong>{stats.contactos}</strong> cliques no WhatsApp.
+          {vendedorAprovado
+            ? <>Os teus anúncios já somam <strong>{stats.visualizacoes}</strong> visualizações e <strong>{stats.contactos}</strong> cliques no WhatsApp.</>
+            : estadoConta === 'suspenso'
+              ? <>A tua conta está suspensa. Podes consultar o painel, mas não podes criar nem editar anúncios. Os anúncios ficam ocultos até à reativação.</>
+              : estadoConta === 'rejeitado'
+                ? <>A tua conta foi rejeitada. Consulta o teu perfil para atualizar os dados necessários.</>
+                : <>A tua conta está em análise. Poderás publicar e editar anúncios após a aprovação da equipa ANGROLINK.</>}
         </p>
       </div>
 

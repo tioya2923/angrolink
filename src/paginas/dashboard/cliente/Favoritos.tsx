@@ -85,7 +85,7 @@ export default function ClienteFavoritos() {
 
   if (loading) {
     return (
-      <div className="max-w-xl">
+      <div className="max-w-xl rounded-xl border-2 border-border bg-card p-5">
         <h1 className="font-titulo text-3xl mb-2">
           Meus Favoritos
         </h1>
@@ -102,7 +102,7 @@ export default function ClienteFavoritos() {
     servicos.length === 0
   ) {
     return (
-      <div className="max-w-xl">
+      <div className="max-w-xl rounded-xl border-2 border-dashed border-border bg-card p-5">
         <h1 className="font-titulo text-3xl mb-2">
           Meus Favoritos
         </h1>
@@ -118,12 +118,12 @@ export default function ClienteFavoritos() {
     <div className="space-y-6">
 
       {/* CABEÇALHO */}
-      <div>
-        <h1 className="font-titulo text-3xl">
+      <div className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-3xl text-primary-foreground">
           Meus Favoritos
         </h1>
 
-        <p className="text-muted-foreground mt-1">
+        <p className="relative z-10 text-primary-foreground/80 mt-1">
           {produtos.length} produtos • {servicos.length} serviços
         </p>
       </div>

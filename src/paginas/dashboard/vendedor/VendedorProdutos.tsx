@@ -34,6 +34,10 @@ export default function VendedorProdutos() {
   const vendedorPendente =
     utilizador?.papel === 'vendedor' &&
     utilizador?.status_aprovacao !== 'aprovado';
+  const contaSuspensa = utilizador?.status_aprovacao === 'suspenso';
+  const textoBloqueio = contaSuspensa
+    ? 'A sua conta está suspensa. Pode consultar os produtos, mas não pode criar, editar, remover ou alterar anúncios até à reativação.'
+    : 'A sua conta está em análise. Poderá gerir produtos após a aprovação da equipa ANGROLINK.';
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,9 +49,8 @@ export default function VendedorProdutos() {
   // =============================
   const bloquearAcao = () => {
     toast({
-      title: 'Conta em análise',
-      description:
-        'Só poderá gerir produtos quando a sua conta for aprovada.',
+      title: contaSuspensa ? 'Conta suspensa' : 'Conta em análise',
+      description: textoBloqueio,
       variant: 'destructive',
     });
   };
@@ -256,15 +259,15 @@ const toggleDestaque = async (produto: Produto) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="painel-dashboard-cabecalho flex items-center justify-between gap-3">
         <div>
-          <h1 className="font-titulo text-2xl font-bold">
+          <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">
             Meus Produtos
           </h1>
 
-          <p className="font-corpo text-sm text-muted-foreground mt-1">
+          <p className="relative z-10 font-corpo text-sm text-primary-foreground/80 mt-1">
             Gere os teus produtos, disponibilidade, destaques e desempenho.
           </p>
         </div>
@@ -278,9 +281,16 @@ const toggleDestaque = async (produto: Produto) => {
           className="flex items-center gap-2 font-corpo text-sm bg-green-700 text-white px-4 py-2 border-2 border-green-700 hover:bg-green-800 transition-colors shrink-0 rounded-md"
         >
           <PlusCircle size={16} />
-          {vendedorPendente ? 'Aguardar aprovação' : 'Adicionar Produto'}
+          {vendedorPendente ? (contaSuspensa ? 'Conta suspensa' : 'Aguardar aprovação') : 'Adicionar Produto'}
         </button>
       </div>
+
+      {vendedorPendente && (
+        <div className={`border-2 p-4 rounded-md ${contaSuspensa ? 'border-red-300 bg-red-50' : 'border-yellow-500/40 bg-yellow-500/10'}`}>
+          <p className="font-corpo text-sm font-semibold">{contaSuspensa ? 'Conta suspensa' : 'Conta em análise'}</p>
+          <p className="mt-1 font-corpo text-xs text-muted-foreground">{textoBloqueio}</p>
+        </div>
+      )}
 
       {/* EMPTY STATE */}
       {produtos.length === 0 ? (
@@ -301,7 +311,7 @@ const toggleDestaque = async (produto: Produto) => {
             className="inline-flex items-center gap-2 font-corpo text-sm bg-green-700 text-white px-4 py-2 border-2 border-green-700 hover:bg-green-800 transition-colors rounded-md"
           >
             <PlusCircle size={16} />
-            {vendedorPendente ? 'Aguardar aprovação' : 'Publicar primeiro produto'}
+            {vendedorPendente ? (contaSuspensa ? 'Conta suspensa' : 'Aguardar aprovação') : 'Publicar primeiro produto'}
           </button>
         </div>
       ) : (
@@ -313,7 +323,7 @@ const toggleDestaque = async (produto: Produto) => {
             return (
               <div
                 key={produto.id}
-                className="border-2 border-border p-3 flex flex-col sm:flex-row gap-3"
+                className="painel-dashboard-item p-4 flex flex-col sm:flex-row gap-3"
               >
                 {/* IMAGEM */}
                 <div className="w-full sm:w-24 h-20 bg-muted shrink-0">

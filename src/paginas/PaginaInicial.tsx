@@ -9,7 +9,6 @@
 
 import { Link } from "react-router-dom";
 import { MessageCircle, Megaphone, Star, Wrench } from "lucide-react";
-import { useEffect, useState } from "react";
 
 import Cabecalho from "@/componentes/Cabecalho";
 import Rodape from "@/componentes/Rodape";
@@ -18,20 +17,23 @@ import ListaProdutos from "@/componentes/ListaProdutos";
 
 import { useAuth } from "@/contextos/AuthContexto";
 import { useMunicipio } from "@/contextos/MunicipioContexto";
-import { fetchProdutos, fetchServicos } from "@/services/api";
-import { Produto, Servico } from "@/tipos";
+import { useProdutosQuery, useServicosQuery } from "@/hooks/useCatalogoQuery";
 import ListaDestaques from "@/componentes/ListaDestaques";
 import CarrosselProdutos from "@/componentes/CarrosselProdutos";
 import FaixaConfianca from "@/componentes/FaixaConfianca";
 
 export default function PaginaInicial() {
   const { municipioId, municipioNome } = useMunicipio();
-  const { tipoComprador, utilizador  } = useAuth();
+  const { utilizador } = useAuth();
 
-  const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  const produtosQuery = useProdutosQuery();
+  const servicosQuery = useServicosQuery();
+  const produtos = produtosQuery.data ?? [];
+  const servicos = servicosQuery.data ?? [];
+  const loading = produtosQuery.isLoading || servicosQuery.isLoading;
+  const erro = produtosQuery.isError || servicosQuery.isError
+    ? 'Erro ao carregar o catálogo.'
+    : null;
 
   /**
    * ===============================
@@ -39,49 +41,6 @@ export default function PaginaInicial() {
    * ===============================
    */
 
-  useEffect(() => {
-    async function carregar() {
-      try {
-        setLoading(true);
-        setErro(null);
-
-        const [produtosData, servicosData] = await Promise.all([
-          fetchProdutos(),
-          fetchServicos()
-        ]);
-        console.log("PRODUTOS RECEBIDOS NA HOME:", produtosData);
-        console.log("SERVICOS RECEBIDOS NA HOME:", servicosData);
-
-        setProdutos(Array.isArray(produtosData) ? produtosData : []);
-        setServicos(Array.isArray(servicosData) ? servicosData : []);
-      } catch {
-        setErro("Erro ao carregar produtos");
-        setProdutos([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    carregar();
-  }, []);
-
-  /**
-   * ===============================
-   * FILTRAR POR TIPO
-   * ===============================
-   */
-
-  const produtosVisiveis = produtos.filter((p) => {
-    if (tipoComprador === "casa") {
-      return p.tipo_venda === "retalho" || p.tipo_venda === "ambos";
-    }
-
-    if (tipoComprador === "negocio") {
-      return p.tipo_venda === "grosso" || p.tipo_venda === "ambos";
-    }
-
-    return true;
-  });
 
   /**
    * ===============================
@@ -90,12 +49,12 @@ export default function PaginaInicial() {
    */
 
   const produtosFiltrados = municipioId
-    ? produtosVisiveis.filter(
+    ? produtos.filter(
         (p) =>
           p.municipio?.toLowerCase().trim() ===
           municipioNome?.toLowerCase().trim()
       )
-    : produtosVisiveis;
+    : produtos;
 
   /**
    * ===============================
@@ -106,7 +65,7 @@ export default function PaginaInicial() {
   const porDataDesc = (a: { criado_em?: string }, b: { criado_em?: string }) =>
     new Date(b.criado_em ?? 0).getTime() - new Date(a.criado_em ?? 0).getTime();
 
-  const produtosDestaque = produtosVisiveis
+  const produtosDestaque = produtos
     .filter((p) => {
       const destaqueValido =
         !(p as any).destaque_ate ||
@@ -149,7 +108,7 @@ export default function PaginaInicial() {
    * ===============================
    */
 
-  const baseRecentes = municipioId ? produtosFiltrados : produtosVisiveis;
+  const baseRecentes = municipioId ? produtosFiltrados : produtos;
 
   const produtosRecentes = [...baseRecentes]
     .sort(
@@ -185,29 +144,30 @@ export default function PaginaInicial() {
     )
     .slice(0, 8);
 
-  const produtosGrosso =
-    tipoComprador === "casa"
-      ? []
-      : produtosFiltrados
-          .filter(
-            (p) =>
-              !idsProdutosDestaque.has(p.id) &&
-              p.disponivel &&
-              (p.tipo_venda === "grosso" || p.tipo_venda === "ambos")
-          )
-          .slice(0, 4);
+  // Esta secção é sempre visível: apresenta oportunidades de compra em grosso
+  // mesmo quando o visitante está a navegar como comprador para casa.
+  const produtosBaseGrosso = municipioId ? produtos.filter(
+    produto => produto.municipio?.toLowerCase().trim() === municipioNome?.toLowerCase().trim(),
+  ) : produtos;
 
-  const produtosRetalho =
-    tipoComprador === "negocio"
-      ? []
-      : produtosFiltrados
-          .filter(
-            (p) =>
-              !idsProdutosDestaque.has(p.id) &&
-              p.disponivel &&
-              (p.tipo_venda === "retalho" || p.tipo_venda === "ambos")
-          )
-          .slice(0, 4);
+  const produtosGrosso = produtosBaseGrosso
+    .filter(
+      produto =>
+        !idsProdutosDestaque.has(produto.id) &&
+        produto.disponivel &&
+        (produto.tipo_venda === "grosso" || produto.tipo_venda === "ambos"),
+    )
+    .sort(porDataDesc)
+    .slice(0, 8);
+
+  const produtosRetalho = produtosFiltrados
+    .filter(
+      produto =>
+        !idsProdutosDestaque.has(produto.id) &&
+        produto.disponivel &&
+        (produto.tipo_venda === "retalho" || produto.tipo_venda === "ambos"),
+    )
+    .slice(0, 4);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -289,18 +249,6 @@ export default function PaginaInicial() {
               </section>
             )}
 
-            {/* GROSSO */}
-            {produtosGrosso.length > 0 && (
-              <section className="py-6 md:py-8 border-b-2 border-border">
-                <div className="container">
-                  <h2 className="font-titulo text-lg md:text-xl mb-1">
-                    📦 Comprar por Grosso
-                  </h2>
-                  <ListaProdutos produtos={produtosGrosso} />
-                </div>
-              </section>
-            )}
-
             {/* RETALHO */}
             {produtosRetalho.length > 0 && (
               <section className="py-6 md:py-8 border-b-2 border-border">
@@ -309,6 +257,18 @@ export default function PaginaInicial() {
                     🛒 Comprar por Retalho
                   </h2>
                   <ListaProdutos produtos={produtosRetalho} />
+                </div>
+              </section>
+            )}
+
+            {/* COMPRAR POR GROSSO */}
+            {produtosGrosso.length > 0 && (
+              <section className="py-6 md:py-8 border-b-2 border-border">
+                <div className="container">
+                  <ListaProdutos
+                    produtos={produtosGrosso}
+                    titulo="📦 Comprar por Grosso"
+                  />
                 </div>
               </section>
             )}

@@ -167,7 +167,7 @@ export const REQUISITOS_POR_TIPO: Record<TipoVendedor, RequisitoDocumentacao> = 
     obrigatorios: ['bi'],
     opcionais: ['nif', 'alvara'],
   },
-  mercado: {
+  revendedor: {
     nivel: 'pequeno',
     rotuloNivel: 'Pequeno negócio',
     obrigatorios: ['bi'],

@@ -22,6 +22,7 @@ import PaginaAnunciar from "@/paginas/PaginaAnunciar";
 import PaginaLogin from "@/paginas/PaginaLogin";
 import DashboardRouter from "@/paginas/dashboard/DashboardRouter";
 import ScrollToTop from "@/componentes/ScrollToTop";
+import MensagensValidacaoNativas from "@/componentes/MensagensValidacaoNativas";
 import NotFound from "./pages/NotFound.tsx";
 import PaginaServico from "@/paginas/PaginaServico";
 import PaginaAnunciarServico from "@/paginas/PaginaAnunciarServico";
@@ -31,7 +32,15 @@ import PaginaTermos from "@/paginas/PaginaTermos";
 import PaginaPrivacidade from "@/paginas/PaginaPrivacidade";
 import PaginaComoFunciona from "@/paginas/PaginaComoFunciona";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -42,6 +51,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            <MensagensValidacaoNativas />
             <Routes>
               {/* Páginas públicas */}
               <Route path="/" element={<PaginaInicial />} />

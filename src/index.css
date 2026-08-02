@@ -124,4 +124,80 @@
   .secao-destaque {
     background-color: hsl(var(--destaque-bg));
   }
+
+  /* Superfícies consistentes do dashboard */
+  .painel-dashboard-cabecalho {
+    @apply relative overflow-hidden rounded-2xl border-2 border-primary bg-primary p-5 md:p-6;
+    box-shadow: 5px 5px 0 hsl(var(--secondary));
+  }
+
+  .painel-dashboard-cabecalho::after {
+    content: '';
+    position: absolute;
+    width: 11rem;
+    height: 11rem;
+    right: -3.5rem;
+    top: -5rem;
+    border: 2px solid hsl(var(--primary-foreground) / 0.2);
+    border-radius: 9999px;
+  }
+
+  .painel-dashboard-form {
+    @apply rounded-2xl border-2 border-border bg-card p-5 md:p-7;
+    box-shadow: 4px 4px 0 hsl(var(--muted));
+  }
+
+  /* Formulários de publicação: passos claros e campos mais confortáveis. */
+  .formulario-publicacao {
+    @apply space-y-6;
+  }
+
+  .formulario-publicacao-secao {
+    @apply rounded-xl border border-border bg-muted/30 p-4 md:p-5;
+  }
+
+  .formulario-publicacao-titulo {
+    @apply flex items-start gap-3 border-b border-border pb-3;
+  }
+
+  .formulario-publicacao-icone {
+    @apply flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground;
+  }
+
+  .formulario-publicacao .campo-publicacao {
+    @apply space-y-2;
+  }
+
+  .formulario-publicacao input:not([type='checkbox']),
+  .formulario-publicacao select,
+  .formulario-publicacao textarea {
+    @apply rounded-lg border-2 border-border bg-background transition-colors;
+  }
+
+  .formulario-publicacao input:not([type='checkbox']):focus,
+  .formulario-publicacao select:focus,
+  .formulario-publicacao textarea:focus {
+    @apply border-primary outline-none ring-2 ring-primary/15;
+  }
+
+  .area-imagem-publicacao {
+    @apply rounded-xl border-2 border-dashed border-primary/35 bg-primary/5 p-5 text-center transition-colors;
+  }
+  .area-imagem-publicacao:hover {
+    @apply border-primary/70 bg-primary/10;
+  }
+
+  .painel-dashboard-item {
+    @apply rounded-xl border-2 border-border bg-card transition-all duration-200;
+  }
+  .painel-dashboard-item:hover {
+    border-color: hsl(var(--primary));
+    transform: translateY(-2px);
+    box-shadow: 4px 4px 0 hsl(var(--muted));
+  }
+
+  .painel-dashboard-metrica {
+    @apply rounded-xl border-2 border-border bg-card p-4;
+    box-shadow: 3px 3px 0 hsl(var(--muted));
+  }
 }

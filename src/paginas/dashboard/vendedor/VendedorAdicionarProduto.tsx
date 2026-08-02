@@ -13,7 +13,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { PlusCircle } from 'lucide-react';
+import { CircleDollarSign, ImagePlus, MapPin, Package2, PlusCircle } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,6 +58,7 @@ export default function VendedorAdicionarProduto() {
   const vendedorAprovado =
     utilizador?.papel === 'vendedor' &&
     utilizador?.status_aprovacao === 'aprovado';
+  const contaSuspensa = utilizador?.status_aprovacao === 'suspenso';
 
   const vendedorIdValido =
     utilizador?.papel === 'vendedor' &&
@@ -246,9 +247,10 @@ export default function VendedorAdicionarProduto() {
       utilizador?.status_aprovacao !== 'aprovado'
     ) {
       toast({
-        title: 'Conta em análise',
-        description:
-          'A sua conta de vendedor ainda está em revisão. Só poderá publicar ou editar produtos quando for aprovada pela equipa ANGROLINK.',
+        title: contaSuspensa ? 'Conta suspensa' : 'Conta em análise',
+        description: contaSuspensa
+          ? 'A sua conta está suspensa. Não é possível publicar nem editar produtos até à reativação.'
+          : 'A sua conta de vendedor ainda está em revisão. Só poderá publicar ou editar produtos quando for aprovada pela equipa ANGROLINK.',
         variant: 'destructive',
       });
       return;
@@ -395,24 +397,34 @@ export default function VendedorAdicionarProduto() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <h1 className="font-titulo text-2xl font-bold">
-        {isEdit ? 'Editar Produto' : 'Adicionar Produto'}
-      </h1>
+    <div className="mx-auto max-w-4xl space-y-6">
+      <header className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">{isEdit ? 'Editar produto' : 'Adicionar produto'}</h1>
+        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">{isEdit ? 'Atualiza os dados do anúncio e guarda as alterações.' : 'Preenche os dados para publicar um novo produto.'}</p>
+      </header>
 
       {!isEdit && utilizador?.papel === 'vendedor' && !vendedorAprovado && (
-        <div className="border-2 border-yellow-500/40 bg-yellow-500/10 p-4 rounded-md">
+        <div className={`border-2 p-4 rounded-md ${contaSuspensa ? 'border-red-300 bg-red-50' : 'border-yellow-500/40 bg-yellow-500/10'}`}>
           <p className="font-corpo text-sm font-semibold">
-            Conta em análise
+            {contaSuspensa ? 'Conta suspensa' : 'Conta em análise'}
           </p>
           <p className="font-corpo text-xs text-muted-foreground mt-1">
-            Pode completar o seu perfil, mas só poderá publicar produtos quando
-            a sua conta for aprovada pela equipa ANGROLINK.
+            {contaSuspensa
+              ? 'Não é possível publicar nem editar produtos até a conta ser reativada.'
+              : 'Pode completar o seu perfil, mas só poderá publicar produtos quando a sua conta for aprovada pela equipa ANGROLINK.'}
           </p>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="painel-dashboard-form formulario-publicacao">
+        <div className="formulario-publicacao-titulo">
+          <span className="formulario-publicacao-icone"><Package2 className="size-5" /></span>
+          <div>
+            <h2 className="font-titulo text-base font-bold">Informações do produto</h2>
+            <p className="font-corpo text-xs text-muted-foreground">Começa pelos detalhes que ajudam o cliente a encontrar o teu anúncio.</p>
+          </div>
+          <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 1 de 3</span>
+        </div>
         <div className="space-y-2">
           <Label className="font-corpo text-sm">Nome do produto *</Label>
 
@@ -468,6 +480,11 @@ export default function VendedorAdicionarProduto() {
           </div>
         </div>
 
+        <div className="formulario-publicacao-titulo pt-2">
+          <span className="formulario-publicacao-icone"><CircleDollarSign className="size-5" /></span>
+          <div><h2 className="font-titulo text-base font-bold">Venda e apresentação</h2><p className="font-corpo text-xs text-muted-foreground">Define o preço, a quantidade e adiciona uma imagem atrativa.</p></div>
+          <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 2 de 3</span>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label>Preço (Kz) *</Label>
@@ -559,7 +576,7 @@ export default function VendedorAdicionarProduto() {
         <div className="space-y-2">
           <Label>Imagem principal</Label>
 
-          <div className="border-2 border-dashed p-4 text-center">
+          <div className="area-imagem-publicacao">
             {imagemPreview ? (
               <>
                 <img
@@ -581,15 +598,34 @@ export default function VendedorAdicionarProduto() {
                 </button>
               </>
             ) : (
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleImagemChange}
-              />
+              <div className="flex flex-col items-center gap-2">
+                <span className="flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary"><ImagePlus className="size-5" /></span>
+                <input
+                  id="imagem-produto"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleImagemChange}
+                  className="sr-only"
+                />
+                <label
+                  htmlFor="imagem-produto"
+                  className="cursor-pointer rounded-md border-2 border-primary bg-primary px-4 py-2 font-corpo text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Escolher imagem
+                </label>
+                <p className="font-corpo text-xs text-muted-foreground">
+                  Nenhuma imagem selecionada · JPG, PNG ou WEBP (máximo 3 MB)
+                </p>
+              </div>
             )}
           </div>
         </div>
 
+        <div className="formulario-publicacao-titulo pt-2">
+          <span className="formulario-publicacao-icone"><MapPin className="size-5" /></span>
+          <div><h2 className="font-titulo text-base font-bold">Localização e publicação</h2><p className="font-corpo text-xs text-muted-foreground">Indica onde o produto está disponível.</p></div>
+          <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 3 de 3</span>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <select
             value={provincia}
@@ -626,7 +662,7 @@ export default function VendedorAdicionarProduto() {
           </select>
         </div>
 
-        <label className="flex items-center gap-2 font-corpo text-sm">
+        <label className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-3 font-corpo text-sm font-medium">
           <input
             type="checkbox"
             checked={disponivel}
@@ -636,7 +672,7 @@ export default function VendedorAdicionarProduto() {
           Disponível
         </label>
 
-        <Button type="submit" className="w-full bg-green-700 hover:bg-green-800 text-white border-2 border-green-700 transition-colors">
+        <Button type="submit" className="w-full rounded-lg bg-green-700 py-6 text-white shadow-sm hover:bg-green-800">
           <PlusCircle className="mr-2" />
 
           {isEdit

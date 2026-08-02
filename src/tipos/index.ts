@@ -14,8 +14,8 @@ export type TipoVendedor =
   | 'taxista'
   | 'moto_taxista'
   | 'produtor'
+  | 'revendedor'
   | 'mini_mercado'
-  | 'mercado'
   | 'supermercado'
   | 'hipermercado'
   | 'grossista'
@@ -270,6 +270,7 @@ export interface Utilizador {
   verificado?: boolean;
   pode_destacar?: boolean;
   conta_ativa?: boolean;
+  plano?: PlanoVendedor;
 }
 
 // =======================
