@@ -18,6 +18,7 @@ import { obterBadgeVendedor } from '@/dados/constantes';
 import { useAuth } from '@/contextos/AuthContexto';
 import { formatarTempoRelativo }
   from '@/lib/datas';
+import { obterPromocao } from '@/lib/precos';
 import {
   guardarHistoricoContacto,
   incrementarCliqueWhatsappProduto,
@@ -108,17 +109,11 @@ export default function CardProduto({
   // =============================
   // DESCONTO
   // =============================
-  const emDesconto =
-    typeof produto?.preco_promocional === 'number' &&
-    typeof produto?.preco_aproximado === 'number' &&
-    produto.preco_promocional > 0 &&
-    produto.preco_promocional < produto.preco_aproximado;
-
-  const percentagemDesconto = emDesconto
-    ? Math.round(
-        (1 - produto.preco_promocional! / produto.preco_aproximado!) * 100
-      )
-    : 0;
+  const promocao = obterPromocao(
+    produto?.preco_aproximado,
+    produto?.preco_promocional,
+  );
+  const emDesconto = Boolean(promocao);
 
   // =============================
   // LINK WHATSAPP
@@ -213,7 +208,7 @@ export default function CardProduto({
 
           {emDesconto && (
             <span className="absolute top-2 left-2 px-2 py-0.5 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-sm">
-              -{percentagemDesconto}%
+              -{promocao!.percentagem}%
             </span>
           )}
 
@@ -271,13 +266,13 @@ export default function CardProduto({
           {emDesconto ? (
             <div className="mt-1.5">
               <p className="font-bold text-destructive">
-                {formatarPreco(produto?.preco_promocional)} Kz
+                {formatarPreco(promocao!.precoPromocional)} Kz
                 <span className="text-xs text-muted-foreground ml-1">
                   / {produto?.unidade || '-'}
                 </span>
               </p>
               <p className="text-xs text-muted-foreground line-through">
-                {formatarPreco(produto?.preco_aproximado)} Kz
+                {formatarPreco(promocao!.precoOriginal)} Kz
               </p>
             </div>
           ) : mostrarDuploPreco ? (

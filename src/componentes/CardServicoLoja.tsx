@@ -8,6 +8,7 @@ import {
 
 import { Servico } from "@/tipos";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
+import { obterPromocao } from '@/lib/precos';
 
 interface Props {
   servico: Servico;
@@ -32,6 +33,7 @@ export default function CardServicoLoja({
         servico.nome_servico
       )
     : "#";
+  const promocao = obterPromocao(servico.preco_estimado, servico.preco_promocional);
 
   return (
 
@@ -51,7 +53,7 @@ export default function CardServicoLoja({
         to={`/servico/${servico.id}`}
       >
 
-        <div className="aspect-square overflow-hidden">
+        <div className="aspect-square overflow-hidden relative">
 
           <img
             src={imagem}
@@ -65,6 +67,11 @@ export default function CardServicoLoja({
               duration-300
             "
           />
+          {promocao && (
+            <span className="absolute left-3 top-3 rounded-full bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground">
+              -{promocao.percentagem}%
+            </span>
+          )}
 
         </div>
 
@@ -87,7 +94,14 @@ export default function CardServicoLoja({
 
         </div>
 
-        <p className="text-2xl font-bold text-green-700 mt-2">
+        {promocao && (
+          <div className="mt-2">
+            <p className="text-2xl font-bold text-destructive">{promocao.precoPromocional.toLocaleString()} Kz</p>
+            <p className="text-sm text-muted-foreground line-through">{promocao.precoOriginal.toLocaleString()} Kz</p>
+          </div>
+        )}
+
+        {!promocao && <p className="text-2xl font-bold text-green-700 mt-2">
 
           {servico.preco_estimado
             ? `${Number(
@@ -95,7 +109,7 @@ export default function CardServicoLoja({
               ).toLocaleString()} Kz`
             : "Preço sob consulta"}
 
-        </p>
+        </p>}
 
         <div className="flex items-center gap-2 mt-3 text-gray-500">
 

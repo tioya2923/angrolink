@@ -33,7 +33,7 @@ import Rodape from '@/componentes/Rodape';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
 import RequisitosDocumentos from '@/componentes/RequisitosDocumentos';
 import SeletorFotoPerfil from '@/componentes/SeletorFotoPerfil';
-import { documentosObrigatoriosEmFalta } from '@/dados/documentosVendedor';
+import { CATALOGO_DOCUMENTOS, documentosObrigatoriosEmFalta, obterRequisitosDocumentos } from '@/dados/documentosVendedor';
 
 import {
   verificarDuplicados,
@@ -104,6 +104,7 @@ export default function PaginaAnunciar() {
   const [carregando, setCarregando] = useState(false);
   const [mostrarOpcionais, setMostrarOpcionais] = useState(false);
   const [fotoPerfil, setFotoPerfil] = useState<File | null>(null);
+  const [fotosDocumentos, setFotosDocumentos] = useState<Record<string, { frente?: File; verso?: File }>>({});
   const [previewFoto, setPreviewFoto] = useState('');
 
   const DIAS_SEMANA = [
@@ -331,6 +332,23 @@ export default function PaginaAnunciar() {
       return;
     }
 
+    if (tipoVendedorSelecionado) {
+      const requisitos = obterRequisitosDocumentos(tipoVendedorSelecionado);
+      const fotosEmFalta = (requisitos?.obrigatorios || []).filter(
+        documentoId => !fotosDocumentos[documentoId]?.frente || !fotosDocumentos[documentoId]?.verso,
+      );
+      if (fotosEmFalta.length > 0) {
+        toast.error(`Envie a foto da frente e do verso de: ${fotosEmFalta.map(id => CATALOGO_DOCUMENTOS[id]?.nome || id).join(', ')}.`);
+        return;
+      }
+
+      const ficheirosInvalidos = Object.values(fotosDocumentos).flatMap(fotos => [fotos.frente, fotos.verso]).filter((ficheiro): ficheiro is File => Boolean(ficheiro)).some(ficheiro => !['image/jpeg', 'image/png', 'image/webp'].includes(ficheiro.type) || ficheiro.size > 3 * 1024 * 1024);
+      if (ficheirosInvalidos) {
+        toast.error('As fotos dos documentos devem ser JPG, PNG ou WEBP e ter no máximo 3 MB cada.');
+        return;
+      }
+    }
+
     if (!formVendedor.termos) {
       toast.error(
         'Deve aceitar os termos da plataforma.'
@@ -543,15 +561,52 @@ export default function PaginaAnunciar() {
       console.log(authData.session);
       console.log(authData.user);
 
-      if (authError || !authData.user) {
-        console.error('Erro ao criar auth vendedor:', authError);
+      let authUser = authData.user;
 
-        if (authError?.message === 'User already registered') {
-          toast.error('Este email já está registado. Faz login em vez de criar nova conta.');
-        } else {
-          toast.error('Erro ao criar conta de vendedor.');
+      // Se uma tentativa anterior criou o utilizador de autenticação mas não
+      // conseguiu criar o perfil, a mesma palavra-passe permite concluir o
+      // pedido em vez de deixar a conta presa como "já registada".
+      if (authError || !authUser || !authData.session) {
+        const { data: sessaoExistente, error: erroLoginExistente } =
+          await supabase.auth.signInWithPassword({
+            email: emailLogin,
+            password: formVendedor.senha,
+          });
+
+        if (erroLoginExistente || !sessaoExistente.user) {
+          console.error('Erro ao criar ou recuperar auth vendedor:', authError || erroLoginExistente);
+          toast.error(
+            'Não foi possível concluir a conta. Se já tens uma conta, confirma a palavra-passe ou entra pela página de login.'
+          );
+          return;
         }
 
+        if (sessaoExistente.user.user_metadata?.papel !== 'vendedor') {
+          toast.error('Este contacto já está associado a uma conta de cliente. Usa outro contacto para criar uma conta de vendedor.');
+          await supabase.auth.signOut();
+          return;
+        }
+
+        authUser = sessaoExistente.user;
+      }
+
+      if (!authUser) {
+        toast.error('Não foi possível criar a conta de vendedor.');
+        return;
+      }
+
+      const { data: perfilExistente, error: erroPerfilExistente } = await supabase
+        .from('vendedores')
+        .select('id')
+        .eq('user_id', authUser.id)
+        .maybeSingle();
+
+      if (erroPerfilExistente) {
+        console.error('Erro ao verificar perfil de vendedor:', erroPerfilExistente);
+      }
+
+      if (perfilExistente) {
+        toast.error('Já existe um pedido de vendedor associado a esta conta. Aguarde a análise ou entre na sua conta.');
         return;
       }
 
@@ -580,13 +635,29 @@ export default function PaginaAnunciar() {
         fotoPerfilUrl = data.publicUrl;
       }
 
+      const documentosComFotos = structuredClone(formVendedor.documentos) as Record<string, Record<string, string>>;
+      if (tipoVendedorSelecionado) {
+        for (const [documentoId, fotos] of Object.entries(fotosDocumentos)) {
+          for (const lado of ['frente', 'verso'] as const) {
+            const ficheiro = fotos[lado];
+            if (!ficheiro) continue;
+            const extensao = ficheiro.name.split('.').pop() || 'jpg';
+            const caminho = `documentos/${authUser.id}/${documentoId}-${lado}-${crypto.randomUUID()}.${extensao}`;
+            const { error: erroUploadDocumento } = await supabase.storage.from('vendedores').upload(caminho, ficheiro, { contentType: ficheiro.type });
+            if (erroUploadDocumento) throw erroUploadDocumento;
+            const { data } = supabase.storage.from('vendedores').getPublicUrl(caminho);
+            documentosComFotos[documentoId] = { ...documentosComFotos[documentoId], [`foto_${lado}`]: data.publicUrl };
+          }
+        }
+      }
+
       console.log(
         'TIPO VENDEDOR:',
         tipoVendedorSelecionado
       );
 
       const novoVendedor = {
-        user_id: authData.user.id,
+        user_id: authUser.id,
 
         foto_perfil: fotoPerfilUrl,
 
@@ -610,6 +681,7 @@ export default function PaginaAnunciar() {
         endereco_detalhado: formPerfil.endereco || null,
 
         tipo_vendedor: tipoVendedorSelecionado,
+        documentos: documentosComFotos,
 
         plano: 'gratuito',
         verificado: false,
@@ -660,10 +732,27 @@ export default function PaginaAnunciar() {
 
       console.log(novoVendedor);
 
-      const { data, error: vendedorError } = await supabase
+      let { data, error: vendedorError } = await supabase
         .from('vendedores')
         .insert(novoVendedor)
         .select();
+
+      // Compatibilidade temporária: permite concluir o cadastro em bases que
+      // ainda não receberam a migração da coluna "documentos".
+      if (vendedorError?.code === 'PGRST204' && vendedorError.message?.includes("'documentos'")) {
+        const { documentos: _documentos, ...novoVendedorSemDocumentos } = novoVendedor;
+        const resultadoAlternativo = await supabase
+          .from('vendedores')
+          .insert(novoVendedorSemDocumentos)
+          .select();
+
+        data = resultadoAlternativo.data;
+        vendedorError = resultadoAlternativo.error;
+
+        if (!vendedorError) {
+          toast.info('Conta criada. Os dados dos documentos serão guardados após a atualização da base de dados.');
+        }
+      }
 
         console.log(data);
         console.log(vendedorError);
@@ -683,10 +772,8 @@ export default function PaginaAnunciar() {
         console.log('hint:', vendedorError?.hint);
         console.log('code:', vendedorError?.code);
 
-        alert(JSON.stringify(vendedorError, null, 2));
-
         toast.error(
-          'Conta criada, mas houve erro ao criar perfil.'
+          'Não foi possível criar o perfil de vendedor. Verifica os dados e tenta novamente.'
         );
 
         return;
@@ -1224,6 +1311,13 @@ export default function PaginaAnunciar() {
                       },
                     }))
                   }
+                  fotos={fotosDocumentos}
+                  onFotoChange={(documentoId, lado, ficheiro) =>
+                    setFotosDocumentos(atual => ({
+                      ...atual,
+                      [documentoId]: { ...atual[documentoId], [lado]: ficheiro },
+                    }))
+                  }
                 />
 
                 {/* Termos */}
@@ -1594,7 +1688,6 @@ function CamposPorTipo({
   const isDistribuidor = tipo === 'grossista';
   const isLoja =
     tipo === 'mini_mercado' ||
-    tipo === 'mercado' ||
     tipo === 'supermercado' ||
     tipo === 'hipermercado';
 

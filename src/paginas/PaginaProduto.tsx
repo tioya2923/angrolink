@@ -9,6 +9,7 @@ import ListaProdutos from '@/componentes/ListaProdutos';
 
 import SeloVendedor from '@/componentes/SeloVendedor';
 import { gerarLinkWhatsApp } from '@/lib/whatsapp';
+import { obterPromocao } from '@/lib/precos';
 
 import {
   fetchProdutoPorId,
@@ -147,6 +148,7 @@ export default function PaginaProduto() {
   const precoFormatado = new Intl.NumberFormat('pt-AO').format(
     produto.preco_aproximado || 0
   );
+  const promocao = obterPromocao(produto.preco_aproximado, produto.preco_promocional);
 
   // =============================
   // 🔥 CLICK WHATSAPP (CORRIGIDO)
@@ -236,12 +238,15 @@ export default function PaginaProduto() {
                 {produto.nome_produto}
               </h1>
 
-              <p className="font-titulo text-3xl text-primary">
-                {precoFormatado} Kz
-                <span className="text-base font-corpo text-muted-foreground ml-2">
-                  / {produto.unidade || '-'}
-                </span>
-              </p>
+              {promocao ? (
+                <div>
+                  <span className="inline-block rounded-full bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground">-{promocao.percentagem}%</span>
+                  <p className="mt-2 font-titulo text-3xl text-destructive">{promocao.precoPromocional.toLocaleString('pt-AO')} Kz <span className="ml-2 text-base font-corpo text-muted-foreground">/ {produto.unidade || '-'}</span></p>
+                  <p className="font-corpo text-base text-muted-foreground line-through">{promocao.precoOriginal.toLocaleString('pt-AO')} Kz</p>
+                </div>
+              ) : (
+                <p className="font-titulo text-3xl text-primary">{precoFormatado} Kz<span className="text-base font-corpo text-muted-foreground ml-2">/ {produto.unidade || '-'}</span></p>
+              )}
 
               <div className="flex items-center gap-2">
                 <span

@@ -34,7 +34,7 @@ import {
   criarProduto,
   uploadImagemProduto,
   fetchCategorias,
-  fetchProdutoPorId,
+  fetchProdutoParaEdicao,
   updateProduto,
   deleteImagemProdutoPorUrl,
 } from "@/services/api";
@@ -51,6 +51,7 @@ export default function VendedorAdicionarProduto() {
   const { utilizador } = useAuth();
 
   const [produtoEditando, setProdutoEditando] = useState<any>(null);
+  const [carregandoEdicao, setCarregandoEdicao] = useState(!!id);
     
 
   const isEdit = !!id;
@@ -95,12 +96,15 @@ export default function VendedorAdicionarProduto() {
       .replace(/[\u0300-\u036f]/g, '');
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !utilizador?.vendedor_id) {
+      setCarregandoEdicao(false);
+      return;
+    }
 
     async function carregarProduto() {
       console.log("ID DA URL:", id);
 
-      const produto = await fetchProdutoPorId(id);
+      const produto = await fetchProdutoParaEdicao(id, utilizador.vendedor_id);
 
       console.log("PRODUTO ENCONTRADO:", produto);
 
@@ -112,14 +116,16 @@ export default function VendedorAdicionarProduto() {
         });
 
         navigate("/dashboard/produtos");
+        setCarregandoEdicao(false);
         return;
       }
 
       setProdutoEditando(produto);
+      setCarregandoEdicao(false);
     }
 
     carregarProduto();
-  }, [id, navigate, toast]);
+  }, [id, navigate, toast, utilizador?.vendedor_id]);
 
   useEffect(() => {
     async function carregarCategorias() {
@@ -395,6 +401,10 @@ export default function VendedorAdicionarProduto() {
       });
     }
   };
+
+  if (isEdit && carregandoEdicao) {
+    return <div className="painel-dashboard-form font-corpo text-sm text-muted-foreground">A carregar dados do produto...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

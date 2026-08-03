@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { ShieldCheck, CheckCircle, XCircle } from 'lucide-react';
+import { CalendarDays, Mail, MapPin, Phone, ShieldCheck, CheckCircle, Store, XCircle } from 'lucide-react';
 
 import { Vendedor, PlanoVendedor, TipoVendedor } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
@@ -194,10 +194,11 @@ export default function AdminVendedores() {
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="font-titulo text-2xl font-bold">
-        Gestão de Vendedores
-      </h1>
+    <div className="space-y-6">
+      <header className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Gestão de Vendedores</h1>
+        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">Aprova, suspende, verifica e gere os planos dos vendedores.</p>
+      </header>
 
       {vendedores.length === 0 ? (
         <p className="font-corpo text-sm text-muted-foreground py-8 text-center">
@@ -209,7 +210,16 @@ export default function AdminVendedores() {
             const estado = estadoVisual((v as any).status_aprovacao);
 
             return (
-              <div key={v.id} className="border-2 border-border p-4 space-y-3">
+              <div key={v.id} className="painel-dashboard-item p-4 space-y-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  {v.foto_perfil ? (
+                    <img src={v.foto_perfil} alt={`Foto de ${v.nome_comercial}`} className="size-16 shrink-0 rounded-full border-2 border-primary/20 object-cover" />
+                  ) : (
+                    <span className="flex size-16 shrink-0 items-center justify-center rounded-full bg-primary text-xl font-titulo font-bold text-primary-foreground">
+                      {v.nome_comercial.trim().charAt(0).toUpperCase() || '?'}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
                 {/* Info */}
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-titulo text-sm">
@@ -265,6 +275,20 @@ export default function AdminVendedores() {
                     </p>
                   );
                 })()}
+
+                    <div className="mt-3 grid gap-x-5 gap-y-2 border-t border-border pt-3 font-corpo text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
+                      <span className="flex items-center gap-1.5"><Mail size={13} className="text-primary" />{v.email || 'Sem e-mail'}</span>
+                      <span className="flex items-center gap-1.5"><Phone size={13} className="text-primary" />{v.telefone_whatsapp || v.whatsapp || 'Sem telefone'}</span>
+                      <span className="flex items-center gap-1.5"><MapPin size={13} className="text-primary" />{[v.municipio, v.provincia].filter(Boolean).join(', ') || 'Localização não indicada'}</span>
+                      <span className="flex items-center gap-1.5"><Store size={13} className="text-primary" />{v.tipo_vendedor || 'Tipo não indicado'}</span>
+                      <span>Responsável: {v.nome_responsavel || 'Não indicado'}</span>
+                      <span>Plano: {(v.plano || 'gratuito').replace(/^./, letra => letra.toUpperCase())}</span>
+                      {v.mercado_bairro && <span>Zona: {v.mercado_bairro}</span>}
+                      {v.horario_atendimento && <span>Horário: {v.horario_atendimento}</span>}
+                      {v.criado_em && <span className="flex items-center gap-1.5"><CalendarDays size={13} className="text-primary" />Registado em {new Date(v.criado_em).toLocaleDateString('pt-AO')}</span>}
+                    </div>
+                  </div>
+                </div>
 
                 {/* Ações */}
                 <div className="flex flex-wrap gap-2">
@@ -328,7 +352,7 @@ export default function AdminVendedores() {
                       alterarPlano(v.id, e.target.value as PlanoVendedor)
                     }
                     disabled={atualizandoId === v.id}
-                    className="font-corpo text-xs border-2 border-border bg-background px-2 py-1.5 focus:outline-none focus:border-primary disabled:opacity-50"
+                    className="rounded-md border-2 border-border bg-background px-2 py-1.5 font-corpo text-xs focus:border-primary focus:outline-none disabled:opacity-50"
                   >
                     <option value="gratuito">Gratuito</option>
                     <option value="destaque">Destaque</option>

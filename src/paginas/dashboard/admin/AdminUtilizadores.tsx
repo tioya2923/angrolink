@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Trash2, User, ShieldCheck, Store } from 'lucide-react';
+import { CalendarDays, Mail, MapPin, Phone, Trash2, User, ShieldCheck, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { obterRotuloCompletoVendedor } from '@/dados/constantes';
 
@@ -22,6 +22,13 @@ interface UtilizadorAdmin {
   telefone: string;
   tipo_conta: 'admin' | 'cliente' | 'comprador' | 'vendedor';
   tipo_vendedor?: string;
+  tipo_comprador?: string;
+  foto_perfil?: string | null;
+  provincia?: string;
+  municipio?: string;
+  bairro?: string;
+  plano?: string;
+  verificado?: boolean;
   data_registo: string;
   estado: 'ativo' | 'pendente' | 'suspenso' | 'rejeitado';
 }
@@ -34,6 +41,9 @@ const ADMIN_FIXO: UtilizadorAdmin = {
   tipo_conta: 'admin',
   data_registo: 'Conta do sistema',
   estado: 'ativo',
+  foto_perfil: null,
+  provincia: 'ANGROLINK',
+  municipio: 'Sistema',
 };
 
 export default function AdminUtilizadores() {
@@ -56,6 +66,11 @@ export default function AdminUtilizadores() {
         email: c.email || '',
         telefone: c.telefone || '',
         tipo_conta: 'cliente',
+        tipo_comprador: c.tipo_comprador || 'casa',
+        foto_perfil: c.foto_perfil || null,
+        provincia: c.provincia || '',
+        municipio: c.municipio || '',
+        bairro: c.bairro || '',
         data_registo: c.criado_em || '',
         estado: 'ativo',
       }));
@@ -67,6 +82,12 @@ export default function AdminUtilizadores() {
         telefone: v.telefone_whatsapp || v.whatsapp || '',
         tipo_conta: 'vendedor',
         tipo_vendedor: v.tipo_vendedor || '',
+        foto_perfil: v.foto_perfil || null,
+        provincia: v.provincia || '',
+        municipio: v.municipio || '',
+        bairro: v.mercado_bairro || v.bairro || '',
+        plano: v.plano || 'gratuito',
+        verificado: v.verificado === true,
         data_registo: v.criado_em || '',
         estado:
           v.status_aprovacao === 'aprovado'
@@ -192,21 +213,22 @@ export default function AdminUtilizadores() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="font-titulo text-2xl font-bold">
-          Gestão de Utilizadores
-        </h1>
+    <div className="space-y-6">
+      <header className="painel-dashboard-cabecalho flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Gestão de Utilizadores</h1>
+          <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">Consulta e administra compradores, vendedores e administradores.</p>
+        </div>
 
         <div className="flex items-center gap-2">
-          <span className="font-corpo text-xs text-muted-foreground">
+          <span className="relative z-10 font-corpo text-xs text-primary-foreground/80">
             Filtrar:
           </span>
 
           <select
             value={filtroTipo}
             onChange={e => setFiltroTipo(e.target.value)}
-            className="font-corpo text-xs border-2 border-border bg-background px-2 py-1.5 focus:outline-none focus:border-primary"
+            className="relative z-10 rounded-md border-2 border-primary-foreground/30 bg-primary-foreground px-2 py-1.5 font-corpo text-xs text-foreground focus:outline-none"
           >
             <option value="todos">
               Todos ({utilizadores.length})
@@ -225,7 +247,7 @@ export default function AdminUtilizadores() {
             </option>
           </select>
         </div>
-      </div>
+      </header>
 
       <div className="space-y-3">
         {filtrados.length === 0 ? (
@@ -234,7 +256,17 @@ export default function AdminUtilizadores() {
           </p>
         ) : (
           filtrados.map(u => (
-            <div key={`${u.tipo_conta}-${u.id}`} className="border-2 border-border p-4 space-y-2">
+            <div key={`${u.tipo_conta}-${u.id}`} className="painel-dashboard-item p-4 space-y-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                {u.foto_perfil ? (
+                  <img src={u.foto_perfil} alt={`Foto de ${u.nome}`} className="size-14 shrink-0 rounded-full border-2 border-primary/20 object-cover" />
+                ) : (
+                  <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-titulo font-bold text-primary-foreground">
+                    {u.nome.trim().charAt(0).toUpperCase() || '?'}
+                  </span>
+                )}
+
+                <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 {obterIconeTipo(u.tipo_conta)}
 
@@ -270,7 +302,20 @@ export default function AdminUtilizadores() {
                 )}
               </div>
 
-              <div className="flex gap-2 pt-1">
+                  <div className="mt-3 grid gap-x-5 gap-y-2 border-t border-border pt-3 font-corpo text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
+                    <span className="flex items-center gap-1.5"><Mail size={13} className="text-primary" />{u.email || 'Sem e-mail'}</span>
+                    <span className="flex items-center gap-1.5"><Phone size={13} className="text-primary" />{u.telefone || 'Sem telefone'}</span>
+                    <span className="flex items-center gap-1.5"><MapPin size={13} className="text-primary" />{[u.municipio, u.provincia].filter(Boolean).join(', ') || 'Localização não indicada'}</span>
+                    <span className="flex items-center gap-1.5"><CalendarDays size={13} className="text-primary" />{u.data_registo === 'Conta do sistema' ? u.data_registo : u.data_registo ? `Registado em ${new Date(u.data_registo).toLocaleDateString('pt-AO')}` : 'Data não indicada'}</span>
+                    {u.bairro && <span>Zona: {u.bairro}</span>}
+                    {normalizarTipoConta(u.tipo_conta) === 'cliente' && <span>Perfil: {u.tipo_comprador === 'negocio' ? 'Negócio' : 'Casa'}</span>}
+                    {normalizarTipoConta(u.tipo_conta) === 'vendedor' && u.tipo_vendedor && <span>Atividade: {obterRotuloCompletoVendedor(u.tipo_vendedor)}</span>}
+                    {normalizarTipoConta(u.tipo_conta) === 'vendedor' && <span>Plano: {(u.plano || 'gratuito').replace(/^./, letra => letra.toUpperCase())}</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 border-t border-border pt-3">
                 {normalizarTipoConta(u.tipo_conta) !== 'admin' && (
                   <>
                     {confirmarEliminar === u.id ? (

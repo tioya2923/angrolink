@@ -17,6 +17,7 @@ import {
 import { Servico } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
+import { obterPromocao } from '@/lib/precos';
 
 import {
   fetchServicosPorVendedor,
@@ -233,9 +234,16 @@ export default function VendedorServicos() {
   };
 
   const editarServico = (servico: Servico) => {
-    navigate('/dashboard/adicionar-servico', {
-      state: { servico },
-    });
+    if (vendedorPendente) {
+      toast({
+        title: contaSuspensa ? 'Conta suspensa' : 'Conta em análise',
+        description: textoBloqueio,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    navigate(`/dashboard/servicos/editar/${servico.id}`);
   };
 
   if (loading) {
@@ -308,6 +316,7 @@ export default function VendedorServicos() {
           {servicos.map(servico => {
             const visualizacoes = Number((servico as any).visualizacoes || 0);
             const cliquesWhatsapp = Number((servico as any).cliques_whatsapp || 0);
+            const promocao = obterPromocao(servico.preco_estimado, servico.preco_promocional);
 
             return (
               <div
@@ -355,7 +364,9 @@ export default function VendedorServicos() {
                     )}
                   </div>
 
-                  <p className="font-corpo text-xs text-muted-foreground">
+                  {promocao ? (
+                    <p className="font-corpo text-xs"><span className="font-semibold text-destructive">{promocao.precoPromocional.toLocaleString('pt-AO')} Kz</span><span className="ml-2 text-muted-foreground line-through">{promocao.precoOriginal.toLocaleString('pt-AO')} Kz</span><span className="ml-2 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold text-destructive-foreground">-{promocao.percentagem}%</span></p>
+                  ) : <p className="font-corpo text-xs text-muted-foreground">
                     {servico.tipo_servico || 'Sem tipo'}
                     {' · '}
                     {servico.municipio || 'Sem município'}
@@ -363,7 +374,7 @@ export default function VendedorServicos() {
                     {servico.preco_estimado
                       ? `${Number(servico.preco_estimado).toLocaleString()} Kz`
                       : 'Preço sob consulta'}
-                  </p>
+                  </p>}
 
                   <div className="flex flex-wrap gap-4 font-corpo text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">

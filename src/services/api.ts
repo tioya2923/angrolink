@@ -223,6 +223,27 @@ export async function fetchProdutoPorId(id: string): Promise<Produto | null> {
   return normalizarProduto(data);
 }
 
+// Leitura privada usada no formulário de edição. Não aplica os filtros do
+// catálogo público, para que o vendedor possa editar anúncios pausados.
+export async function fetchProdutoParaEdicao(
+  id: string,
+  vendedorId: string,
+): Promise<Produto | null> {
+  const { data, error } = await supabase
+    .from('produtos')
+    .select('*, categoria:categorias (*)')
+    .eq('id', id)
+    .eq('vendedor_id', vendedorId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Erro ao carregar produto para edição:', error);
+    return null;
+  }
+
+  return data ? normalizarProduto(data) : null;
+}
+
 // =============================
 // PRODUTOS RELACIONADOS
 // =============================
@@ -645,6 +666,7 @@ interface CriarServicoParams {
   tipo_servico?: string;
   descricao?: string;
   preco_estimado?: number | null;
+  preco_promocional?: number | null;
   provincia?: string;
   municipio?: string;
   zona_atuacao?: string;
@@ -683,6 +705,7 @@ export async function criarServico(params: CriarServicoParams) {
       tipo_servico: params.tipo_servico || null,
       descricao: params.descricao || "",
       preco_estimado: params.preco_estimado || null,
+      preco_promocional: params.preco_promocional || null,
       provincia: params.provincia || "",
       municipio: params.municipio || "",
       zona_atuacao: params.zona_atuacao || "",
@@ -819,6 +842,26 @@ export async function fetchServicoPorId(id: string): Promise<Servico | null> {
   }
 
   return normalizarServico(data);
+}
+
+// Leitura privada usada no formulário de edição de serviços.
+export async function fetchServicoParaEdicao(
+  id: string,
+  vendedorId: string,
+): Promise<Servico | null> {
+  const { data, error } = await supabase
+    .from('servicos')
+    .select('*')
+    .eq('id', id)
+    .eq('vendedor_id', vendedorId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Erro ao carregar serviço para edição:', error);
+    return null;
+  }
+
+  return data ? normalizarServico(data) : null;
 }
 
 // =============================
@@ -1065,7 +1108,8 @@ export async function fetchVendedoresAdmin(): Promise<Vendedor[]> {
 export async function atualizarEstadoVendedor(
   vendedorId: string,
   estado: VendedorUpdate['status_aprovacao'],
-  adminId?: string | null
+  adminId?: string | null,
+  motivoRejeicao?: string | null,
 ) {
   const dadosAtualizacao: VendedorUpdate = {
     status_aprovacao: estado,
@@ -1080,6 +1124,14 @@ export async function atualizarEstadoVendedor(
   if (estado === 'rejeitado' || estado === 'suspenso') {
     dadosAtualizacao.verificado = false;
     dadosAtualizacao.pode_destacar = false;
+  }
+
+  if (estado === 'rejeitado') {
+    const motivo = motivoRejeicao?.trim();
+    if (!motivo) throw new Error('Indique o motivo da rejeição.');
+    dadosAtualizacao.motivo_rejeicao = motivo;
+  } else {
+    dadosAtualizacao.motivo_rejeicao = null;
   }
 
   const { data, error } = await supabase

@@ -91,9 +91,10 @@ export default function AdminResumo() {
 
   return (
     <div className="space-y-6">
-      <h1 className="font-titulo text-2xl font-bold">
-        Painel de Administração
-      </h1>
+      <header className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Painel de Administração</h1>
+        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">Visão geral da atividade e saúde do marketplace.</p>
+      </header>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <CardMetrica
@@ -122,7 +123,7 @@ export default function AdminResumo() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-form">
           <h3 className="font-titulo text-sm mb-3">
             Estado da plataforma
           </h3>
@@ -145,7 +146,7 @@ export default function AdminResumo() {
           </div>
         </div>
 
-        <div className="border-2 border-border p-4">
+        <div className="painel-dashboard-form">
           <h3 className="font-titulo text-sm mb-3">
             Produtos por Município
           </h3>
@@ -191,7 +192,7 @@ function CardMetrica({
   valor: number;
 }) {
   return (
-    <div className="border-2 border-border p-4">
+    <div className="painel-dashboard-metrica">
       <Icone size={20} className="text-primary mb-2" />
       <p className="font-titulo text-2xl">{valor}</p>
       <p className="font-corpo text-xs text-muted-foreground">{rotulo}</p>

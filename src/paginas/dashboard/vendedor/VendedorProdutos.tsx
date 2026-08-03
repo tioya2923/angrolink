@@ -17,6 +17,7 @@ import {
 import { Produto } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
+import { obterPromocao } from '@/lib/precos';
 
 import {
   fetchProdutosPorVendedor,
@@ -231,9 +232,7 @@ const toggleDestaque = async (produto: Produto) => {
   const editarProduto = (produto: Produto) => {
     if (vendedorPendente) return bloquearAcao();
 
-    navigate('/dashboard/adicionar', {
-      state: { produto },
-    });
+    navigate(`/dashboard/produtos/editar/${produto.id}`);
   };
 
   // =============================
@@ -319,6 +318,7 @@ const toggleDestaque = async (produto: Produto) => {
           {produtos.map(produto => {
             const visualizacoes = Number((produto as any).visualizacoes || 0);
             const cliquesWhatsapp = Number((produto as any).cliques_whatsapp || 0);
+            const promocao = obterPromocao(produto.preco_aproximado, produto.preco_promocional);
 
             return (
               <div
@@ -366,14 +366,16 @@ const toggleDestaque = async (produto: Produto) => {
                     </span>
                   </div>
 
-                  <p className="font-corpo text-xs text-muted-foreground">
+                  {promocao ? (
+                    <p className="font-corpo text-xs"><span className="font-semibold text-destructive">{promocao.precoPromocional.toLocaleString('pt-AO')} Kz</span><span className="ml-2 text-muted-foreground line-through">{promocao.precoOriginal.toLocaleString('pt-AO')} Kz</span><span className="ml-2 rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold text-destructive-foreground">-{promocao.percentagem}%</span></p>
+                  ) : <p className="font-corpo text-xs text-muted-foreground">
                     {Number(produto.preco_aproximado || 0).toLocaleString()} Kz/
                     {produto.unidade || 'unidade'}
                     {' · '}
                     {produto.categoria_nome || 'Sem categoria'}
                     {' · '}
                     {produto.tipo_venda || 'tipo não definido'}
-                  </p>
+                  </p>}
 
                   <div className="flex flex-wrap gap-4 font-corpo text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">

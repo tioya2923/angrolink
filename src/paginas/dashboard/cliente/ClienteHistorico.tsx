@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { History, MessageSquare, Package, Wrench } from 'lucide-react';
 
 import { useAuth } from '@/contextos/AuthContexto';
 import { supabase } from '@/services/supabase';
@@ -229,9 +229,7 @@ export default function ClienteHistorico() {
 
   if (loading) {
     return (
-      <p className="text-sm text-muted-foreground">
-        A carregar histórico...
-      </p>
+      <div className="painel-dashboard-form font-corpo text-sm text-muted-foreground">A carregar histórico...</div>
     );
   }
 
@@ -279,32 +277,32 @@ export default function ClienteHistorico() {
   );
 
   return (
-    <div className="space-y-4">
-      <h1 className="font-titulo text-2xl font-bold">
-        Histórico de Contactos
-      </h1>
+    <div className="space-y-6">
+      <header className="painel-dashboard-cabecalho flex items-center gap-3">
+        <span className="relative z-10 flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15 text-primary-foreground"><History className="size-5" /></span>
+        <div><h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Histórico de contactos</h1><p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">Os produtos e serviços contactados nos últimos 60 dias.</p></div>
+      </header>
 
       {historico.length === 0 ? (
-        <p className="font-corpo text-sm text-muted-foreground">
-          Ainda não contactaste nenhum vendedor ou prestador.
-        </p>
+        <div className="painel-dashboard-form border-dashed text-center"><p className="font-corpo text-sm text-muted-foreground">Ainda não contactaste nenhum vendedor ou prestador.</p></div>
       ) : (
         <div className="space-y-6">
 
           {/* ABAS */}
-          <div className="border-b border-border">
+          <div className="rounded-xl border-2 border-border bg-card p-2">
             <div className="flex gap-2">
 
               <button
                 onClick={() =>
                   setAbaAtiva('produtos')
                 }
-                className={`px-4 py-2 text-sm font-medium transition ${
+                className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 font-corpo text-sm font-semibold transition ${
                   abaAtiva === 'produtos'
-                    ? 'border-b-2 border-green-700 text-green-700'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
+                <Package className="size-4" />
                 Produtos ({totalProdutos})
               </button>
 
@@ -312,12 +310,13 @@ export default function ClienteHistorico() {
                 onClick={() =>
                   setAbaAtiva('servicos')
                 }
-                className={`px-4 py-2 text-sm font-medium transition ${
+                className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 font-corpo text-sm font-semibold transition ${
                   abaAtiva === 'servicos'
-                    ? 'border-b-2 border-green-700 text-green-700'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
               >
+                <Wrench className="size-4" />
                 Serviços ({totalServicos})
               </button>
 

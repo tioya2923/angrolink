@@ -446,6 +446,7 @@ export type Database = {
           nome_prestador: string | null
           nome_servico: string
           preco_estimado: number | null
+          preco_promocional: number | null
           provincia: string | null
           publicado: boolean | null
           telefone_whatsapp: string | null
@@ -469,6 +470,7 @@ export type Database = {
           nome_prestador?: string | null
           nome_servico: string
           preco_estimado?: number | null
+          preco_promocional?: number | null
           provincia?: string | null
           publicado?: boolean | null
           telefone_whatsapp?: string | null
@@ -492,6 +494,7 @@ export type Database = {
           nome_prestador?: string | null
           nome_servico?: string
           preco_estimado?: number | null
+          preco_promocional?: number | null
           provincia?: string | null
           publicado?: boolean | null
           telefone_whatsapp?: string | null
@@ -524,6 +527,7 @@ export type Database = {
           criado_em: string | null
           data_inicio_atividade: string | null
           descricao: string | null
+          documentos: Json | null
           email: string | null
           email_login: string | null
           endereco_detalhado: string | null
@@ -534,6 +538,7 @@ export type Database = {
           id: string
           mercado_bairro: string | null
           mercado_localizado: string | null
+          motivo_rejeicao: string | null
           municipio: string | null
           nome_comercial: string
           nome_responsavel: string | null
@@ -570,6 +575,7 @@ export type Database = {
           criado_em?: string | null
           data_inicio_atividade?: string | null
           descricao?: string | null
+          documentos?: Json | null
           email?: string | null
           email_login?: string | null
           endereco_detalhado?: string | null
@@ -580,6 +586,7 @@ export type Database = {
           id?: string
           mercado_bairro?: string | null
           mercado_localizado?: string | null
+          motivo_rejeicao?: string | null
           municipio?: string | null
           nome_comercial: string
           nome_responsavel?: string | null
@@ -616,6 +623,7 @@ export type Database = {
           criado_em?: string | null
           data_inicio_atividade?: string | null
           descricao?: string | null
+          documentos?: Json | null
           email?: string | null
           email_login?: string | null
           endereco_detalhado?: string | null
@@ -626,6 +634,7 @@ export type Database = {
           id?: string
           mercado_bairro?: string | null
           mercado_localizado?: string | null
+          motivo_rejeicao?: string | null
           municipio?: string | null
           nome_comercial?: string
           nome_responsavel?: string | null

@@ -19,6 +19,7 @@ import { gerarLinkWhatsApp } from '@/lib/whatsapp';
 import { useAuth } from '@/contextos/AuthContexto';
 import { formatarTempoRelativo }
   from '@/lib/datas';
+import { obterPromocao } from '@/lib/precos';
 
 import {
   incrementarCliqueWhatsappServico,
@@ -138,6 +139,11 @@ export default function CardServico({
       )
     : '#';
 
+  const promocao = obterPromocao(
+    servico.preco_estimado,
+    servico.preco_promocional,
+  );
+
   // =============================
   // WHATSAPP
   // =============================
@@ -253,6 +259,12 @@ export default function CardServico({
             }}
           />
 
+          {promocao && (
+            <span className="absolute left-2 top-2 rounded-sm bg-destructive px-2 py-0.5 text-[10px] font-bold text-destructive-foreground">
+              -{promocao.percentagem}%
+            </span>
+          )}
+
           <div className="absolute top-2 right-2 flex flex-col gap-2 items-end">
             <span className="px-2 py-0.5 bg-green-700 text-white text-[10px] rounded-sm">
               Serviço
@@ -301,11 +313,14 @@ export default function CardServico({
             {nomeServico}
           </h3>
 
-          <p className="mt-1 font-bold text-primary">
-            {formatarPreco(
-              servico.preco_estimado
-            )}
-          </p>
+          {promocao ? (
+            <div className="mt-1">
+              <p className="font-bold text-destructive">{formatarPreco(promocao.precoPromocional)}</p>
+              <p className="text-xs text-muted-foreground line-through">{formatarPreco(promocao.precoOriginal)}</p>
+            </div>
+          ) : (
+            <p className="mt-1 font-bold text-primary">{formatarPreco(servico.preco_estimado)}</p>
+          )}
 
           <p className="text-xs text-muted-foreground mt-1">
             {servico.tipo_servico ||

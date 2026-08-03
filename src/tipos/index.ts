@@ -110,6 +110,7 @@ export interface Vendedor {
   data_fim_plano?: string | null;
 
   status_aprovacao?: StatusVendedorAprovacao;
+  motivo_rejeicao?: string | null;
 
   criado_em?: string;
 
@@ -216,6 +217,7 @@ export interface Servico {
   descricao?: string | null;
 
   preco_estimado?: number | null;
+  preco_promocional?: number | null;
 
   provincia?: string | null;
   municipio?: string | null;
@@ -267,6 +269,7 @@ export interface Utilizador {
   termos_aceites?: boolean;
 
   status_aprovacao?: StatusVendedorAprovacao;
+  motivo_rejeicao?: string | null;
   verificado?: boolean;
   pode_destacar?: boolean;
   conta_ativa?: boolean;

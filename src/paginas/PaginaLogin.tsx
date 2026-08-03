@@ -61,6 +61,16 @@ export default function PaginaLogin() {
 
         // ❗ NÃO redireciona aqui — deixa o useEffect tratar
       } else {
+        const mensagemRejeicao = localStorage.getItem('angrolink_mensagem_rejeicao');
+        if (mensagemRejeicao) {
+          localStorage.removeItem('angrolink_mensagem_rejeicao');
+          toast({
+            title: 'Pedido de cadastro rejeitado',
+            description: mensagemRejeicao.replace(/\n/g, ' '),
+            variant: 'destructive',
+          });
+          return;
+        }
         toast({
           title: 'Email ou senha inválidos ou perfil não encontrado.',
           variant: 'destructive',

@@ -1,4 +1,4 @@
-import { FileCheck } from 'lucide-react';
+import { FileCheck, ImagePlus } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,9 +10,11 @@ interface Props {
   /** Quando fornecido (com onChange), o componente pede os dados de cada documento. */
   valores?: Record<string, Record<string, string>>;
   onChange?: (documentoId: string, campoId: string, valor: string) => void;
+  fotos?: Record<string, { frente?: File; verso?: File }>;
+  onFotoChange?: (documentoId: string, lado: 'frente' | 'verso', ficheiro: File | undefined) => void;
 }
 
-export default function RequisitosDocumentos({ tipo, valores, onChange }: Props) {
+export default function RequisitosDocumentos({ tipo, valores, onChange, fotos, onFotoChange }: Props) {
   const requisitos = obterRequisitosDocumentos(tipo);
   if (!requisitos) return null;
 
@@ -52,10 +54,10 @@ export default function RequisitosDocumentos({ tipo, valores, onChange }: Props)
                 {doc.descricao}
               </p>
 
-              <div className={doc.campos.length > 1 ? 'grid grid-cols-1 sm:grid-cols-3 gap-3' : ''}>
+              <div className={doc.campos.length > 1 ? 'grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_1.3fr]' : ''}>
                 {doc.campos.map(campo => (
                   <div key={campo.id} className="space-y-1">
-                    <Label className="font-corpo text-xs font-medium">
+                    <Label className={`font-corpo text-xs font-medium ${doc.campos.length > 1 ? 'flex min-h-10 items-end whitespace-nowrap text-[11px]' : ''}`}>
                       {campo.rotulo} *
                     </Label>
                     <Input
@@ -70,6 +72,28 @@ export default function RequisitosDocumentos({ tipo, valores, onChange }: Props)
                   </div>
                 ))}
               </div>
+
+              {interativo && (
+                <div className="rounded-md border border-dashed border-primary/40 bg-primary/5 p-3">
+                  <p className="mb-2 flex items-center gap-1 font-corpo text-xs font-semibold text-primary"><ImagePlus size={14} /> Fotografias do documento *</p>
+                  <p className="mb-3 font-corpo text-[11px] text-muted-foreground">Envie imagens legíveis da frente e do verso de {doc.nome}. JPG, PNG ou WEBP, até 3 MB por imagem.</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {(['frente', 'verso'] as const).map(lado => (
+                      <div key={lado} className="space-y-1">
+                        <Label className="font-corpo text-xs font-medium">{lado === 'frente' ? 'Foto da frente *' : 'Foto do verso *'}</Label>
+                        <Input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          required
+                          onChange={e => onFotoChange?.(id, lado, e.target.files?.[0])}
+                          className="cursor-pointer border-2 border-border text-xs file:mr-2 file:rounded file:border-0 file:bg-primary file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary-foreground"
+                        />
+                        {fotos?.[id]?.[lado] && <p className="truncate font-corpo text-[11px] text-primary">Selecionada: {fotos[id][lado]!.name}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

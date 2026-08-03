@@ -22,7 +22,7 @@ import { useAuth } from '@/contextos/AuthContexto';
 import {
   criarServico,
   updateServico,
-  fetchServicoPorId,
+  fetchServicoParaEdicao,
   uploadImagemProduto,
   deleteImagemProdutoPorUrl,
 } from '@/services/api';
@@ -50,6 +50,7 @@ export default function VendedorAdicionarServico() {
 
   const [servicoEditando, setServicoEditando] =
     useState<any>(null);
+  const [carregandoEdicao, setCarregandoEdicao] = useState(!!id);
 
   const isEdit = !!id;
 
@@ -65,6 +66,7 @@ export default function VendedorAdicionarServico() {
   const [tipoServico, setTipoServico] = useState('');
   const [descricao, setDescricao] = useState('');
   const [precoEstimado, setPrecoEstimado] = useState('');
+  const [precoPromocional, setPrecoPromocional] = useState('');
 
   const [provincia, setProvincia] = useState('');
   const [municipio, setMunicipio] = useState('');
@@ -76,13 +78,16 @@ export default function VendedorAdicionarServico() {
   const [removerImagem, setRemoverImagem] = useState(false);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !utilizador?.vendedor_id) {
+      setCarregandoEdicao(false);
+      return;
+    }
 
     async function carregarServico() {
 
       console.log("ID DO SERVIÇO:", id);
 
-      const servico = await fetchServicoPorId(id);
+      const servico = await fetchServicoParaEdicao(id, utilizador.vendedor_id);
 
       console.log("SERVIÇO ENCONTRADO:", servico);
 
@@ -94,15 +99,17 @@ export default function VendedorAdicionarServico() {
         });
 
         navigate("/dashboard/servicos");
+        setCarregandoEdicao(false);
         return;
       }
 
       setServicoEditando(servico);
+      setCarregandoEdicao(false);
     }
 
     carregarServico();
 
-  }, [id, navigate, toast]);
+  }, [id, navigate, toast, utilizador?.vendedor_id]);
 
   useEffect(() => {
     if (!servicoEditando) return;
@@ -113,6 +120,11 @@ export default function VendedorAdicionarServico() {
     setPrecoEstimado(
       servicoEditando.preco_estimado
         ? String(servicoEditando.preco_estimado)
+        : ''
+    );
+    setPrecoPromocional(
+      servicoEditando.preco_promocional
+        ? String(servicoEditando.preco_promocional)
         : ''
     );
 
@@ -215,6 +227,15 @@ export default function VendedorAdicionarServico() {
       return;
     }
 
+    if (precoPromocional && (Number(precoPromocional) <= 0 || Number(precoPromocional) >= Number(precoEstimado))) {
+      toast({
+        title: 'Preço promocional inválido',
+        description: 'O preço promocional deve ser inferior ao preço estimado.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!provincia) {
       toast({
         title: 'Seleciona a província',
@@ -253,6 +274,7 @@ export default function VendedorAdicionarServico() {
         tipo_servico: tipoServico,
         descricao,
         preco_estimado: Number(precoEstimado),
+        preco_promocional: precoPromocional ? Number(precoPromocional) : null,
         provincia,
         municipio,
         zona_atuacao: zonaAtuacao,
@@ -295,6 +317,10 @@ export default function VendedorAdicionarServico() {
       });
     }
   };
+
+  if (isEdit && carregandoEdicao) {
+    return <div className="painel-dashboard-form font-corpo text-sm text-muted-foreground">A carregar dados do serviço...</div>;
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -392,6 +418,19 @@ export default function VendedorAdicionarServico() {
             className="w-full border-2 px-3 py-2"
             placeholder="Descreve o serviço oferecido..."
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Preço promocional (Kz)</Label>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={precoPromocional}
+            onChange={e => setPrecoPromocional(e.target.value)}
+            placeholder="Opcional — inferior ao preço estimado"
+          />
+          <p className="font-corpo text-xs text-muted-foreground">Quando definido, o desconto e a percentagem aparecem automaticamente nos cartões.</p>
         </div>
 
         {/* IMAGEM */}

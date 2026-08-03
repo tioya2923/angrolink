@@ -30,6 +30,8 @@ interface PedidoVendedor {
   estado: StatusVendedorAprovacao;
   ano_inicio?: string;
   entrega_disponivel?: boolean;
+  motivo_rejeicao?: string | null;
+  dados: Record<string, any>;
 }
 
 export default function AdminPedidosVendedores() {
@@ -39,6 +41,10 @@ export default function AdminPedidosVendedores() {
   const [detalheAberto, setDetalheAberto] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] =
     useState<StatusVendedorAprovacao | 'todos'>('pendente');
+  const [pedidoParaRejeitar, setPedidoParaRejeitar] =
+    useState<PedidoVendedor | null>(null);
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
+  const [aRejeitar, setARejeitar] = useState(false);
 
   useEffect(() => {
     async function carregar() {
@@ -59,6 +65,8 @@ export default function AdminPedidosVendedores() {
         estado: v.status_aprovacao || 'pendente',
         ano_inicio: v.ano_inicio,
         entrega_disponivel: v.entrega_disponivel,
+        motivo_rejeicao: v.motivo_rejeicao || null,
+        dados: v,
       }));
 
       setPedidos(normalizados);
@@ -67,12 +75,20 @@ export default function AdminPedidosVendedores() {
     carregar();
   }, []);
 
-  const alterarEstado = async (id: string, estado: StatusVendedorAprovacao) => {
+  const alterarEstado = async (
+    id: string,
+    estado: StatusVendedorAprovacao,
+    motivoRejeicao?: string,
+  ) => {
     try {
-      await atualizarEstadoVendedor(id, estado);
+      await atualizarEstadoVendedor(id, estado, undefined, motivoRejeicao);
 
       setPedidos(prev =>
-        prev.map(p => (p.id === id ? { ...p, estado } : p))
+        prev.map(p => (p.id === id ? {
+          ...p,
+          estado,
+          motivo_rejeicao: estado === 'rejeitado' ? motivoRejeicao || null : null,
+        } : p))
       );
 
       const msgs: Record<StatusVendedorAprovacao, { title: string; desc: string }> = {
@@ -104,6 +120,27 @@ export default function AdminPedidosVendedores() {
     }
   };
 
+  const confirmarRejeicao = async () => {
+    const motivo = motivoRejeicao.trim();
+    if (!pedidoParaRejeitar || !motivo) {
+      toast({
+        title: 'Motivo obrigatório',
+        description: 'O pedido não foi rejeitado. Indique um motivo claro para o vendedor.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setARejeitar(true);
+      await alterarEstado(pedidoParaRejeitar.id, 'rejeitado', motivo);
+      setPedidoParaRejeitar(null);
+      setMotivoRejeicao('');
+    } finally {
+      setARejeitar(false);
+    }
+  };
+
   const pedidosFiltrados =
     filtroEstado === 'todos'
       ? pedidos
@@ -132,16 +169,14 @@ export default function AdminPedidosVendedores() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-titulo text-2xl font-bold">
-          Pedidos de Vendedores
-        </h1>
+      <header className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Pedidos de Vendedores</h1>
 
-        <p className="font-corpo text-sm text-muted-foreground mt-1">
+        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">
           Área de triagem para aprovar, rejeitar ou reabrir pedidos. Suspensão,
           bloqueio e eliminação devem ser feitos na gestão de vendedores.
         </p>
-      </div>
+      </header>
 
       {/* Contadores */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -149,7 +184,7 @@ export default function AdminPedidosVendedores() {
           <button
             key={estado}
             onClick={() => setFiltroEstado(estado)}
-            className={`border-2 p-3 rounded-md text-center transition-colors ${
+            className={`rounded-xl border-2 p-3 text-center transition-colors ${
               filtroEstado === estado
                 ? corEstado[estado] + ' border-opacity-100'
                 : 'border-border hover:border-muted-foreground/30'
@@ -202,11 +237,23 @@ export default function AdminPedidosVendedores() {
         {pedidosFiltrados.map(p => (
           <div
             key={p.id}
-            className={`border-2 ${corEstado[p.estado]} p-4 rounded-md space-y-3`}
+            className={`painel-dashboard-item ${corEstado[p.estado]} p-4 space-y-3`}
           >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-titulo text-sm font-medium">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                {p.dados?.foto_perfil ? (
+                  <img
+                    src={p.dados.foto_perfil}
+                    alt={`Foto de ${p.nome_comercial}`}
+                    className="size-12 shrink-0 rounded-full border-2 border-primary/20 object-cover"
+                  />
+                ) : (
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary font-titulo text-base font-bold text-primary-foreground">
+                    {p.nome_comercial.trim().charAt(0).toUpperCase() || '?'}
+                  </span>
+                )}
+                <div className="flex flex-wrap items-center gap-2">
+                <span className="font-titulo text-sm font-bold">
                   {p.nome_comercial}
                 </span>
 
@@ -217,6 +264,7 @@ export default function AdminPedidosVendedores() {
                 <span className={`font-corpo text-xs px-2 py-0.5 border rounded capitalize ${badgeEstado[p.estado]}`}>
                   {p.estado}
                 </span>
+                </div>
               </div>
 
               <button
@@ -268,6 +316,14 @@ export default function AdminPedidosVendedores() {
                     {p.entrega_disponivel ? 'Sim' : 'Não'}
                   </p>
                 )}
+
+                {p.estado === 'rejeitado' && p.motivo_rejeicao && (
+                  <p className="font-corpo text-xs text-destructive">
+                    <strong>Motivo da rejeição:</strong> {p.motivo_rejeicao}
+                  </p>
+                )}
+
+                <DadosPedido dados={p.dados} />
               </div>
             )}
 
@@ -284,7 +340,10 @@ export default function AdminPedidosVendedores() {
                   </button>
 
                   <button
-                    onClick={() => alterarEstado(p.id, 'rejeitado')}
+                    onClick={() => {
+                      setPedidoParaRejeitar(p);
+                      setMotivoRejeicao('');
+                    }}
                     className="flex items-center gap-1 font-corpo text-xs border-2 border-destructive text-destructive px-3 py-1.5 rounded hover:bg-destructive hover:text-destructive-foreground transition-colors"
                   >
                     <XCircle size={14} />
@@ -319,6 +378,128 @@ export default function AdminPedidosVendedores() {
             </div>
           </div>
         ))}
+      </div>
+
+      {pedidoParaRejeitar && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4">
+          <div className="w-full max-w-lg rounded-xl border-2 border-destructive bg-card p-5 shadow-xl">
+            <div className="flex items-start gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                <XCircle className="size-5" />
+              </span>
+              <div>
+                <h2 className="font-titulo text-lg font-bold">Rejeitar pedido de vendedor</h2>
+                <p className="mt-1 font-corpo text-sm text-muted-foreground">
+                  Indique um motivo claro para <strong>{pedidoParaRejeitar.nome_comercial}</strong>. Este motivo será mostrado ao vendedor e o acesso ficará bloqueado até a análise ser reaberta.
+                </p>
+              </div>
+            </div>
+
+            <label className="mt-5 block space-y-2">
+              <span className="font-corpo text-sm font-semibold">Motivo da rejeição *</span>
+              <textarea
+                value={motivoRejeicao}
+                onChange={e => setMotivoRejeicao(e.target.value)}
+                placeholder="Ex.: Os documentos apresentados não correspondem aos dados do responsável."
+                className="min-h-28 w-full rounded-lg border-2 border-border bg-background p-3 font-corpo text-sm focus:border-destructive focus:outline-none focus:ring-2 focus:ring-destructive/15"
+                autoFocus
+              />
+            </label>
+
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setPedidoParaRejeitar(null)}
+                disabled={aRejeitar}
+                className="rounded-lg border-2 border-border px-4 py-2 font-corpo text-sm font-semibold hover:bg-muted disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarRejeicao}
+                disabled={aRejeitar || !motivoRejeicao.trim()}
+                className="rounded-lg bg-destructive px-4 py-2 font-corpo text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {aRejeitar ? 'A rejeitar...' : 'Confirmar rejeição'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DadosPedido({ dados }: { dados: Record<string, any> }) {
+  const campos = [
+    ['Nome comercial', dados.nome_comercial],
+    ['Responsável', dados.nome_responsavel],
+    ['Tipo de vendedor', obterRotuloCompletoVendedor(dados.tipo_vendedor)],
+    ['Telefone / WhatsApp', dados.telefone_whatsapp || dados.whatsapp],
+    ['E-mail', dados.email],
+    ['Província', dados.provincia],
+    ['Município', dados.municipio],
+    ['Bairro / mercado', dados.mercado_bairro || dados.bairro],
+    ['Endereço', dados.endereco_detalhado],
+    ['Descrição', dados.descricao],
+    ['Atividade iniciada em', dados.data_inicio_atividade],
+    ['Horário de atendimento', dados.horario_atendimento],
+    ['Entrega disponível', dados.entrega_disponivel == null ? null : dados.entrega_disponivel ? 'Sim' : 'Não'],
+    ['Tipo de produção', dados.tipo_producao],
+    ['Área cultivada', dados.area_cultivada ? `${dados.area_cultivada} hectares` : null],
+    ['Principais culturas', dados.principais_culturas],
+    ['Produção mensal', dados.producao_mensal],
+    ['Venda por grosso', dados.venda_grosso == null ? null : dados.venda_grosso ? 'Sim' : 'Não'],
+    ['Venda a retalho', dados.venda_retalho == null ? null : dados.venda_retalho ? 'Sim' : 'Não'],
+    ['Tipos de produtos', dados.tipos_produtos],
+    ['Compra a produtores', dados.compra_produtores == null ? null : dados.compra_produtores ? 'Sim' : 'Não'],
+    ['Volume mínimo', dados.volume_minimo],
+    ['Entrega noutras províncias', dados.entrega_outras_provincias == null ? null : dados.entrega_outras_provincias ? 'Sim' : 'Não'],
+    ['Tipo de loja', dados.tipo_loja],
+    ['Mercado localizado', dados.mercado_localizado],
+    ['Venda presencial', dados.venda_presencial == null ? null : dados.venda_presencial ? 'Sim' : 'Não'],
+  ].filter(([, valor]) => valor !== null && valor !== undefined && valor !== '');
+
+  const documentos = dados.documentos && typeof dados.documentos === 'object'
+    ? Object.entries(dados.documentos as Record<string, Record<string, string>>)
+    : [];
+
+  return (
+    <div className="mt-4 space-y-3 rounded-lg border border-border bg-muted/30 p-3">
+      <p className="font-corpo text-xs font-semibold text-foreground">Dados submetidos no cadastro</p>
+      <dl className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
+        {campos.map(([rotulo, valor]) => (
+          <div key={rotulo}>
+            <dt className="font-corpo text-[11px] font-medium text-muted-foreground">{rotulo}</dt>
+            <dd className="font-corpo text-xs text-foreground break-words">{String(valor)}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <div className="border-t border-border pt-3">
+        <p className="font-corpo text-xs font-semibold">Documentos informados</p>
+        {documentos.length > 0 ? (
+          <div className="mt-2 space-y-2">
+            {documentos.map(([documentoId, valores]) => (
+              <div key={documentoId} className="rounded border border-border bg-background p-2">
+                <p className="font-corpo text-xs font-medium">{documentoId.replace(/_/g, ' ')}</p>
+                {Object.entries(valores).map(([campo, valor]) =>
+                  campo === 'foto_frente' || campo === 'foto_verso' ? (
+                    <a key={campo} href={String(valor)} target="_blank" rel="noreferrer" className="mt-2 block overflow-hidden rounded border border-border bg-muted/30">
+                      <img src={String(valor)} alt={`${campo === 'foto_frente' ? 'Frente' : 'Verso'} do documento`} className="h-32 w-full object-contain" />
+                      <span className="block px-2 py-1 font-corpo text-[11px] font-medium text-primary">Ver foto: {campo === 'foto_frente' ? 'frente' : 'verso'}</span>
+                    </a>
+                  ) : (
+                    <p key={campo} className="font-corpo text-xs text-muted-foreground">{campo.replace(/_/g, ' ')}: {String(valor)}</p>
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-1 font-corpo text-xs text-muted-foreground">Não existem documentos guardados para este pedido antigo.</p>
+        )}
       </div>
     </div>
   );

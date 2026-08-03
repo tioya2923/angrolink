@@ -55,20 +55,20 @@ export default function AdminRankings() {
   }
 
   return (
-    <div className="space-y-8 p-6">
-      <div>
+    <div className="space-y-6">
+      <header className="painel-dashboard-cabecalho">
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-6 w-6 text-green-700" />
-          <h1 className="text-2xl font-bold">Rankings da Angrolink</h1>
+          <BarChart3 className="relative z-10 h-6 w-6 text-primary-foreground" />
+          <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Rankings da Angrolink</h1>
         </div>
 
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">
           Veja quais produtos, vendedores e categorias estão a gerar mais procura.
         </p>
-      </div>
+      </header>
 
       {/* PRODUTOS MAIS CLICADOS */}
-      <section className="rounded-2xl border-2 border-border bg-white p-5 shadow-sm">
+      <section className="painel-dashboard-form">
         <div className="mb-4 flex items-center gap-2">
           <Package className="h-5 w-5 text-green-700" />
           <h2 className="text-lg font-semibold">Produtos mais clicados</h2>
@@ -114,7 +114,7 @@ export default function AdminRankings() {
       </section>
 
       {/* VENDEDORES MAIS ATIVOS */}
-      <section className="rounded-2xl border-2 border-border bg-white p-5 shadow-sm">
+      <section className="painel-dashboard-form">
         <div className="mb-4 flex items-center gap-2">
           <Store className="h-5 w-5 text-green-700" />
           <h2 className="text-lg font-semibold">Vendedores mais ativos</h2>
@@ -159,7 +159,7 @@ export default function AdminRankings() {
       </section>
 
       {/* CATEGORIAS MAIS PROCURADAS */}
-      <section className="rounded-2xl border-2 border-border bg-white p-5 shadow-sm">
+      <section className="painel-dashboard-form">
         <div className="mb-4 flex items-center gap-2">
           <Tags className="h-5 w-5 text-green-700" />
           <h2 className="text-lg font-semibold">Categorias mais procuradas</h2>

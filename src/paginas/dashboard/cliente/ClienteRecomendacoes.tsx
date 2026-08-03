@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, MessageSquare, Eye } from 'lucide-react';
+import { MapPin, MessageSquare, Eye, Sparkles } from 'lucide-react';
 
 import { useAuth } from '@/contextos/AuthContexto';
 import { supabase } from '@/services/supabase';
@@ -263,20 +263,18 @@ export default function ClienteRecomendacoes() {
 
   if (loading) {
     return (
-      <p className="font-corpo text-sm text-muted-foreground">
-        A carregar recomendações...
-      </p>
+      <div className="painel-dashboard-form font-corpo text-sm text-muted-foreground">A carregar recomendações...</div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="font-titulo text-2xl font-bold">
-          Recomendações
-        </h1>
+    <div className="space-y-6">
+      <header className="painel-dashboard-cabecalho flex items-center gap-3">
+        <span className="relative z-10 flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-foreground/15 text-primary-foreground"><Sparkles className="size-5" /></span>
+        <div>
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Recomendações</h1>
 
-        <p className="font-corpo text-sm text-muted-foreground flex items-center gap-1 mt-1">
+        <p className="relative z-10 mt-1 flex items-center gap-1 font-corpo text-sm text-primary-foreground/80">
           <MapPin size={14} />
           {motivo}
           {utilizador?.municipio || utilizador?.provincia ? (
@@ -290,10 +288,11 @@ export default function ClienteRecomendacoes() {
             ' — complete a sua localização nas definições'
           )}
         </p>
-      </div>
+        </div>
+      </header>
 
       {recomendados.length === 0 ? (
-        <div className="border-2 border-dashed border-border p-6 text-center">
+        <div className="painel-dashboard-form border-dashed p-6 text-center">
           <p className="font-corpo text-sm text-muted-foreground">
             Sem recomendações disponíveis de momento.
           </p>
@@ -308,7 +307,7 @@ export default function ClienteRecomendacoes() {
             return (
               <div
                 key={produto.id}
-                className="border-2 border-border overflow-hidden bg-card hover:border-green-700 transition-colors"
+                className="painel-dashboard-item overflow-hidden"
               >
                 <Link to={`/produto/${produto.id}`}>
                   <div className="h-32 bg-muted flex items-center justify-center">
@@ -327,7 +326,7 @@ export default function ClienteRecomendacoes() {
                   </div>
                 </Link>
 
-                <div className="p-3 space-y-2">
+                <div className="p-4 space-y-3">
                   <div>
                     <Link
                       to={`/produto/${produto.id}`}

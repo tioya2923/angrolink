@@ -318,10 +318,13 @@ export default function ClienteDefinicoes() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg">
-      <h1 className="font-titulo text-2xl font-bold">Definições da Conta</h1>
+    <div className="space-y-6 max-w-2xl">
+      <header className="painel-dashboard-cabecalho">
+        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Definições da conta</h1>
+        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">Atualiza os teus dados, fotografia e segurança da conta.</p>
+      </header>
 
-      <div className="flex items-center gap-4">
+      <div className="painel-dashboard-form flex items-center gap-4">
         <div className="relative">
           <div className="w-20 h-20 rounded-full border-2 border-green-900/20 overflow-hidden bg-green-700 flex items-center justify-center">
             {fotoPerfil ? (
@@ -365,7 +368,7 @@ export default function ClienteDefinicoes() {
         </div>
       </div>
 
-      <form onSubmit={handleGuardar} className="space-y-4">
+      <form onSubmit={handleGuardar} className="painel-dashboard-form space-y-4">
         <div className="space-y-2">
           <Label className="font-corpo text-sm">Nome</Label>
           <Input
@@ -460,8 +463,8 @@ export default function ClienteDefinicoes() {
         </Button>
       </form>
 
-      <div className="border-t-2 border-border pt-6 space-y-6">
-        <div className="space-y-3">
+      <div className="space-y-6">
+        <div className="painel-dashboard-form space-y-3">
           <h2 className="font-titulo text-lg font-semibold flex items-center gap-2">
             <Lock size={18} />
             Alterar palavra-passe
@@ -512,7 +515,7 @@ export default function ClienteDefinicoes() {
           </Button>
         </div>
 
-        <div className="border-t-2 border-border pt-6 space-y-3">
+        <div className="rounded-2xl border-2 border-destructive/30 bg-destructive/5 p-5 space-y-3">
           <h2 className="font-titulo text-lg font-semibold text-destructive flex items-center gap-2">
             <Trash2 size={18} />
             Apagar Conta

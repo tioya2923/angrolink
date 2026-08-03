@@ -21,6 +21,7 @@ import {
 
 const STORAGE_KEY = 'angrolink_auth_user';
 const STORAGE_TIPO_COMPRADOR = 'angrolink_tipo_comprador';
+const STORAGE_MENSAGEM_REJEICAO = 'angrolink_mensagem_rejeicao';
 
 
 
@@ -103,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     foto_perfil: vendedor?.foto_perfil || null,
 
     status_aprovacao: vendedor?.status_aprovacao || 'pendente',
+    motivo_rejeicao: vendedor?.motivo_rejeicao || null,
     verificado: vendedor?.verificado || false,
     pode_destacar: vendedor?.pode_destacar || false,
     conta_ativa: vendedor?.conta_ativa !== false,
@@ -154,6 +156,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 🔥 ALTERAÇÃO AQUI (segura e mínima)
     if (vendedor) {
+      if (vendedor.status_aprovacao === 'rejeitado') {
+        const motivo = vendedor.motivo_rejeicao?.trim();
+        const mensagem = motivo
+          ? `O seu pedido de cadastro foi rejeitado.\n\nMotivo indicado: ${motivo}\n\nEntre em contacto com a equipa ANGROLINK para resolver esta situação.`
+          : 'O seu pedido de cadastro foi rejeitado. Entre em contacto com a equipa ANGROLINK para resolver esta situação.';
+
+        localStorage.setItem(STORAGE_MENSAGEM_REJEICAO, mensagem);
+        if (utilizador?.id === authUser.id) window.alert(mensagem);
+
+        await supabase.auth.signOut();
+        setUtilizador(null);
+        localStorage.removeItem(STORAGE_KEY);
+        return false;
+      }
+
       if (vendedor.conta_ativa === false) {
         await supabase.auth.signOut();
 

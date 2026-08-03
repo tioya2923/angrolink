@@ -3,6 +3,7 @@ import { Eye, MapPin, MessageCircle } from "lucide-react";
 
 import { Produto } from "@/tipos";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
+import { obterPromocao } from '@/lib/precos';
 
 interface Props {
   produto: Produto;
@@ -23,6 +24,7 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
         produto.nome_produto
       )
     : "#";
+  const promocao = obterPromocao(produto.preco_aproximado, produto.preco_promocional);
 
   return (
     <div
@@ -37,7 +39,7 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
       "
     >
       <Link to={`/produto/${produto.id}`}>
-        <div className="aspect-square overflow-hidden">
+        <div className="aspect-square overflow-hidden relative">
           <img
             src={imagem}
             alt={produto.nome_produto}
@@ -50,6 +52,11 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
               duration-300
             "
           />
+          {promocao && (
+            <span className="absolute left-3 top-3 rounded-full bg-destructive px-2 py-1 text-xs font-bold text-destructive-foreground">
+              -{promocao.percentagem}%
+            </span>
+          )}
         </div>
       </Link>
 
@@ -58,12 +65,14 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
           {produto.nome_produto}
         </h3>
 
-        <p className="text-2xl font-bold text-green-700 mt-2">
-          {Number(
-            produto.preco_aproximado || 0
-          ).toLocaleString()}{" "}
-          Kz
-        </p>
+        {promocao ? (
+          <div className="mt-2">
+            <p className="text-2xl font-bold text-destructive">{promocao.precoPromocional.toLocaleString()} Kz</p>
+            <p className="text-sm text-muted-foreground line-through">{promocao.precoOriginal.toLocaleString()} Kz</p>
+          </div>
+        ) : (
+          <p className="text-2xl font-bold text-green-700 mt-2">{Number(produto.preco_aproximado || 0).toLocaleString()} Kz</p>
+        )}
 
         <div
           className="
