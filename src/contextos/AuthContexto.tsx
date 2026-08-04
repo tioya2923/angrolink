@@ -30,6 +30,7 @@ interface DadosCadastro {
   email: string;
   senha: string;
   telefone?: string;
+  indicativo?: string;
   provincia?: string;
   municipio?: string;
   tipo_comprador?: TipoComprador;
@@ -111,6 +112,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     plano: vendedor?.plano || 'gratuito',
   });
 
+  const montarUtilizadorParceiroEntrega = (parceiro: any, authUser: any): Utilizador => ({
+    id: authUser.id,
+    nome: parceiro.nome_completo || authUser.user_metadata?.nome || '',
+    email: parceiro.email || authUser.email || '',
+    telefone: parceiro.telefone || authUser.user_metadata?.telefone || '',
+    provincia: parceiro.provincia || '',
+    municipio: parceiro.municipio || '',
+    bairro: parceiro.bairro || '',
+    foto_perfil: parceiro.foto_perfil_url || null,
+    papel: 'parceiro_entrega',
+    parceiro_entrega_id: parceiro.id,
+    estado_parceiro_entrega: parceiro.estado,
+    conta_ativa: parceiro.estado !== 'suspenso' && parceiro.estado !== 'rejeitado',
+  });
+
   const carregarPerfilSupabase = async (authUser: any): Promise<boolean> => {
     if (!authUser?.id) {
       console.error('Auth user sem ID.');
@@ -186,6 +202,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       guardarUtilizador(userFinal);
 
       console.log('AUTH PERFIL — vendedor carregado:', userFinal);
+      return true;
+    }
+
+    const { data: parceiro, error: parceiroError } = await (supabase as any)
+      .from('parceiros_entrega')
+      .select('*')
+      .eq('user_id', authUser.id)
+      .maybeSingle();
+
+    if (parceiroError) {
+      console.error('Erro ao carregar parceiro de entregas:', parceiroError);
+      return false;
+    }
+
+    if (parceiro) {
+      if (parceiro.estado === 'rejeitado') {
+        localStorage.setItem(STORAGE_MENSAGEM_REJEICAO, parceiro.motivo_rejeicao || 'O seu pedido de parceiro de entregas foi rejeitado. Contacte a equipa ANGROLINK.');
+        await supabase.auth.signOut();
+        setUtilizador(null);
+        localStorage.removeItem(STORAGE_KEY);
+        return false;
+      }
+      guardarUtilizador(montarUtilizadorParceiroEntrega(parceiro, authUser));
       return true;
     }
 
@@ -524,7 +563,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         : null;
 
     const emailLogin =
-      gerarEmailInterno(dados.telefone);
+      gerarEmailInterno(dados.telefone || '', dados.indicativo);
 
     console.log('========== CADASTRO ==========');
     console.log('EMAIL LOGIN:', emailLogin);

@@ -9,8 +9,8 @@ import { Servico } from '@/tipos';
 import { MUNICIPIOS, PROVINCIAS } from '@/dados/constantes';
 
 const TIPOS_SERVICO = [
-  'Transporte',
-  'Entrega',
+  'Transporte de mercadorias',
+  'Entrega de mercadorias',
   'Moagem',
   'Limpeza',
   'Reparação',

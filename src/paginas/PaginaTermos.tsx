@@ -141,6 +141,20 @@ export default function PaginaTermos() {
               </p>
             </div>
 
+            <div id="termos-parceiros" className="rounded-lg border-2 border-primary/20 bg-primary/5 p-5">
+              <h2 className="font-titulo text-xl font-bold mb-2 text-primary">
+                11. Termos para Parceiros de Entregas ANGROLINK
+              </h2>
+              <div className="space-y-3">
+                <p>O parceiro de entregas declara que as informações, documentos e dados do veículo submetidos são verdadeiros, atuais e lhe pertencem ou estão legalmente autorizados para utilização.</p>
+                <p>O parceiro só pode aceitar tarefas após aprovação da ANGROLINK e enquanto os seus documentos, veículo e estado de disponibilidade se mantiverem válidos.</p>
+                <p>É proibido transportar passageiros, dinheiro, armas, bens ilícitos, mercadorias perigosas sem autorização, animais vivos ou cargas incompatíveis com o veículo aprovado.</p>
+                <p>O parceiro compromete-se a recolher e entregar mercadorias com cuidado, respeitar os códigos de recolha e entrega, manter comunicação adequada e reportar incidentes imediatamente.</p>
+                <p>A ANGROLINK pode suspender ou remover a disponibilidade do parceiro perante documentos expirados, fraude, comportamento inseguro, incumprimento destes termos ou reclamações fundamentadas.</p>
+                <p>As regras de preços, pagamentos, comissões, cancelamentos, danos e repasses serão apresentadas antes da ativação operacional do serviço de entregas.</p>
+              </div>
+            </div>
+
             <p className="text-xs text-muted-foreground border-t-2 border-border pt-4">
               Última atualização: {new Date().getFullYear()}. Este documento é uma versão inicial e deve ser revisto juridicamente antes do lançamento oficial.
             </p>

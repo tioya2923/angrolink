@@ -438,20 +438,6 @@ export const TIPOS_VENDEDOR: {
     exemplos: 'Banca de fruta e verdura, quitanda de bairro',
   },
   {
-    valor: 'taxista',
-    rotulo: 'Taxista / Transportador',
-    icone: '🚖',
-    descricao: 'Oferece serviços de transporte de pessoas ou mercadorias em automóvel.',
-    exemplos: 'Táxi, candongueiro, transporte de carga',
-  },
-  {
-    valor: 'moto_taxista',
-    rotulo: 'Moto-Taxista',
-    icone: '🏍️',
-    descricao: 'Oferece serviços de transporte de pessoas em mota, ao abrigo do regime jurídico próprio da atividade.',
-    exemplos: 'Kupapata, moto-táxi',
-  },
-  {
     valor: 'produtor',
     rotulo: 'Produtor',
     icone: '🌾',
@@ -493,13 +479,6 @@ export const TIPOS_VENDEDOR: {
     descricao: 'Vende grandes quantidades para lojas, mercados ou revendedores.',
     exemplos: 'Paletes de bebidas, sacos de arroz, caixas de frango',
   },
-  {
-    valor: 'prestador_servico',
-    rotulo: 'Prestador de Serviços',
-    icone: '🛠️',
-    descricao: 'Oferece serviços locais ligados a entrega, reparação, mão de obra ou apoio ao comércio.',
-    exemplos: 'Entregas, mecânica, trator, mão de obra',
-  },
 ];
 
 /** Helper: obter badge do tipo de vendedor */
@@ -513,8 +492,6 @@ export function obterBadgeVendedor(tipo: TipoVendedor): { icone: string; rotulo:
   const rotuloCurto: Record<TipoVendedor, string> = {
     ambulante: 'Ambulante',
     quitandeira: 'Quitandeira',
-    taxista: 'Taxista',
-    moto_taxista: 'Moto-Taxista',
     produtor: 'Produtor',
     mini_mercado: 'Mini Mercado',
     revendedor: 'Revendedor',
@@ -529,6 +506,19 @@ export function obterBadgeVendedor(tipo: TipoVendedor): { icone: string; rotulo:
     rotulo: rotuloCurto[tipo],
   };
 }
+
+/** Serviços anunciáveis por perfis profissionais. A plataforma não inclui transporte de passageiros. */
+export const TIPOS_SERVICO = [
+  'Entrega de mercadorias',
+  'Transporte de mercadorias',
+  'Moagem',
+  'Limpeza',
+  'Reparação',
+  'Aluguer de Equipamento',
+  'Mão de obra agrícola',
+  'Consultoria',
+  'Outros',
+] as const;
 
 /** Helper: obter "ícone + rótulo completo" do tipo de vendedor (ex: para listas de admin) */
 export function obterRotuloCompletoVendedor(tipo: string): string {

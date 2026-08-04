@@ -38,7 +38,7 @@ export default function SeletorTelefone({
   placeholder,
   required,
   id,
-  maxLength = 15,
+  maxLength = 9,
   className,
 }: SeletorTelefoneProps) {
   const [aberto, setAberto] = useState(false);

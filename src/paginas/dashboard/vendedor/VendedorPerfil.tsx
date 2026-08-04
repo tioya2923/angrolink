@@ -129,9 +129,7 @@ export default function VendedorPerfil() {
     tipoVendedor === 'supermercado' ||
     tipoVendedor === 'hipermercado';
   const isPrestadorServico =
-    tipoVendedor === 'prestador_servico' ||
-    tipoVendedor === 'taxista' ||
-    tipoVendedor === 'moto_taxista';
+    tipoVendedor === 'prestador_servico';
 
   useEffect(() => {
     async function carregarVendedor() {

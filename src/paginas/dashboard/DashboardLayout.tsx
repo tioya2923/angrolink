@@ -13,17 +13,21 @@ import {
   ArrowLeft,
   BarChart3,
   Clock,
+  ClipboardList,
+  FileCheck2,
   Heart,
   LayoutDashboard,
   Leaf,
   LogOut,
   Menu,
   MessageSquare,
+  MapPinned,
   Package,
   PlusCircle,
   Settings,
   ShieldCheck,
   Sparkles,
+  Truck,
   UserCircle,
   Users,
   Wrench,
@@ -46,6 +50,13 @@ interface ItemMenu {
 }
 
 const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
+  parceiro_entrega: [
+    { rotulo: 'Resumo', icone: LayoutDashboard, caminho: '/dashboard' },
+    { rotulo: 'Pedidos de entrega', icone: ClipboardList, caminho: '/dashboard/pedidos' },
+    { rotulo: 'Veículo e disponibilidade', icone: Truck, caminho: '/dashboard/veiculo' },
+    { rotulo: 'Áreas de cobertura', icone: MapPinned, caminho: '/dashboard/areas' },
+    { rotulo: 'Documentos', icone: FileCheck2, caminho: '/dashboard/documentos' },
+  ],
   admin: [
     {
       rotulo: 'Menu',
@@ -61,6 +72,11 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       rotulo: 'Pedidos',
       icone: UserCircle,
       caminho: '/dashboard/pedidos-vendedores',
+    },
+    {
+      rotulo: 'Entregadores',
+      icone: Truck,
+      caminho: '/dashboard/entregadores',
     },
     {
       rotulo: 'Utilizadores',
@@ -189,6 +205,8 @@ export default function DashboardLayout({
       ? 'Administrador'
       : utilizador.papel === 'vendedor'
         ? 'Vendedor'
+        : utilizador.papel === 'parceiro_entrega'
+          ? 'Parceiro de entregas'
         : 'Cliente';
 
   const inicialNome =

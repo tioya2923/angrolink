@@ -5,8 +5,9 @@
  * (zungueiras, quitandeiras, pequenos produtores) só precisam do BI para
  * começar a vender; negócios fixos de maior porte precisam de NIF, Alvará
  * Comercial e, no topo, Registo Comercial. Categorias com exigências
- * legais próprias (ex: taxista) pedem também os documentos específicos
- * da sua atividade (carta de condução, documentos do veículo).
+ * reguladas pedem documentos específicos. Esses requisitos serão associados
+ * à atividade de entrega/transporte numa fase logística posterior, e não ao
+ * tipo de vendedor.
  */
 
 import { TipoVendedor } from '@/tipos';
@@ -142,18 +143,6 @@ export const REQUISITOS_POR_TIPO: Record<TipoVendedor, RequisitoDocumentacao> = 
     rotuloNivel: 'Vendedor informal',
     obrigatorios: ['bi'],
     opcionais: ['cartao_vendedor'],
-  },
-  taxista: {
-    nivel: 'informal',
-    rotuloNivel: 'Prestador de transporte',
-    obrigatorios: ['bi', 'carta_conducao', 'livrete_veiculo'],
-    opcionais: ['seguro_automovel'],
-  },
-  moto_taxista: {
-    nivel: 'informal',
-    rotuloNivel: 'Prestador de transporte (moto-táxi)',
-    obrigatorios: ['bi', 'carta_conducao', 'certificado_moto_taxi', 'livrete_veiculo'],
-    opcionais: ['seguro_automovel'],
   },
   produtor: {
     nivel: 'informal',

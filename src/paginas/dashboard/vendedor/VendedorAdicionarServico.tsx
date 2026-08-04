@@ -28,8 +28,8 @@ import {
 } from '@/services/api';
 
 const TIPOS_SERVICO = [
-  'Transporte',
-  'Entrega',
+  'Transporte de mercadorias',
+  'Entrega de mercadorias',
   'Moagem',
   'Limpeza',
   'Reparação',

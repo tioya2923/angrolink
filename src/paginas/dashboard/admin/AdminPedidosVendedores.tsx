@@ -5,13 +5,16 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { CheckCircle, XCircle, MapPin, Calendar, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contextos/AuthContexto';
 import { obterRotuloCompletoVendedor } from '@/dados/constantes';
 import { StatusVendedorAprovacao } from '@/tipos';
 
 import {
   fetchVendedoresAdmin,
+  fetchParceirosEntregaAdmin,
   atualizarEstadoVendedor,
 } from '@/services/api';
 
@@ -36,8 +39,10 @@ interface PedidoVendedor {
 
 export default function AdminPedidosVendedores() {
   const { toast } = useToast();
+  const { utilizador } = useAuth();
 
   const [pedidos, setPedidos] = useState<PedidoVendedor[]>([]);
+  const [pedidosEntregadores, setPedidosEntregadores] = useState(0);
   const [detalheAberto, setDetalheAberto] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] =
     useState<StatusVendedorAprovacao | 'todos'>('pendente');
@@ -73,6 +78,9 @@ export default function AdminPedidosVendedores() {
     }
 
     carregar();
+    fetchParceirosEntregaAdmin()
+      .then(lista => setPedidosEntregadores(lista.filter((parceiro: any) => ['rascunho', 'documentos_pendentes', 'em_analise'].includes(parceiro.estado)).length))
+      .catch(() => setPedidosEntregadores(0));
   }, []);
 
   const alterarEstado = async (
@@ -81,7 +89,7 @@ export default function AdminPedidosVendedores() {
     motivoRejeicao?: string,
   ) => {
     try {
-      await atualizarEstadoVendedor(id, estado, undefined, motivoRejeicao);
+      await atualizarEstadoVendedor(id, estado, utilizador?.id, motivoRejeicao);
 
       setPedidos(prev =>
         prev.map(p => (p.id === id ? {
@@ -111,10 +119,10 @@ export default function AdminPedidosVendedores() {
       };
 
       toast({ title: msgs[estado].title, description: msgs[estado].desc });
-    } catch {
+    } catch (erro: any) {
       toast({
         title: 'Erro',
-        description: 'Não foi possível atualizar o estado',
+        description: erro?.message || 'Não foi possível atualizar o estado',
         variant: 'destructive',
       });
     }
@@ -177,6 +185,23 @@ export default function AdminPedidosVendedores() {
           bloqueio e eliminação devem ser feitos na gestão de vendedores.
         </p>
       </header>
+
+      <nav className="grid gap-3 sm:grid-cols-2" aria-label="Tipo de pedido de cadastro">
+        <Link
+          to="/dashboard/pedidos-vendedores"
+          className="rounded-xl border-2 border-primary bg-primary/5 p-4 transition-colors"
+        >
+          <p className="font-titulo text-base font-bold text-primary">Pedidos de vendedores</p>
+          <p className="mt-1 font-corpo text-sm text-muted-foreground">{contadores.pendente} pedido{contadores.pendente === 1 ? '' : 's'} pendente{contadores.pendente === 1 ? '' : 's'} de análise.</p>
+        </Link>
+        <Link
+          to="/dashboard/pedidos-entregadores"
+          className="rounded-xl border-2 border-border p-4 transition-colors hover:border-primary/40 hover:bg-primary/5"
+        >
+          <p className="font-titulo text-base font-bold">Pedidos de entregadores</p>
+          <p className="mt-1 font-corpo text-sm text-muted-foreground">{pedidosEntregadores} pedido{pedidosEntregadores === 1 ? '' : 's'} pendente{pedidosEntregadores === 1 ? '' : 's'} de análise.</p>
+        </Link>
+      </nav>
 
       {/* Contadores */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

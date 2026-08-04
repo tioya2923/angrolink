@@ -1149,6 +1149,192 @@ export async function atualizarEstadoVendedor(
   return normalizarVendedor(data);
 }
 
+// =============================
+// ADMIN — PARCEIROS DE ENTREGAS
+// =============================
+
+export type EstadoParceiroAdmin =
+  | 'rascunho'
+  | 'documentos_pendentes'
+  | 'em_analise'
+  | 'aprovado'
+  | 'rejeitado'
+  | 'suspenso'
+  | 'documentacao_expirada';
+
+export async function fetchParceirosEntregaAdmin() {
+  const db: any = supabase;
+  const { data, error } = await db
+    .from('parceiros_entrega')
+    .select('*, veiculos_entrega(*), areas_cobertura_entrega(*), documentos_parceiro_entrega(*)')
+    .order('criado_em', { ascending: false });
+
+  if (error) {
+    console.error('Erro ao buscar parceiros de entregas:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
+export async function atualizarEstadoParceiroEntrega(
+  parceiroId: string,
+  estado: EstadoParceiroAdmin,
+  motivo?: string | null,
+  adminId?: string | null,
+) {
+  const db: any = supabase;
+  const motivoLimpo = motivo?.trim() || null;
+
+  if ((estado === 'rejeitado' || estado === 'suspenso') && !motivoLimpo) {
+    throw new Error('Indique o motivo desta decisão.');
+  }
+
+  if (estado === 'aprovado') {
+    const { data: documentos, error: erroDocumentos } = await db
+      .from('documentos_parceiro_entrega')
+      .select('id, estado')
+      .eq('parceiro_id', parceiroId);
+
+    if (erroDocumentos) throw erroDocumentos;
+    if (!documentos?.length || documentos.some((documento: any) => documento.estado !== 'aprovado')) {
+      throw new Error('Analise e aprove todos os documentos antes de aprovar o parceiro.');
+    }
+  }
+
+  const dados: Record<string, unknown> = {
+    estado,
+    disponibilidade: false,
+  };
+
+  if (estado === 'aprovado') {
+    dados.aprovado_em = new Date().toISOString();
+    dados.motivo_rejeicao = null;
+    dados.motivo_suspensao = null;
+  } else if (estado === 'rejeitado') {
+    dados.motivo_rejeicao = motivoLimpo;
+    dados.motivo_suspensao = null;
+  } else if (estado === 'suspenso') {
+    dados.motivo_suspensao = motivoLimpo;
+  } else {
+    dados.motivo_rejeicao = null;
+    dados.motivo_suspensao = null;
+  }
+
+  const { data, error } = await db
+    .from('parceiros_entrega')
+    .update(dados)
+    .eq('id', parceiroId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+
+  if (estado === 'aprovado') await db
+    .from('veiculos_entrega')
+    .update({ estado_verificacao: 'aprovado', motivo_rejeicao: null })
+    .eq('parceiro_id', parceiroId);
+
+  return data;
+}
+
+export async function atualizarEstadoDocumentoParceiro(
+  documentoId: string,
+  estado: 'aprovado' | 'rejeitado',
+  adminId?: string | null,
+  motivo?: string | null,
+) {
+  const db: any = supabase;
+  const motivoLimpo = motivo?.trim() || null;
+  if (estado === 'rejeitado' && !motivoLimpo) throw new Error('Indique o motivo da rejeição do documento.');
+
+  const { data, error } = await db
+    .from('documentos_parceiro_entrega')
+    .update({
+      estado,
+      motivo_rejeicao: estado === 'rejeitado' ? motivoLimpo : null,
+      analisado_por: adminId || null,
+      analisado_em: new Date().toISOString(),
+    })
+    .eq('id', documentoId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+
+  if (estado === 'rejeitado') {
+    const { error: erroParceiro } = await db
+      .from('parceiros_entrega')
+      .update({ estado: 'documentos_pendentes', disponibilidade: false })
+      .eq('id', data.parceiro_id);
+    if (erroParceiro) throw erroParceiro;
+  }
+
+  return data;
+}
+
+export async function reenviarDocumentoParceiro(documentoId: string, frente: File, verso: File) {
+  const { data: auth, error: erroAuth } = await supabase.auth.getUser();
+  if (erroAuth || !auth.user) throw new Error('Sessão inválida. Entre novamente na sua conta.');
+
+  const enviar = async (ficheiro: File, lado: 'frente' | 'verso') => {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(ficheiro.type) || ficheiro.size > 3 * 1024 * 1024) {
+      throw new Error('Use imagens JPG, PNG ou WEBP até 3 MB.');
+    }
+    const extensao = ficheiro.name.split('.').pop() || 'jpg';
+    const caminho = `${auth.user!.id}/reenvio-${documentoId}-${lado}-${crypto.randomUUID()}.${extensao}`;
+    const { error } = await supabase.storage.from('documentos-parceiros').upload(caminho, ficheiro, { contentType: ficheiro.type });
+    if (error) throw error;
+    return caminho;
+  };
+
+  const [frentePath, versoPath] = await Promise.all([enviar(frente, 'frente'), enviar(verso, 'verso')]);
+  const db: any = supabase;
+  const { error } = await db.rpc('reenviar_documento_parceiro', {
+    p_documento_id: documentoId,
+    p_frente_path: frentePath,
+    p_verso_path: versoPath,
+  });
+  if (error) throw error;
+}
+
+export async function obterUrlDocumentoParceiro(path: string) {
+  const { data, error } = await supabase.storage
+    .from('documentos-parceiros')
+    .createSignedUrl(path, 60 * 10);
+
+  if (error) throw error;
+  return data.signedUrl;
+}
+
+export async function fetchMeuParceiroEntrega(userId: string) {
+  const db: any = supabase;
+  const { data, error } = await db
+    .from('parceiros_entrega')
+    .select('*, veiculos_entrega(*), areas_cobertura_entrega(*), documentos_parceiro_entrega(*)')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function atualizarDisponibilidadeParceiroEntrega(
+  parceiroId: string,
+  disponibilidade: boolean,
+) {
+  const db: any = supabase;
+  const { data, error } = await db
+    .from('parceiros_entrega')
+    .update({ disponibilidade })
+    .eq('id', parceiroId)
+    .select('disponibilidade')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
 export async function eliminarVendedorAdmin(id: string) {
   const { error } = await supabase
     .from('vendedores')
@@ -1961,6 +2147,8 @@ const TIPOS_VENDEDOR_LEGADOS: Record<string, Vendedor['tipo_vendedor']> = {
   fazenda: 'produtor',
   mercado: 'revendedor',
   loja: 'mini_mercado',
+  taxista: 'prestador_servico',
+  moto_taxista: 'prestador_servico',
 };
 
 function normalizarTipoVendedor(tipo: unknown): Vendedor['tipo_vendedor'] {

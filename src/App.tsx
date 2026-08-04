@@ -31,6 +31,7 @@ import SobreNos from "@/paginas/SobreNos";
 import PaginaTermos from "@/paginas/PaginaTermos";
 import PaginaPrivacidade from "@/paginas/PaginaPrivacidade";
 import PaginaComoFunciona from "@/paginas/PaginaComoFunciona";
+import PaginaCadastroParceiroEntrega from "@/paginas/PaginaCadastroParceiroEntrega";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/servico/:id" element={<PaginaServico />} />
               <Route path="/vendedor/:id" element={<PaginaVendedor />} />
               <Route path="/anunciar" element={<PaginaAnunciar />} />
+              <Route path="/parceiro-entregas/cadastro" element={<PaginaCadastroParceiroEntrega />} />
               <Route path="/anunciar-servico" element={<PaginaAnunciarServico />} />
               <Route path="/servicos" element={<PaginaServicos />} />
               {/* Autenticação */}

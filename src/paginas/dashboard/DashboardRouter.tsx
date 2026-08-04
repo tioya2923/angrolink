@@ -7,6 +7,7 @@ import AdminVendedores from './admin/AdminVendedores';
 import AdminProdutos from './admin/AdminProdutos';
 import AdminUtilizadores from './admin/AdminUtilizadores';
 import AdminPedidosVendedores from './admin/AdminPedidosVendedores';
+import AdminEntregadores from './admin/AdminEntregadores';
 
 import ClienteResumo from './cliente/ClienteResumo';
 import Favoritos from './cliente/Favoritos';
@@ -24,6 +25,7 @@ import VendedorEstatisticas from './vendedor/VendedorEstatisticas';
 import VendedorPerfil from './vendedor/VendedorPerfil';
 import VendedorServicos from './vendedor/VendedorServicos';
 import AdminRankings from './admin/AdminRankings';
+import ParceiroResumo from './parceiro/ParceiroResumo';
 
 export default function DashboardRouter() {
 
@@ -52,11 +54,23 @@ return(
 
 <Routes>
 
+{utilizador.papel === "parceiro_entrega" && (
+  <>
+    <Route index element={<ParceiroResumo />} />
+    <Route path="pedidos" element={<ParceiroResumo secao="pedidos" />} />
+    <Route path="veiculo" element={<ParceiroResumo secao="veiculo" />} />
+    <Route path="areas" element={<ParceiroResumo secao="areas" />} />
+    <Route path="documentos" element={<ParceiroResumo secao="documentos" />} />
+  </>
+)}
+
 {utilizador.papel==="admin" && (
 <>
 <Route index element={<AdminResumo/>}/>
 <Route path="vendedores" element={<AdminVendedores/>}/>
 <Route path="pedidos-vendedores" element={<AdminPedidosVendedores/>}/>
+<Route path="pedidos-entregadores" element={<AdminEntregadores apenasPedidos/>}/>
+<Route path="entregadores" element={<AdminEntregadores/>}/>
 <Route path="utilizadores" element={<AdminUtilizadores/>}/>
 <Route path="produtos" element={<AdminProdutos/>}/>
 <Route path="rankings" element={<AdminRankings/>}/>

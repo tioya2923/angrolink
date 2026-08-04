@@ -20,7 +20,7 @@ import { useAuth } from '@/contextos/AuthContexto';
 import { supabase } from '@/services/supabase';
 import {
   ArrowLeft, ShoppingBag, Megaphone, Send, Eye, EyeOff,
-  CheckSquare, Camera, ChevronDown, ChevronUp,  Wrench,
+  CheckSquare, Camera, ChevronDown, ChevronUp, Truck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -255,7 +255,9 @@ export default function PaginaAnunciar() {
 
         senha: formComprador.senha,
 
-        telefone: telefoneUtilizador,
+        telefone: formComprador.telefone,
+
+        indicativo: formComprador.indicativo,
 
         provincia: provinciaNome,
 
@@ -495,7 +497,7 @@ export default function PaginaAnunciar() {
         telefoneCompleto(formVendedor.telefone, formVendedor.indicativo);
 
       const emailLogin =
-        gerarEmailInterno(telefone);
+        gerarEmailInterno(formVendedor.telefone, formVendedor.indicativo);
 
       const emailOpcional =
         normalizarEmail(formPerfil.email);
@@ -918,54 +920,54 @@ export default function PaginaAnunciar() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <button
                   onClick={() => setEtapa('form-comprador')}
-                  className="border-2 border-border bg-card p-6 text-left hover:border-green-700 transition-colors group rounded-md"
+                  className="group flex min-h-[400px] flex-col rounded-md border-2 border-border bg-card p-6 text-left transition-colors hover:border-green-700"
                 >
                   <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-md mb-4 group-hover:bg-primary/20 transition-colors">
                     <ShoppingBag className="w-6 h-6 text-primary" />
                   </div>
-                  <h2 className="font-titulo text-lg mb-2">Comprar</h2>
+                  <h2 className="mb-2 min-h-14 font-titulo text-lg">Comprar</h2>
                   <p className="font-corpo text-sm text-muted-foreground leading-relaxed">
                     Encontre produtos e contacte vendedores diretamente via WhatsApp.
                   </p>
-                  <span className="inline-block mt-4 font-corpo text-sm font-semibold text-green-700">
+                  <span className="mt-auto inline-block pt-4 font-corpo text-sm font-semibold text-green-700">
                     Criar conta de comprador →
                   </span>
                 </button>
 
                 <button
                   onClick={() => setEtapa('tipo-vendedor')}
-                  className="border-2 border-border bg-card p-6 text-left hover:border-green-700 transition-colors group rounded-md"
+                  className="group flex min-h-[400px] flex-col rounded-md border-2 border-border bg-card p-6 text-left transition-colors hover:border-green-700"
                 >
                   <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-md mb-4 group-hover:bg-primary/20 transition-colors">
                     <Megaphone className="w-6 h-6 text-primary" />
                   </div>
 
-                  <h2 className="font-titulo text-lg mb-2">Vender Produtos</h2>
+                  <h2 className="mb-2 min-h-14 font-titulo text-lg">Vender Produtos</h2>
 
                   <p className="font-corpo text-sm text-muted-foreground leading-relaxed">
                     Crie conta como vendedor e publique produtos no marketplace.
                   </p>
 
-                  <span className="inline-block mt-4 font-corpo text-sm font-semibold text-green-700">
+                  <span className="mt-auto inline-block pt-4 font-corpo text-sm font-semibold text-green-700">
                     Criar conta de vendedor →
                   </span>
                 </button>
 
                 <button
-                  onClick={() => selecionarTipoVendedor('prestador_servico')}
-                  className="border-2 border-border bg-card p-6 text-left hover:border-green-700 transition-colors group rounded-md"
+                  onClick={() => navigate('/parceiro-entregas/cadastro')}
+                  className="group flex min-h-[400px] flex-col rounded-md border-2 border-border bg-card p-6 text-left transition-colors hover:border-green-700"
                 >
                   <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-md mb-4 group-hover:bg-primary/20 transition-colors">
-                    <Wrench className="w-6 h-6 text-primary" />
+                    <Truck className="w-6 h-6 text-primary" />
                   </div>
-                  <h2 className="font-titulo text-lg mb-2">Anunciar Serviço</h2>
+                  <h2 className="mb-2 min-h-14 font-titulo text-lg">Fazer Entregas de Mercadorias</h2>
 
                 <p className="font-corpo text-sm text-muted-foreground leading-relaxed">
-                  Crie uma conta profissional para anunciar serviços no marketplace.
+                  Torne-se parceiro ANGROLINK e receba pedidos para recolher e entregar mercadorias.
                 </p>
 
-                <span className="inline-block mt-4 font-corpo text-sm font-semibold text-green-700">
-                  Criar conta de prestador →
+                <span className="mt-auto inline-block pt-4 font-corpo text-sm font-semibold text-green-700">
+                  Criar conta de parceiro de entregas →
                 </span>
                 </button>
               </div>
@@ -1014,7 +1016,7 @@ export default function PaginaAnunciar() {
                       setFormComprador(p => ({ ...p, telefone }))
                     }
                     placeholder="923456789"
-                    maxLength={formComprador.indicativo === '244' ? 9 : 14}
+                    maxLength={9}
                     required
                   />
                 </div>
@@ -1258,7 +1260,7 @@ export default function PaginaAnunciar() {
                       setFormVendedor(p => ({ ...p, telefone }))
                     }
                     placeholder="923456789"
-                    maxLength={formVendedor.indicativo === '244' ? 9 : 14}
+                    maxLength={9}
                     required
                   />
                 </div>

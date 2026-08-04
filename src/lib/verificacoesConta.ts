@@ -14,8 +14,13 @@ export function telefoneCompleto(
 }
 
 export function gerarEmailInterno(
-  telefone: string
+  telefone: string,
+  indicativo?: string
 ) {
+  if (indicativo) {
+    return `${normalizarTelefone(indicativo)}${normalizarTelefone(telefone)}@telefone.angrolink`;
+  }
+
   let numero = normalizarTelefone(telefone);
 
   // Se vier apenas com os 9 dígitos,

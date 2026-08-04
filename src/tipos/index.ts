@@ -11,8 +11,6 @@
 export type TipoVendedor =
   | 'ambulante'
   | 'quitandeira'
-  | 'taxista'
-  | 'moto_taxista'
   | 'produtor'
   | 'revendedor'
   | 'mini_mercado'
@@ -41,7 +39,18 @@ export type UnidadeProduto =
   | 'unidade'
   | 'animal';
 
-export type PapelUtilizador = 'admin' | 'cliente' | 'vendedor';
+export type PapelUtilizador = 'admin' | 'cliente' | 'vendedor' | 'parceiro_entrega';
+
+export type TipoVeiculoEntrega = 'mota' | 'carro' | 'carrinha' | 'camiao';
+
+export type EstadoParceiroEntrega =
+  | 'rascunho'
+  | 'documentos_pendentes'
+  | 'em_analise'
+  | 'aprovado'
+  | 'rejeitado'
+  | 'suspenso'
+  | 'documentacao_expirada';
 
 export type TipoComprador = 'casa' | 'negocio';
 
@@ -254,6 +263,8 @@ export interface Utilizador {
   papel: PapelUtilizador;
 
   vendedor_id?: string;
+  parceiro_entrega_id?: string;
+  estado_parceiro_entrega?: EstadoParceiroEntrega;
 
   tipo_comprador?: TipoComprador;
 
