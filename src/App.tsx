@@ -6,12 +6,13 @@
  */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MunicipioProvider } from "@/contextos/MunicipioContexto";
 import { AuthProvider } from "@/contextos/AuthContexto";
+import { useAuth } from "@/contextos/AuthContexto";
 
 // Páginas
 import PaginaInicial from "@/paginas/PaginaInicial";
@@ -43,6 +44,16 @@ const queryClient = new QueryClient({
   },
 });
 
+function RotaInicial() {
+  const { utilizador, pronto } = useAuth();
+
+  if (!pronto) return null;
+  if (utilizador?.papel === 'parceiro_entrega') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <PaginaInicial />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -55,7 +66,7 @@ const App = () => (
             <MensagensValidacaoNativas />
             <Routes>
               {/* Páginas públicas */}
-              <Route path="/" element={<PaginaInicial />} />
+              <Route path="/" element={<RotaInicial />} />
               <Route path="/sobre-nos" element={<SobreNos />} />
               <Route path="/termos" element={<PaginaTermos />} />
               <Route path="/privacidade" element={<PaginaPrivacidade />} />

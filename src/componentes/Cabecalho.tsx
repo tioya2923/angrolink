@@ -37,7 +37,7 @@ export default function Cabecalho() {
 
   const fecharMenu = () => setMenuAberto(false);
 
-  const linksPublicos = [
+  const linksPublicos = utilizador?.papel === 'parceiro_entrega' ? [] : [
     { to: '/pesquisa', label: 'Produtos' },
     { to: '/servicos', label: 'Serviços' },
   ];
@@ -67,6 +67,15 @@ export default function Cabecalho() {
           { to: '/dashboard/estatisticas', label: 'Estatísticas' },
           { to: '/dashboard/perfil', label: 'Perfil' },
         ];
+      case 'parceiro_entrega':
+        return [
+          { to: '/dashboard', label: 'Central de entregas' },
+          { to: '/dashboard/pedidos', label: 'Pedidos de entrega' },
+          { to: '/dashboard/veiculo', label: 'Veículo e disponibilidade' },
+          { to: '/dashboard/areas', label: 'Áreas de cobertura' },
+          { to: '/dashboard/documentos', label: 'Documentos' },
+          { to: '/dashboard/apoio', label: 'Apoio ANGROLINK' },
+        ];
       case 'cliente':
       default:
         return [
@@ -82,7 +91,7 @@ export default function Cabecalho() {
   return (
     <header className="border-b-2 border-border bg-green-800 sticky top-0 z-50">
       <div className="w-full px-4 md:px-8 flex items-center justify-between h-14 md:h-16">
-        <Link to="/" className="flex items-center gap-2 group transition-opacity hover:opacity-90 font-titulo text-xl md:text-2xl font-bold tracking-tight text-foreground">
+        <Link to={utilizador?.papel === 'parceiro_entrega' ? '/dashboard' : '/'} className="flex items-center gap-2 group transition-opacity hover:opacity-90 font-titulo text-xl md:text-2xl font-bold tracking-tight text-foreground">
           <Leaf className="w-7 h-7 text-green-700 fill-green-600/100 text-white" strokeWidth={3} />
           <span className="font-titulo text-xl md:text-2xl font-bold tracking-tight text-white">
             ANGROLINK

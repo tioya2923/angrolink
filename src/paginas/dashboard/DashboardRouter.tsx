@@ -61,6 +61,7 @@ return(
     <Route path="veiculo" element={<ParceiroResumo secao="veiculo" />} />
     <Route path="areas" element={<ParceiroResumo secao="areas" />} />
     <Route path="documentos" element={<ParceiroResumo secao="documentos" />} />
+    <Route path="apoio" element={<ParceiroResumo secao="apoio" />} />
   </>
 )}
 

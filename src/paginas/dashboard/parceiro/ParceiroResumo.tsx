@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, ClipboardList, Clock3, FileCheck2, MapPin, ShieldAlert, Truck } from 'lucide-react';
+import { CheckCircle2, ClipboardList, Clock3, FileCheck2, MapPin, ShieldAlert, Truck, CircleHelp, Phone, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contextos/AuthContexto';
 import { useToast } from '@/hooks/use-toast';
 import { atualizarDisponibilidadeParceiroEntrega, fetchMeuParceiroEntrega, reenviarDocumentoParceiro } from '@/services/api';
 
-type SecaoParceiro = 'resumo' | 'pedidos' | 'veiculo' | 'areas' | 'documentos';
+type SecaoParceiro = 'resumo' | 'pedidos' | 'veiculo' | 'areas' | 'documentos' | 'apoio';
 
 const TITULOS: Record<SecaoParceiro, [string, string]> = {
   resumo: ['Painel do entregador', 'Acompanhe a sua conta, disponibilidade e preparação para receber pedidos.'],
@@ -12,6 +12,7 @@ const TITULOS: Record<SecaoParceiro, [string, string]> = {
   veiculo: ['Veículo e disponibilidade', 'Mantenha o veículo validado e indique quando está pronto para entregar.'],
   areas: ['Áreas de cobertura', 'Consulte as zonas em que poderá receber pedidos de entrega.'],
   documentos: ['Documentos e verificação', 'Acompanhe o estado da documentação enviada para análise.'],
+  apoio: ['Apoio ANGROLINK', 'Encontre orientações para trabalhar na plataforma e resolver situações da conta.'],
 };
 
 const NOME_DOCUMENTO: Record<string, string> = {
@@ -77,6 +78,7 @@ export default function ParceiroResumo({ secao = 'resumo' }: { secao?: SecaoParc
     {secao === 'veiculo' && <Veiculo parceiro={parceiro} veiculo={veiculo} aprovado={aprovado} mudarDisponibilidade={mudarDisponibilidade} aGuardar={aGuardar}/>} 
     {secao === 'areas' && <Areas parceiro={parceiro}/>} 
     {secao === 'documentos' && <Documentos documentos={documentos} reenviar={reenviarDocumento} aGuardar={aGuardar}/>} 
+    {secao === 'apoio' && <Apoio parceiro={parceiro}/>} 
   </div>;
 }
 
@@ -113,3 +115,10 @@ function Documentos({ documentos, reenviar, aGuardar }: any) { return <section c
 function DocumentoCard({ documento, reenviar, aGuardar }: any) { const [frente, setFrente] = useState<File | null>(null); const [verso, setVerso] = useState<File | null>(null); const rejeitado = documento.estado === 'rejeitado'; return <div className="rounded-xl border border-border bg-muted/20 p-4"><FileCheck2 className="mb-2 size-5 text-primary"/><p className="font-corpo text-sm font-semibold">{NOME_DOCUMENTO[documento.tipo_documento] || documento.tipo_documento}</p><p className={`mt-2 inline-flex rounded-full border px-2 py-0.5 font-corpo text-xs ${documento.estado === 'aprovado' ? 'border-primary/30 bg-primary/10 text-primary' : rejeitado ? 'border-destructive/30 bg-destructive/10 text-destructive' : 'border-amber-500/30 bg-amber-500/10 text-amber-700'}`}>{documento.estado === 'aprovado' ? 'Aprovado' : rejeitado ? 'Rejeitado' : 'Em análise'}</p>{documento.motivo_rejeicao && <p className="mt-2 font-corpo text-xs text-destructive">{documento.motivo_rejeicao}</p>}{rejeitado && <div className="mt-4 border-t border-border pt-3"><p className="font-corpo text-xs font-semibold">Reenviar frente e verso</p><label className="mt-2 block font-corpo text-xs text-muted-foreground">Nova foto da frente<input type="file" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-xs" onChange={e => setFrente(e.target.files?.[0] || null)}/></label><label className="mt-2 block font-corpo text-xs text-muted-foreground">Nova foto do verso<input type="file" accept="image/jpeg,image/png,image/webp" className="mt-1 block w-full text-xs" onChange={e => setVerso(e.target.files?.[0] || null)}/></label><button disabled={!frente || !verso || aGuardar} onClick={() => frente && verso && reenviar(documento, frente, verso)} className="mt-3 w-full rounded-lg bg-primary px-3 py-2 font-corpo text-xs font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">Reenviar para análise</button></div>}</div>; }
 
 function Info({ rotulo, valor }: { rotulo: string; valor: string }) { return <div><p className="font-corpo text-xs text-muted-foreground">{rotulo}</p><p className="mt-1 font-corpo text-sm font-semibold capitalize">{valor}</p></div>; }
+
+function Apoio({ parceiro }: any) {
+  return <div className="grid gap-5 lg:grid-cols-2">
+    <section className="painel-dashboard-form"><div className="flex items-center gap-2"><CircleHelp className="size-5 text-primary"/><h2 className="font-titulo text-lg font-bold">Como funciona</h2></div><ol className="mt-4 space-y-3 font-corpo text-sm text-muted-foreground"><li><strong className="text-foreground">1. Fique disponível:</strong> apenas depois da aprovação.</li><li><strong className="text-foreground">2. Receba pedidos:</strong> compatíveis com zona e veículo.</li><li><strong className="text-foreground">3. Recolha a mercadoria:</strong> antes de iniciar o trajeto.</li><li><strong className="text-foreground">4. Conclua a entrega:</strong> com confirmação do destinatário.</li></ol></section>
+    <section className="painel-dashboard-form"><h2 className="font-titulo text-lg font-bold">Precisa de ajuda?</h2><p className="mt-2 font-corpo text-sm text-muted-foreground">Contacte a equipa ANGROLINK para corrigir documentos ou esclarecer a situação da conta.</p><div className="mt-5 flex flex-wrap gap-3"><a href="tel:+244000000000" className="inline-flex items-center gap-2 rounded-lg border border-primary/30 px-3 py-2 font-corpo text-sm font-semibold text-primary hover:bg-primary/5"><Phone className="size-4"/>Ligar ao apoio</a><a href="https://wa.me/244000000000" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg bg-primary px-3 py-2 font-corpo text-sm font-semibold text-primary-foreground"><MessageCircle className="size-4"/>WhatsApp de apoio</a></div><p className="mt-4 font-corpo text-xs text-muted-foreground">Estado atual: <strong>{String(parceiro.estado).replace('_', ' ')}</strong>.</p></section>
+  </div>;
+}

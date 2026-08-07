@@ -14,6 +14,7 @@ import {
   BarChart3,
   Clock,
   ClipboardList,
+  CircleHelp,
   FileCheck2,
   Heart,
   LayoutDashboard,
@@ -56,6 +57,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
     { rotulo: 'Veículo e disponibilidade', icone: Truck, caminho: '/dashboard/veiculo' },
     { rotulo: 'Áreas de cobertura', icone: MapPinned, caminho: '/dashboard/areas' },
     { rotulo: 'Documentos', icone: FileCheck2, caminho: '/dashboard/documentos' },
+    { rotulo: 'Apoio ANGROLINK', icone: CircleHelp, caminho: '/dashboard/apoio' },
   ],
   admin: [
     {
@@ -221,6 +223,17 @@ export default function DashboardLayout({
           : 'Em aprovação'
       : null;
 
+  const estadoParceiro =
+    utilizador.papel === 'parceiro_entrega'
+      ? utilizador.estado_parceiro_entrega === 'aprovado'
+        ? 'Aprovado'
+        : utilizador.estado_parceiro_entrega === 'suspenso'
+          ? 'Suspenso'
+          : utilizador.estado_parceiro_entrega === 'documentos_pendentes'
+            ? 'Documentos pendentes'
+            : 'Em análise'
+      : null;
+
   const menu =
     utilizador.papel === 'vendedor' && !vendedorAprovado
       ? menuBase.filter(
@@ -257,7 +270,7 @@ export default function DashboardLayout({
             </button>
 
             <Link
-              to="/"
+              to={utilizador.papel === 'parceiro_entrega' ? '/dashboard' : '/'}
               className="flex items-center gap-2 group transition-opacity hover:opacity-90"
             >
               <Leaf
@@ -378,6 +391,22 @@ export default function DashboardLayout({
 
                 )}
 
+                {estadoParceiro && (
+                  <div
+                    className={`mt-3 rounded-full px-3 py-1 text-xs font-semibold ${
+                      utilizador.estado_parceiro_entrega === 'aprovado'
+                        ? 'bg-green-100 text-green-700'
+                        : utilizador.estado_parceiro_entrega === 'suspenso'
+                          ? 'bg-red-100 text-red-700'
+                          : utilizador.estado_parceiro_entrega === 'documentos_pendentes'
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                    }`}
+                  >
+                    {estadoParceiro}
+                  </div>
+                )}
+
               </div>
 
             </div>
@@ -410,7 +439,7 @@ export default function DashboardLayout({
 
           <div className="border-t-2 border-border p-4">
             <Link
-              to="/"
+              to={utilizador.papel === 'parceiro_entrega' ? '/dashboard' : '/'}
               className="flex items-center gap-2 font-corpo text-xs text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft size={14} />
@@ -454,7 +483,7 @@ export default function DashboardLayout({
 
               <div className="border-t-2 border-border p-4">
                 <Link
-                  to="/"
+                  to={utilizador.papel === 'parceiro_entrega' ? '/dashboard' : '/'}
                   onClick={() =>
                     setMenuAberto(false)
                   }
