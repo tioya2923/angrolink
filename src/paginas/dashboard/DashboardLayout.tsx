@@ -6,7 +6,7 @@
  * adaptado por tipo de utilizador.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import {
@@ -37,6 +37,7 @@ import {
 
 import { useAuth } from '@/contextos/AuthContexto';
 import { PapelUtilizador } from '@/tipos';
+import { obterUrlDocumentoParceiro } from '@/services/api';
 
 interface ItemMenu {
   rotulo: string;
@@ -53,9 +54,10 @@ interface ItemMenu {
 const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
   parceiro_entrega: [
     { rotulo: 'Resumo', icone: LayoutDashboard, caminho: '/dashboard' },
+    { rotulo: 'Dados e perfil', icone: UserCircle, caminho: '/dashboard/dados' },
     { rotulo: 'Pedidos de entrega', icone: ClipboardList, caminho: '/dashboard/pedidos' },
     { rotulo: 'Veículo e disponibilidade', icone: Truck, caminho: '/dashboard/veiculo' },
-    { rotulo: 'Áreas de cobertura', icone: MapPinned, caminho: '/dashboard/areas' },
+    { rotulo: 'Cobertura', icone: MapPinned, caminho: '/dashboard/areas' },
     { rotulo: 'Documentos', icone: FileCheck2, caminho: '/dashboard/documentos' },
     { rotulo: 'Apoio ANGROLINK', icone: CircleHelp, caminho: '/dashboard/apoio' },
   ],
@@ -193,6 +195,21 @@ export default function DashboardLayout({
 
   const [menuAberto, setMenuAberto] =
     useState(false);
+  const [fotoPerfilAssinada, setFotoPerfilAssinada] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    if (utilizador?.papel !== 'parceiro_entrega' || !utilizador.foto_perfil) {
+      setFotoPerfilAssinada(null);
+      return;
+    }
+
+    obterUrlDocumentoParceiro(utilizador.foto_perfil)
+      .then(url => { if (ativo) setFotoPerfilAssinada(url); })
+      .catch(() => { if (ativo) setFotoPerfilAssinada(null); });
+
+    return () => { ativo = false; };
+  }, [utilizador?.foto_perfil, utilizador?.papel]);
 
   if (!utilizador) return null;
 
@@ -316,10 +333,10 @@ export default function DashboardLayout({
 
               <div className="flex flex-col items-center text-center">
 
-                {utilizador.foto_perfil ? (
+                {fotoPerfilAssinada || (utilizador.papel !== 'parceiro_entrega' && utilizador.foto_perfil) ? (
 
                   <img
-                    src={utilizador.foto_perfil}
+                    src={fotoPerfilAssinada || utilizador.foto_perfil}
                     alt={utilizador.nome}
                     className="
                       w-24

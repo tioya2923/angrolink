@@ -58,6 +58,7 @@ return(
   <>
     <Route index element={<ParceiroResumo />} />
     <Route path="pedidos" element={<ParceiroResumo secao="pedidos" />} />
+    <Route path="dados" element={<ParceiroResumo secao="dados" />} />
     <Route path="veiculo" element={<ParceiroResumo secao="veiculo" />} />
     <Route path="areas" element={<ParceiroResumo secao="areas" />} />
     <Route path="documentos" element={<ParceiroResumo secao="documentos" />} />

@@ -46,6 +46,7 @@ interface AuthContextoTipo {
   pronto: boolean;
   tipoComprador: TipoComprador;
   atualizarTipoComprador: (tipo: TipoComprador) => void;
+  recarregarPerfil: () => Promise<boolean>;
 }
 
 const AuthContexto = createContext<AuthContextoTipo | null>(null);
@@ -305,6 +306,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
+    if (papelMetadata === 'parceiro_entrega') {
+      console.log('Aguardar criação do perfil de parceiro de entregas...');
+
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const { data: parceiroNovo } = await supabase
+          .from('parceiros_entrega')
+          .select('*')
+          .eq('user_id', authUser.id)
+          .maybeSingle();
+
+        if (parceiroNovo) {
+          const userFinal = montarUtilizadorParceiroEntrega(
+            parceiroNovo,
+            authUser
+          );
+
+          guardarUtilizador(userFinal);
+          return true;
+        }
+      }
+
+      console.warn('Perfil do parceiro de entregas ainda não foi criado.');
+      return false;
+    }
+
     console.warn('Cliente não encontrado. A criar perfil cliente automaticamente.');
 
 
@@ -505,7 +533,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cliente?.email_login) {
         emailLogin = cliente.email_login;
       } else {
-
         // Procurar em vendedores
         const { data: vendedor } = await supabase
           .from('vendedores')
@@ -518,38 +545,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-
     console.log('========================');
     console.log('IDENTIFICADOR:', identificador);
     console.log('EMAIL LOGIN FINAL:', emailLogin);
     console.log('========================');
 
-    const { data, error } =
-      await supabase.auth.signInWithPassword({
-        email: emailLogin,
+    let lastSignInError: any = null;
+
+    const attemptSignIn = async (email: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
         password: senha,
       });
 
-    if (!error && data.user) {
+      lastSignInError = error;
 
-      const perfilCarregado =
-        await carregarPerfilSupabase(data.user);
-
-      if (!perfilCarregado) {
-        console.error(
-          'Login autenticou, mas não carregou perfil.'
-        );
-        return false;
+      if (!error && data.user) {
+        const perfilCarregado = await carregarPerfilSupabase(data.user);
+        if (!perfilCarregado) {
+          console.error('Login autenticou, mas não carregou perfil.');
+          return false;
+        }
+        return true;
       }
 
+      return false;
+    };
+
+    if (await attemptSignIn(emailLogin)) {
       return true;
     }
 
-    console.warn(
-      'Login Supabase falhou:',
-      error?.message
-    );
+    if (!emailLogin.endsWith('@telefone.angrolink')) {
+      const { data: parceiro } = await supabase
+        .from('parceiros_entrega')
+        .select('telefone')
+        .eq('email', emailLogin)
+        .maybeSingle();
 
+      if (parceiro?.telefone) {
+        const emailInterno = gerarEmailInterno(parceiro.telefone.replace(/\D/g, ''));
+        if (await attemptSignIn(emailInterno)) {
+          return true;
+        }
+      }
+    }
+
+    console.warn('Login Supabase falhou:', lastSignInError?.message);
     return false;
   };
 
@@ -694,6 +736,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  // Atualiza o papel quando a mesma conta passa a ter outro perfil na
+  // plataforma, sem obrigar o utilizador a terminar e reiniciar a sessão.
+  const recarregarPerfil = async (): Promise<boolean> => {
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) return false;
+    return carregarPerfilSupabase(data.user);
+  };
+
   return (
     <AuthContexto.Provider
       value={{
@@ -705,6 +755,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         pronto,
         tipoComprador,
         atualizarTipoComprador,
+        recarregarPerfil,
       }}
     >
       {children}

@@ -244,19 +244,24 @@ export default function PaginaCriarProduto() {
           />
 
           {/* IMAGEM */}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={e =>
-              setImagem(e.target.files?.[0] || null)
-            }
-          />
+          <div className="space-y-2">
+            <label className="inline-flex cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
+              Escolher imagem
+              <input
+                type="file"
+                accept="image/*"
+                onChange={e =>
+                  setImagem(e.target.files?.[0] || null)
+                }
+                className="sr-only"
+              />
+            </label>
 
-          {preview && (
-            <img
-              src={preview}
-              className="w-40 h-40 object-cover border"
-            />
+            {preview && (
+              <img
+                src={preview}
+                className="w-40 h-40 object-cover border"
+              />
           )}
 
           {/* BOTÃO */}

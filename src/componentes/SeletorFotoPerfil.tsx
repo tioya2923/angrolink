@@ -49,28 +49,31 @@ export default function SeletorFotoPerfil({
         </div>
       )}
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const ficheiro = e.target.files?.[0];
+      <label className="inline-flex cursor-pointer items-center justify-center rounded-md border-2 border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+        Escolher imagem
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const ficheiro = e.target.files?.[0];
 
-          if (!ficheiro) return;
+            if (!ficheiro) return;
 
-          if (!ficheiro.type.startsWith('image/')) {
-            toast.error('Escolha uma imagem.');
-            return;
-          }
+            if (!ficheiro.type.startsWith('image/')) {
+              toast.error('Escolha uma imagem.');
+              return;
+            }
 
-          if (ficheiro.size > 5 * 1024 * 1024) {
-            toast.error('A imagem deve ter menos de 5MB.');
-            return;
-          }
+            if (ficheiro.size > 5 * 1024 * 1024) {
+              toast.error('A imagem deve ter menos de 5MB.');
+              return;
+            }
 
-          onSelecionar(ficheiro);
-        }}
-        className="block w-full text-sm"
-      />
+            onSelecionar(ficheiro);
+          }}
+          className="sr-only"
+        />
+      </label>
     </div>
   );
 }

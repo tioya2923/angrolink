@@ -338,8 +338,9 @@ export default function ClienteDefinicoes() {
             )}
           </div>
 
-          <label className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-green-700 text-white flex items-center justify-center cursor-pointer hover:bg-green-900 transition-colors shadow-md">
+          <label className="absolute bottom-0 right-0 flex items-center gap-1 rounded-full bg-green-700 px-3 py-1 text-white cursor-pointer hover:bg-green-900 transition-colors shadow-md">
             <Camera size={12} />
+            <span className="text-xs font-medium">Alterar foto</span>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"

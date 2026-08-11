@@ -83,6 +83,8 @@ export async function verificarDuplicados(
 
   let vendedorEmail = null;
   let vendedorEmailLogin = null;
+  let parceiroTelefone = null;
+  let parceiroEmail = null;
 
   if (emailNormalizado) {
 
@@ -114,7 +116,21 @@ export async function verificarDuplicados(
         .eq('email_login', emailNormalizado)
         .maybeSingle());
 
+    ({ data: parceiroEmail } =
+      await supabase
+        .from('parceiros_entrega')
+        .select('id')
+        .eq('email', emailNormalizado)
+        .maybeSingle());
+
   }
+
+  ({ data: parceiroTelefone } =
+    await supabase
+      .from('parceiros_entrega')
+      .select('id')
+      .eq('telefone', telefoneFormatado)
+      .maybeSingle());
 
   console.log('========================');
   console.log('Telefone recebido:', telefone);
@@ -123,9 +139,11 @@ export async function verificarDuplicados(
 
   console.log('clienteTelefone:', clienteTelefone);
   console.log('vendedorTelefone:', vendedorTelefone);
+  console.log('parceiroTelefone:', parceiroTelefone);
 
   console.log('clienteEmail:', clienteEmail);
   console.log('vendedorEmail:', vendedorEmail);
+  console.log('parceiroEmail:', parceiroEmail);
 
   console.log('========================');
 
@@ -133,13 +151,15 @@ export async function verificarDuplicados(
 
     telefoneExiste:
       !!clienteTelefone ||
-      !!vendedorTelefone,
+      !!vendedorTelefone ||
+      !!parceiroTelefone,
 
     emailExiste:
       !!clienteEmail ||
       !!clienteEmailLogin ||
       !!vendedorEmail ||
-      !!vendedorEmailLogin,
+      !!vendedorEmailLogin ||
+      !!parceiroEmail,
 
   };
 

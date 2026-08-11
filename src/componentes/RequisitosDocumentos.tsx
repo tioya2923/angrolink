@@ -81,14 +81,27 @@ export default function RequisitosDocumentos({ tipo, valores, onChange, fotos, o
                     {(['frente', 'verso'] as const).map(lado => (
                       <div key={lado} className="space-y-1">
                         <Label className="font-corpo text-xs font-medium">{lado === 'frente' ? 'Foto da frente *' : 'Foto do verso *'}</Label>
-                        <Input
+                      <div className="flex flex-col gap-2">
+                        <input
+                          id={`documento-${id}-${lado}`}
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
                           required
                           onChange={e => onFotoChange?.(id, lado, e.target.files?.[0])}
-                          className="cursor-pointer border-2 border-border text-xs file:mr-2 file:rounded file:border-0 file:bg-primary file:px-2 file:py-1 file:text-xs file:font-medium file:text-primary-foreground"
+                          className="sr-only"
                         />
-                        {fotos?.[id]?.[lado] && <p className="truncate font-corpo text-[11px] text-primary">Selecionada: {fotos[id][lado]!.name}</p>}
+                        <label
+                          htmlFor={`documento-${id}-${lado}`}
+                          className="inline-flex cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition"
+                        >
+                          Escolher imagem
+                        </label>
+                        {fotos?.[id]?.[lado] && (
+                          <p className="truncate font-corpo text-[11px] text-primary">
+                            Selecionada: {fotos[id][lado]!.name}
+                          </p>
+                        )}
+                      </div>
                       </div>
                     ))}
                   </div>

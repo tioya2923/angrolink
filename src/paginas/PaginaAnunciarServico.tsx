@@ -277,11 +277,24 @@ export default function PaginaAnunciarServico() {
                   </button>
                 </>
               ) : (
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleImagemChange}
-                />
+                <div className="flex flex-col items-center gap-2">
+                  <input
+                    id="imagem-servico"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleImagemChange}
+                    className="sr-only"
+                  />
+                  <label
+                    htmlFor="imagem-servico"
+                    className="inline-flex cursor-pointer items-center justify-center rounded-md border-2 border-primary bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                  >
+                    Escolher imagem
+                  </label>
+                  <p className="font-corpo text-xs text-muted-foreground">
+                    JPG, PNG ou WEBP (máximo 3 MB)
+                  </p>
+                </div>
               )}
             </div>
           </div>

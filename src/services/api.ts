@@ -1164,9 +1164,9 @@ export type EstadoParceiroAdmin =
 
 export async function fetchParceirosEntregaAdmin() {
   const db: any = supabase;
-  const { data, error } = await db
+  const { data: parceiros, error } = await db
     .from('parceiros_entrega')
-    .select('*, veiculos_entrega(*), areas_cobertura_entrega(*), documentos_parceiro_entrega(*)')
+    .select('*')
     .order('criado_em', { ascending: false });
 
   if (error) {
@@ -1174,7 +1174,27 @@ export async function fetchParceirosEntregaAdmin() {
     throw error;
   }
 
-  return data || [];
+  if (!parceiros?.length) return [];
+
+  // Carregamento explícito: a cache de relações do PostgREST pode devolver
+  // listas vazias num select aninhado, embora os dados existam nas tabelas.
+  const ids = parceiros.map((parceiro: any) => parceiro.id);
+  const [veiculos, areas, documentos] = await Promise.all([
+    db.from('veiculos_entrega').select('*').in('parceiro_id', ids),
+    db.from('areas_cobertura_entrega').select('*').in('parceiro_id', ids),
+    db.from('documentos_parceiro_entrega').select('*').in('parceiro_id', ids),
+  ]);
+
+  if (veiculos.error) throw veiculos.error;
+  if (areas.error) throw areas.error;
+  if (documentos.error) throw documentos.error;
+
+  return parceiros.map((parceiro: any) => ({
+    ...parceiro,
+    veiculos_entrega: (veiculos.data || []).filter((veiculo: any) => veiculo.parceiro_id === parceiro.id),
+    areas_cobertura_entrega: (areas.data || []).filter((area: any) => area.parceiro_id === parceiro.id),
+    documentos_parceiro_entrega: (documentos.data || []).filter((documento: any) => documento.parceiro_id === parceiro.id),
+  }));
 }
 
 export async function atualizarEstadoParceiroEntrega(
@@ -1299,9 +1319,18 @@ export async function reenviarDocumentoParceiro(documentoId: string, frente: Fil
 }
 
 export async function obterUrlDocumentoParceiro(path: string) {
+  // Registos antigos podem guardar a URL pública que era gerada no cadastro.
+  // O bucket é privado; convertemos essa URL de volta ao caminho do ficheiro
+  // para gerar sempre uma URL assinada válida.
+  const marcadorBucket = '/documentos-parceiros/';
+  const inicioCaminho = path.indexOf(marcadorBucket);
+  const caminho = inicioCaminho >= 0
+    ? decodeURIComponent(path.slice(inicioCaminho + marcadorBucket.length).split('?')[0])
+    : path;
+
   const { data, error } = await supabase.storage
     .from('documentos-parceiros')
-    .createSignedUrl(path, 60 * 10);
+    .createSignedUrl(caminho, 60 * 10);
 
   if (error) throw error;
   return data.signedUrl;
@@ -1309,14 +1338,85 @@ export async function obterUrlDocumentoParceiro(path: string) {
 
 export async function fetchMeuParceiroEntrega(userId: string) {
   const db: any = supabase;
-  const { data, error } = await db
+  const { data: parceiro, error } = await db
     .from('parceiros_entrega')
-    .select('*, veiculos_entrega(*), areas_cobertura_entrega(*), documentos_parceiro_entrega(*)')
+    .select('*')
     .eq('user_id', userId)
     .maybeSingle();
 
   if (error) throw error;
+  if (!parceiro) return null;
+
+  // Consultas separadas evitam que uma relação ainda não atualizada na cache
+  // do PostgREST faça o painel parecer vazio após o cadastro.
+  const [veiculos, areas, documentos] = await Promise.all([
+    db.from('veiculos_entrega').select('*').eq('parceiro_id', parceiro.id),
+    db.from('areas_cobertura_entrega').select('*').eq('parceiro_id', parceiro.id),
+    db.from('documentos_parceiro_entrega').select('*').eq('parceiro_id', parceiro.id),
+  ]);
+
+  if (veiculos.error) throw veiculos.error;
+  if (areas.error) throw areas.error;
+  if (documentos.error) throw documentos.error;
+
+  return {
+    ...parceiro,
+    veiculos_entrega: veiculos.data || [],
+    areas_cobertura_entrega: areas.data || [],
+    documentos_parceiro_entrega: documentos.data || [],
+  };
+}
+
+export async function atualizarMeuParceiroEntrega(parceiroId: string, dados: Record<string, unknown>) {
+  const db: any = supabase;
+  const { data, error } = await db
+    .from('parceiros_entrega')
+    .update(dados)
+    .eq('id', parceiroId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
   return data;
+}
+
+export async function atualizarVeiculoEntrega(veiculoId: string, dados: Record<string, unknown>) {
+  const db: any = supabase;
+  const { data, error } = await db
+    .from('veiculos_entrega')
+    .update(dados)
+    .eq('id', veiculoId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function atualizarAreaCoberturaEntrega(areaId: string, dados: Record<string, unknown>) {
+  const db: any = supabase;
+  const { data, error } = await db
+    .from('areas_cobertura_entrega')
+    .update(dados)
+    .eq('id', areaId)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function uploadFotoPerfilParceiro(parceiroId: string, ficheiro: File) {
+  const extensao = ficheiro.name.split('.').pop() || 'jpg';
+  const caminho = `${parceiroId}/perfil-${crypto.randomUUID()}.${extensao}`;
+  const { error: uploadError } = await supabase.storage
+    .from('documentos-parceiros')
+    .upload(caminho, ficheiro, { contentType: ficheiro.type });
+  if (uploadError) throw uploadError;
+
+  // O bucket é privado: guardamos o caminho e a interface cria uma URL
+  // assinada temporária apenas para o dono ou administrador autorizado.
+  return caminho;
 }
 
 export async function atualizarDisponibilidadeParceiroEntrega(
