@@ -14,6 +14,8 @@ import Favoritos from './cliente/Favoritos';
 import ClienteHistorico from './cliente/ClienteHistorico';
 import ClienteRecomendacoes from './cliente/ClienteRecomendacoes';
 import ClienteDefinicoes from './cliente/ClienteDefinicoes';
+import ClienteEncomendas from './cliente/ClienteEncomendas';
+import ClienteEncomendaDetalhe from './cliente/ClienteEncomendaDetalhe';
 
 import VendedorResumo from './vendedor/VendedorResumo';
 import VendedorProdutos from './vendedor/VendedorProdutos';
@@ -26,6 +28,9 @@ import VendedorPerfil from './vendedor/VendedorPerfil';
 import VendedorServicos from './vendedor/VendedorServicos';
 import AdminRankings from './admin/AdminRankings';
 import ParceiroResumo from './parceiro/ParceiroResumo';
+import VendedorDocumentos from './vendedor/VendedorDocumentos';
+import VendedorEncomendas from './vendedor/VendedorEncomendas';
+import VendedorEncomendaDetalhe from './vendedor/VendedorEncomendaDetalhe';
 
 export default function DashboardRouter() {
 
@@ -84,15 +89,15 @@ return(
 <Route index element={<VendedorResumo/>}/>
 <Route
   path="produtos"
-  element={<VendedorProdutos />}
+  element={utilizador.status_aprovacao === 'aprovado' ? <VendedorProdutos /> : <Navigate to="/dashboard/documentos" replace />}
 />
 <Route
   path="servicos"
-  element={<VendedorServicos />}
+  element={utilizador.status_aprovacao === 'aprovado' ? <VendedorServicos /> : <Navigate to="/dashboard/documentos" replace />}
 />
 <Route
   path="favoritos"
-  element={<Favoritos />}
+  element={utilizador.status_aprovacao === 'aprovado' ? <Favoritos /> : <Navigate to="/dashboard/documentos" replace />}
 />
 <Route
   path="adicionar"
@@ -148,13 +153,16 @@ return(
   }
 />
 
-<Route path="desempenho" element={<VendedorDesempenho/>}/>
+<Route path="desempenho" element={utilizador.status_aprovacao === 'aprovado' ? <VendedorDesempenho/> : <Navigate to="/dashboard/documentos" replace />}/>
 <Route
   path="contactos"
-  element={<VendedorContactos />}
+  element={utilizador.status_aprovacao === 'aprovado' ? <VendedorContactos /> : <Navigate to="/dashboard/documentos" replace />}
 />
-<Route path="estatisticas" element={<VendedorEstatisticas/>}/>
+<Route path="estatisticas" element={utilizador.status_aprovacao === 'aprovado' ? <VendedorEstatisticas/> : <Navigate to="/dashboard/documentos" replace />}/>
 <Route path="perfil" element={<VendedorPerfil/>}/>
+<Route path="documentos" element={<VendedorDocumentos/>}/>
+<Route path="encomendas" element={<VendedorEncomendas/>}/>
+<Route path="encomendas/:id" element={<VendedorEncomendaDetalhe/>}/>
 </>
 )}
 
@@ -165,6 +173,8 @@ return(
 <Route path="historico" element={<ClienteHistorico/>}/>
 <Route path="recomendacoes" element={<ClienteRecomendacoes/>}/>
 <Route path="definicoes" element={<ClienteDefinicoes/>}/>
+<Route path="encomendas" element={<ClienteEncomendas/>}/>
+<Route path="encomendas/:id" element={<ClienteEncomendaDetalhe/>}/>
 </>
 )}
 

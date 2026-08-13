@@ -17,6 +17,7 @@ import {
 import { Servico } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { obterPromocao } from '@/lib/precos';
 
 import {
@@ -71,6 +72,8 @@ export default function VendedorServicos() {
   useEffect(() => {
     carregarServicos();
   }, [utilizador?.vendedor_id]);
+
+  useAtualizacaoTempoReal(['servicos', 'vendedores'], carregarServicos);
 
   const irAdicionarServico = () => {
     if (vendedorPendente) {

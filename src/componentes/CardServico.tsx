@@ -105,6 +105,7 @@ export default function CardServico({
     utilizador?.id,
     utilizador?.papel,
     servico?.id,
+    podeFavoritar,
   ]);
 
   if (!servico) return null;

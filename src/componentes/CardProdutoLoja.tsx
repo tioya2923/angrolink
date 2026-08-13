@@ -4,6 +4,7 @@ import { Eye, MapPin, MessageCircle } from "lucide-react";
 import { Produto } from "@/tipos";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
 import { obterPromocao } from '@/lib/precos';
+import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
 
 interface Props {
   produto: Produto;
@@ -147,6 +148,7 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
               WhatsApp
             </a>
           )}
+          <AcoesCompraProduto produto={produto} vendedorNome={vendedor?.nome_comercial} modo="card" />
         </div>
       </div>
     </div>

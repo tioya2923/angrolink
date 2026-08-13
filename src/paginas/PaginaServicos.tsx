@@ -7,6 +7,7 @@ import ListaServicos from '@/componentes/ListaServicos';
 import { fetchServicos } from '@/services/api';
 import { Servico } from '@/tipos';
 import { MUNICIPIOS, PROVINCIAS } from '@/dados/constantes';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 
 const TIPOS_SERVICO = [
   'Transporte de mercadorias',
@@ -49,6 +50,11 @@ export default function PaginaServicos() {
 
     carregarServicos();
   }, []);
+
+  useAtualizacaoTempoReal(['servicos', 'vendedores'], async () => {
+    const data = await fetchServicos();
+    setServicos(Array.isArray(data) ? data : []);
+  });
 
   const municipiosFiltrados = MUNICIPIOS.filter(
     m => m.provincia_id === PROVINCIAS.find(p => p.nome === provincia)?.id

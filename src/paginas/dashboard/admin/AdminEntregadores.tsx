@@ -14,6 +14,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { useToast } from '@/hooks/use-toast';
 import {
   atualizarEstadoParceiroEntrega,
@@ -83,6 +84,11 @@ export default function AdminEntregadores({ apenasPedidos = false }: { apenasPed
   };
 
   useEffect(() => { carregar(); }, []);
+
+  useAtualizacaoTempoReal(
+    ['parceiros_entrega', 'veiculos_entrega', 'documentos_parceiro_entrega', 'areas_cobertura_entrega'],
+    carregar,
+  );
 
   const contadores = useMemo(() => ({
     pendentes: parceiros.filter(p => estadoPendente(p.estado)).length,

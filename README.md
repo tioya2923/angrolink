@@ -1,73 +1,54 @@
-# Welcome to your Lovable project
+# ANGROLINK
 
-## Project info
+Marketplace angolano para compra e venda de produtos, serviços e futura logística de entregas de mercadorias.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Perfis da plataforma
 
-## How can I edit this code?
+- **Cliente:** pesquisa produtos e serviços, guarda favoritos e contacta anunciantes.
+- **Vendedor:** cria um perfil comercial, submete documentos para análise e publica produtos ou serviços após aprovação.
+- **Parceiro de entregas:** regista veículo, zona de cobertura e documentação para análise administrativa. Só pode receber pedidos depois de aprovado.
+- **Administrador:** analisa pedidos, documentos, anúncios e utilizações da plataforma.
 
-There are several ways of editing your application.
+## Tecnologias
 
-**Use Lovable**
+- React, TypeScript, Vite e Tailwind CSS
+- Supabase Authentication, Database e Storage
+- React Router e TanStack React Query
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Configuração local
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Instale as dependências:
 
-**Use your preferred IDE**
+   ```bash
+   npm install
+   ```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+2. Crie um ficheiro `.env` a partir deste modelo:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+   ```env
+   VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+   VITE_SUPABASE_ANON_KEY=SUA_CHAVE_ANON
+   VITE_SUPABASE_BUCKET_PRODUTOS=produtos
+   ```
 
-Follow these steps:
+3. Aplique no Supabase, pela ordem necessária, as migrações em `supabase/migrations/`. Estas migrações criam as estruturas e regras de segurança usadas pelos pedidos de vendedores e parceiros de entregas.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+4. Inicie a aplicação:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+   ```bash
+   npm run dev
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+## Verificação antes de publicar
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```bash
+npm run lint
+npm run test
+npm run build
 ```
 
-**Edit a file directly in GitHub**
+## Regras importantes
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- A aprovação, rejeição, suspensão e permissões devem ser garantidas por RLS e funções do Supabase; o estado apresentado na interface não é uma proteção de segurança por si só.
+- Os documentos de vendedores e parceiros de entrega são dados sensíveis. Evite colocá-los em buckets públicos e utilize URLs assinadas quando forem privados.
+- Números de telefone são guardados no formato internacional (`+indicativo` + número). Para Angola, o formulário aceita nove dígitos e aplica o indicativo `+244` selecionado pelo utilizador.

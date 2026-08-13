@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import { CalendarDays, Mail, MapPin, Phone, Trash2, User, ShieldCheck, Store } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { obterRotuloCompletoVendedor } from '@/dados/constantes';
 
 import {
@@ -115,6 +116,8 @@ export default function AdminUtilizadores() {
   useEffect(() => {
     carregarUtilizadores();
   }, []);
+
+  useAtualizacaoTempoReal(['clientes', 'vendedores', 'parceiros_entrega'], carregarUtilizadores);
 
   const normalizarTipoConta = (tipo: string) => {
     if (tipo === 'comprador') return 'cliente';

@@ -8,6 +8,7 @@ import { Star, Eye, EyeOff, MapPin, Package, Tag } from 'lucide-react';
 
 import { Produto } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 
 import {
   fetchProdutosAdmin,
@@ -42,6 +43,8 @@ export default function AdminProdutos() {
   useEffect(() => {
     carregarProdutos();
   }, []);
+
+  useAtualizacaoTempoReal(['produtos', 'vendedores', 'categorias'], carregarProdutos);
 
   const toggleDestaque = async (produto: Produto) => {
     try {

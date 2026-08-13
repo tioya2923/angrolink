@@ -468,7 +468,7 @@ export default function VendedorPerfil() {
     try {
       setApagandoConta(true);
 
-      const { error } = await (supabase as any).rpc('desativar_minha_conta');
+      const { error } = await supabase.rpc('desativar_minha_conta');
 
       if (error) throw error;
 

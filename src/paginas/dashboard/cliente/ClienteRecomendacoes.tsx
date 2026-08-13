@@ -17,6 +17,7 @@ import {
   incrementarCliqueWhatsappProduto,
 } from '@/services/api';
 import { Produto } from '@/tipos';
+import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
 
 type ProdutoRecomendado = Produto & {
   vendedor?: {
@@ -371,6 +372,7 @@ export default function ClienteRecomendacoes() {
                       </a>
                     )}
                   </div>
+                  <AcoesCompraProduto produto={produto} vendedorNome={produto.vendedor?.nome_comercial} modo="card" />
                 </div>
               </div>
             );

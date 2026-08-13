@@ -24,6 +24,8 @@ import {
 
 import { Produto } from '@/tipos';
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
+import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
 
 export default function PaginaProduto() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +34,9 @@ export default function PaginaProduto() {
   const [produto, setProduto] = useState<Produto | null>(null);
   const [relacionados, setRelacionados] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(['produtos', 'vendedores', 'categorias'], () => setVersaoTempoReal(v => v + 1));
 
   useEffect(() => {
     async function carregarProduto() {
@@ -109,7 +114,7 @@ export default function PaginaProduto() {
     }
 
     carregarProduto();
-  }, [id, utilizador?.id, utilizador?.papel, utilizador?.vendedor_id]);
+  }, [id, utilizador?.id, utilizador?.papel, utilizador?.vendedor_id, versaoTempoReal]);
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -280,6 +285,10 @@ export default function PaginaProduto() {
                     <SeloVendedor vendedor={vendedor} />
                   </div>
                 </div>
+              )}
+
+              {vendedor && (
+                <AcoesCompraProduto produto={produto} vendedorNome={vendedor.nome_comercial} />
               )}
 
               {vendedor && (

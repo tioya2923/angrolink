@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import {
   BarChart3,
   Eye,
@@ -19,6 +20,12 @@ export default function AdminRankings() {
   const [vendedores, setVendedores] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(
+    ['produtos', 'servicos', 'vendedores', 'historico_contactos', 'historico_contactos_servicos'],
+    () => setVersaoTempoReal(v => v + 1),
+  );
 
   useEffect(() => {
     async function carregarRankings() {
@@ -42,7 +49,7 @@ export default function AdminRankings() {
     }
 
     carregarRankings();
-  }, []);
+  }, [versaoTempoReal]);
 
   if (loading) {
     return (

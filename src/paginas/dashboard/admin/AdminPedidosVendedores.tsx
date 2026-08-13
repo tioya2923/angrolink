@@ -4,13 +4,24 @@
  * Suspender, bloquear e eliminar devem ficar na Gestão de Vendedores.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle, XCircle, MapPin, Calendar, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { obterRotuloCompletoVendedor } from '@/dados/constantes';
 import { StatusVendedorAprovacao } from '@/tipos';
+import {
+  listarDocumentosVendedor,
+  obterDocumentosLegadosVendedor,
+  obterUrlAssinadaDocumentoVendedor,
+  analisarDocumentoVendedor,
+  documentoVendedorPodeSerAnalisado,
+  validarRejeicaoCandidaturaVendedor,
+  type DocumentoVendedor,
+  type TipoRejeicaoCandidatura,
+} from '@/services/documentosVendedor';
 
 import {
   fetchVendedoresAdmin,
@@ -49,6 +60,7 @@ export default function AdminPedidosVendedores() {
   const [pedidoParaRejeitar, setPedidoParaRejeitar] =
     useState<PedidoVendedor | null>(null);
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
+  const [tipoRejeicao, setTipoRejeicao] = useState<TipoRejeicaoCandidatura | null>(null);
   const [aRejeitar, setARejeitar] = useState(false);
 
   useEffect(() => {
@@ -82,6 +94,33 @@ export default function AdminPedidosVendedores() {
       .then(lista => setPedidosEntregadores(lista.filter((parceiro: any) => ['rascunho', 'documentos_pendentes', 'em_analise'].includes(parceiro.estado)).length))
       .catch(() => setPedidosEntregadores(0));
   }, []);
+
+  useAtualizacaoTempoReal(
+    ['vendedores', 'parceiros_entrega', 'documentos_parceiro_entrega', 'veiculos_entrega'],
+    async () => {
+      const data = await fetchVendedoresAdmin();
+      setPedidos((data || []).map((v: any) => ({
+        id: v.id,
+        nome_comercial: v.nome_comercial,
+        nome_responsavel: v.nome_responsavel,
+        tipo_vendedor: v.tipo_vendedor,
+        provincia: v.provincia,
+        municipio: v.municipio,
+        mercado_bairro: v.mercado_bairro,
+        telefone: v.telefone_whatsapp || v.whatsapp || '',
+        email: v.email,
+        descricao: v.descricao,
+        data_registo: v.criado_em,
+        estado: v.status_aprovacao || 'pendente',
+        ano_inicio: v.ano_inicio,
+        entrega_disponivel: v.entrega_disponivel,
+        motivo_rejeicao: v.motivo_rejeicao || null,
+        dados: v,
+      })));
+      const parceiros = await fetchParceirosEntregaAdmin();
+      setPedidosEntregadores(parceiros.filter((parceiro: any) => ['rascunho', 'documentos_pendentes', 'em_analise'].includes(parceiro.estado)).length);
+    },
+  );
 
   const alterarEstado = async (
     id: string,
@@ -130,10 +169,25 @@ export default function AdminPedidosVendedores() {
 
   const confirmarRejeicao = async () => {
     const motivo = motivoRejeicao.trim();
-    if (!pedidoParaRejeitar || !motivo) {
+    if (!pedidoParaRejeitar) return;
+
+    let documentos: DocumentoVendedor[];
+    try {
+      documentos = await listarDocumentosVendedor(pedidoParaRejeitar.id);
+    } catch (erro) {
       toast({
-        title: 'Motivo obrigatório',
-        description: 'O pedido não foi rejeitado. Indique um motivo claro para o vendedor.',
+        title: 'Não foi possível validar os documentos',
+        description: erro instanceof Error ? erro.message : 'Tente novamente antes de rejeitar a candidatura.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const erroValidacao = validarRejeicaoCandidaturaVendedor(tipoRejeicao, motivo, documentos);
+    if (erroValidacao) {
+      toast({
+        title: 'Rejeição não concluída',
+        description: erroValidacao,
         variant: 'destructive',
       });
       return;
@@ -144,6 +198,7 @@ export default function AdminPedidosVendedores() {
       await alterarEstado(pedidoParaRejeitar.id, 'rejeitado', motivo);
       setPedidoParaRejeitar(null);
       setMotivoRejeicao('');
+      setTipoRejeicao(null);
     } finally {
       setARejeitar(false);
     }
@@ -368,6 +423,7 @@ export default function AdminPedidosVendedores() {
                     onClick={() => {
                       setPedidoParaRejeitar(p);
                       setMotivoRejeicao('');
+                      setTipoRejeicao(null);
                     }}
                     className="flex items-center gap-1 font-corpo text-xs border-2 border-destructive text-destructive px-3 py-1.5 rounded hover:bg-destructive hover:text-destructive-foreground transition-colors"
                   >
@@ -415,17 +471,29 @@ export default function AdminPedidosVendedores() {
               <div>
                 <h2 className="font-titulo text-lg font-bold">Rejeitar pedido de vendedor</h2>
                 <p className="mt-1 font-corpo text-sm text-muted-foreground">
-                  Indique um motivo claro para <strong>{pedidoParaRejeitar.nome_comercial}</strong>. Este motivo será mostrado ao vendedor e o acesso ficará bloqueado até a análise ser reaberta.
+                  Indique um motivo claro para <strong>{pedidoParaRejeitar.nome_comercial}</strong>. Este motivo será mostrado ao vendedor; a conta ficará em modo restrito até nova análise e aprovação.
                 </p>
               </div>
             </div>
+
+            <fieldset className="mt-5 space-y-2">
+              <legend className="font-corpo text-sm font-semibold">Tipo de motivo *</legend>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 font-corpo text-sm hover:bg-muted/40">
+                <input type="radio" name="tipo-rejeicao" checked={tipoRejeicao === 'documental'} onChange={() => setTipoRejeicao('documental')} className="mt-1" />
+                <span><strong>Documentos precisam de correção</strong><small className="mt-1 block text-muted-foreground">Rejeite primeiro cada documento incorreto e indique o respetivo motivo.</small></span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3 font-corpo text-sm hover:bg-muted/40">
+                <input type="radio" name="tipo-rejeicao" checked={tipoRejeicao === 'nao_documental'} onChange={() => setTipoRejeicao('nao_documental')} className="mt-1" />
+                <span><strong>Motivo não documental</strong><small className="mt-1 block text-muted-foreground">Ex.: atividade proibida, fraude, duplicação ou dados comerciais inconsistentes.</small></span>
+              </label>
+            </fieldset>
 
             <label className="mt-5 block space-y-2">
               <span className="font-corpo text-sm font-semibold">Motivo da rejeição *</span>
               <textarea
                 value={motivoRejeicao}
                 onChange={e => setMotivoRejeicao(e.target.value)}
-                placeholder="Ex.: Os documentos apresentados não correspondem aos dados do responsável."
+                placeholder={tipoRejeicao === 'nao_documental' ? 'Ex.: A atividade declarada não é permitida pela plataforma.' : 'Ex.: O BI apresentado não corresponde aos dados do responsável.'}
                 className="min-h-28 w-full rounded-lg border-2 border-border bg-background p-3 font-corpo text-sm focus:border-destructive focus:outline-none focus:ring-2 focus:ring-destructive/15"
                 autoFocus
               />
@@ -434,7 +502,7 @@ export default function AdminPedidosVendedores() {
             <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <button
                 type="button"
-                onClick={() => setPedidoParaRejeitar(null)}
+                onClick={() => { setPedidoParaRejeitar(null); setTipoRejeicao(null); }}
                 disabled={aRejeitar}
                 className="rounded-lg border-2 border-border px-4 py-2 font-corpo text-sm font-semibold hover:bg-muted disabled:opacity-50"
               >
@@ -443,7 +511,7 @@ export default function AdminPedidosVendedores() {
               <button
                 type="button"
                 onClick={confirmarRejeicao}
-                disabled={aRejeitar || !motivoRejeicao.trim()}
+                disabled={aRejeitar || !motivoRejeicao.trim() || !tipoRejeicao}
                 className="rounded-lg bg-destructive px-4 py-2 font-corpo text-sm font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {aRejeitar ? 'A rejeitar...' : 'Confirmar rejeição'}
@@ -486,10 +554,6 @@ function DadosPedido({ dados }: { dados: Record<string, any> }) {
     ['Venda presencial', dados.venda_presencial == null ? null : dados.venda_presencial ? 'Sim' : 'Não'],
   ].filter(([, valor]) => valor !== null && valor !== undefined && valor !== '');
 
-  const documentos = dados.documentos && typeof dados.documentos === 'object'
-    ? Object.entries(dados.documentos as Record<string, Record<string, string>>)
-    : [];
-
   return (
     <div className="mt-4 space-y-3 rounded-lg border border-border bg-muted/30 p-3">
       <p className="font-corpo text-xs font-semibold text-foreground">Dados submetidos no cadastro</p>
@@ -502,30 +566,159 @@ function DadosPedido({ dados }: { dados: Record<string, any> }) {
         ))}
       </dl>
 
-      <div className="border-t border-border pt-3">
-        <p className="font-corpo text-xs font-semibold">Documentos informados</p>
-        {documentos.length > 0 ? (
-          <div className="mt-2 space-y-2">
-            {documentos.map(([documentoId, valores]) => (
-              <div key={documentoId} className="rounded border border-border bg-background p-2">
-                <p className="font-corpo text-xs font-medium">{documentoId.replace(/_/g, ' ')}</p>
-                {Object.entries(valores).map(([campo, valor]) =>
-                  campo === 'foto_frente' || campo === 'foto_verso' ? (
-                    <a key={campo} href={String(valor)} target="_blank" rel="noreferrer" className="mt-2 block overflow-hidden rounded border border-border bg-muted/30">
-                      <img src={String(valor)} alt={`${campo === 'foto_frente' ? 'Frente' : 'Verso'} do documento`} className="h-32 w-full object-contain" />
-                      <span className="block px-2 py-1 font-corpo text-[11px] font-medium text-primary">Ver foto: {campo === 'foto_frente' ? 'frente' : 'verso'}</span>
-                    </a>
-                  ) : (
-                    <p key={campo} className="font-corpo text-xs text-muted-foreground">{campo.replace(/_/g, ' ')}: {String(valor)}</p>
-                  )
+      <DocumentosPedidoVendedor vendedorId={dados.id} />
+    </div>
+  );
+}
+
+function DocumentosPedidoVendedor({ vendedorId }: { vendedorId: string }) {
+  const { toast } = useToast();
+  const [documentos, setDocumentos] = useState<DocumentoVendedor[]>([]);
+  const [temDadosLegados, setTemDadosLegados] = useState(false);
+  const [aCarregar, setACarregar] = useState(true);
+  const [documentoParaRejeitar, setDocumentoParaRejeitar] = useState<string | null>(null);
+  const [motivoDocumento, setMotivoDocumento] = useState('');
+  const [aAnalisar, setAAnalisar] = useState<string | null>(null);
+
+  const carregarDocumentos = useCallback(async () => {
+    setACarregar(true);
+    try {
+      const documentosPrivados = await listarDocumentosVendedor(vendedorId);
+      const documentosLegados = documentosPrivados.length === 0
+        ? await obterDocumentosLegadosVendedor(vendedorId)
+        : null;
+
+      setDocumentos(documentosPrivados);
+      setTemDadosLegados(Boolean(documentosLegados && Object.keys(documentosLegados).length > 0));
+    } catch {
+      setDocumentos([]);
+      setTemDadosLegados(false);
+    } finally {
+      setACarregar(false);
+    }
+  }, [vendedorId]);
+
+  useEffect(() => {
+    void carregarDocumentos();
+  }, [carregarDocumentos]);
+
+  useAtualizacaoTempoReal(['documentos_vendedor'], carregarDocumentos);
+
+  const abrirDocumento = async (path: string) => {
+    try {
+      const url = await obterUrlAssinadaDocumentoVendedor(path);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch {
+      window.alert('Não foi possível abrir este documento privado. Tente novamente.');
+    }
+  };
+
+  const analisarDocumento = async (
+    documento: DocumentoVendedor,
+    estado: 'aprovado' | 'rejeitado',
+    motivo?: string,
+  ) => {
+    try {
+      setAAnalisar(documento.id);
+      const atualizado = await analisarDocumentoVendedor(documento.id, estado, motivo);
+      setDocumentos(anterior => anterior.map(item => item.id === atualizado.id ? atualizado : item));
+      setDocumentoParaRejeitar(null);
+      setMotivoDocumento('');
+      toast({
+        title: estado === 'aprovado' ? 'Documento aprovado' : 'Documento rejeitado',
+        description: estado === 'aprovado'
+          ? 'A análise deste documento foi registada.'
+          : 'O vendedor poderá reenviar apenas este documento.',
+      });
+    } catch (erro) {
+      toast({
+        title: 'Não foi possível atualizar o documento',
+        description: erro instanceof Error ? erro.message : 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setAAnalisar(null);
+    }
+  };
+
+  return (
+    <section className="border-t border-border pt-3">
+      <p className="font-corpo text-xs font-semibold">Documentos para análise</p>
+      <p className="mt-1 font-corpo text-[11px] text-muted-foreground">
+        As imagens novas são privadas e só abrem por ligação temporária para administradores.
+      </p>
+      {aCarregar ? (
+        <p className="mt-2 font-corpo text-xs text-muted-foreground">A carregar documentos...</p>
+      ) : documentos.length > 0 ? (
+        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+          {documentos.map(documento => (
+            <article key={documento.id} className="rounded border border-border bg-background p-2">
+              <p className="font-corpo text-xs font-medium capitalize">{documento.tipo_documento.replace(/_/g, ' ')}</p>
+              <p className="mt-1 font-corpo text-[11px] text-muted-foreground">
+                Estado: {documento.estado.replace(/_/g, ' ')}
+                {documento.numero_documento ? ` · N.º ${documento.numero_documento}` : ''}
+              </p>
+              {documento.motivo_rejeicao && (
+                <p className="mt-1 font-corpo text-[11px] text-destructive">Motivo: {documento.motivo_rejeicao}</p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" onClick={() => abrirDocumento(documento.frente_path)} className="font-corpo text-xs font-semibold text-primary underline">
+                  Abrir frente
+                </button>
+                {documento.verso_path && (
+                  <button type="button" onClick={() => abrirDocumento(documento.verso_path!)} className="font-corpo text-xs font-semibold text-primary underline">
+                    Abrir verso
+                  </button>
                 )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className="mt-1 font-corpo text-xs text-muted-foreground">Não existem documentos guardados para este pedido antigo.</p>
-        )}
-      </div>
-    </div>
+              {documentoVendedorPodeSerAnalisado(documento.estado) && <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+                <button
+                  type="button"
+                  disabled={aAnalisar === documento.id}
+                  onClick={() => void analisarDocumento(documento, 'aprovado')}
+                  className="rounded border border-primary px-2 py-1 font-corpo text-xs font-semibold text-primary hover:bg-primary hover:text-primary-foreground disabled:opacity-50"
+                >
+                  {aAnalisar === documento.id ? 'A guardar...' : 'Aprovar documento'}
+                </button>
+                <button
+                  type="button"
+                  disabled={aAnalisar === documento.id}
+                  onClick={() => { setDocumentoParaRejeitar(documento.id); setMotivoDocumento(''); }}
+                  className="rounded border border-destructive px-2 py-1 font-corpo text-xs font-semibold text-destructive hover:bg-destructive hover:text-destructive-foreground disabled:opacity-50"
+                >
+                  Rejeitar documento
+                </button>
+              </div>}
+              {documentoVendedorPodeSerAnalisado(documento.estado) && documentoParaRejeitar === documento.id && (
+                <div className="mt-3 rounded border border-destructive/30 bg-destructive/5 p-3">
+                  <label className="block font-corpo text-xs font-semibold">
+                    Motivo da rejeição deste documento *
+                    <textarea
+                      value={motivoDocumento}
+                      onChange={evento => setMotivoDocumento(evento.target.value)}
+                      placeholder="Ex.: A fotografia está ilegível; envie uma imagem nítida."
+                      className="mt-2 min-h-20 w-full rounded border border-border bg-background p-2 font-corpo text-xs focus:border-destructive focus:outline-none"
+                      autoFocus
+                    />
+                  </label>
+                  <div className="mt-2 flex gap-2">
+                    <button type="button" onClick={() => { setDocumentoParaRejeitar(null); setMotivoDocumento(''); }} className="rounded border border-border px-2 py-1 font-corpo text-xs font-semibold hover:bg-muted">Cancelar</button>
+                    <button type="button" disabled={!motivoDocumento.trim() || aAnalisar === documento.id} onClick={() => void analisarDocumento(documento, 'rejeitado', motivoDocumento)} className="rounded bg-destructive px-2 py-1 font-corpo text-xs font-semibold text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50">Confirmar rejeição</button>
+                  </div>
+                </div>
+              )}
+              {documento.estado === 'aprovado' && <p className="mt-3 border-t border-border pt-3 font-corpo text-xs font-medium text-primary">Documento validado. Não requer nova ação.</p>}
+              {documento.estado === 'rejeitado' && <p className="mt-3 border-t border-border pt-3 font-corpo text-xs text-muted-foreground">A aguardar o reenvio corrigido pelo vendedor.</p>}
+            </article>
+          ))}
+        </div>
+      ) : temDadosLegados ? (
+        <p className="mt-2 font-corpo text-xs text-muted-foreground">
+          Este pedido possui documentos legados. Os dados foram preservados, mas as imagens devem ser migradas para a área privada antes de nova análise.
+        </p>
+      ) : (
+        <p className="mt-2 font-corpo text-xs text-muted-foreground">Não existem documentos privados enviados neste pedido.</p>
+      )}
+    </section>
   );
 }

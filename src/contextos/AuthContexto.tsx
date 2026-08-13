@@ -12,12 +12,13 @@ import {
   ReactNode,
 } from 'react';
 
-import { Utilizador, TipoComprador } from '@/tipos';
+import { Utilizador, TipoComprador, Vendedor } from '@/tipos';
 import { supabase } from '@/services/supabase';
 import {
   gerarEmailInterno,
   normalizarIdentificadorLogin,
 } from '@/lib/verificacoesConta';
+import { COLUNAS_VENDEDOR_SEM_DOCUMENTOS } from '@/services/vendedores';
 
 const STORAGE_KEY = 'angrolink_auth_user';
 const STORAGE_TIPO_COMPRADOR = 'angrolink_tipo_comprador';
@@ -149,45 +150,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
       guardarUtilizador(adminUser);
-      console.log('AUTH PERFIL — admin carregado:', adminUser);
       return true;
     }
 
-    console.log('AUTH PERFIL — procurar vendedor por user_id:', authUser.id);
-
-    const { data: vendedor, error: vendedorError } = await supabase
+    const { data: dadosVendedor, error: vendedorError } = await supabase
       .from('vendedores')
-      .select('*')
+      .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
       .eq('user_id', authUser.id)
       .maybeSingle();
-
-    console.log('AUTH PERFIL — resposta vendedor:', {
-      vendedor,
-      vendedorError,
-    });
+    const vendedor = dadosVendedor as unknown as (Vendedor & { conta_ativa: boolean | null }) | null;
 
     if (vendedorError) {
       console.error('Erro ao carregar vendedor:', vendedorError);
       return false;
     }
 
-    // 🔥 ALTERAÇÃO AQUI (segura e mínima)
     if (vendedor) {
-      if (vendedor.status_aprovacao === 'rejeitado') {
-        const motivo = vendedor.motivo_rejeicao?.trim();
-        const mensagem = motivo
-          ? `O seu pedido de cadastro foi rejeitado.\n\nMotivo indicado: ${motivo}\n\nEntre em contacto com a equipa ANGROLINK para resolver esta situação.`
-          : 'O seu pedido de cadastro foi rejeitado. Entre em contacto com a equipa ANGROLINK para resolver esta situação.';
-
-        localStorage.setItem(STORAGE_MENSAGEM_REJEICAO, mensagem);
-        if (utilizador?.id === authUser.id) window.alert(mensagem);
-
-        await supabase.auth.signOut();
-        setUtilizador(null);
-        localStorage.removeItem(STORAGE_KEY);
-        return false;
-      }
-
+      // Rejeição e suspensão restringem funções comerciais, mas não são um
+      // bloqueio de autenticação: o vendedor precisa entrar para consultar e
+      // corrigir a candidatura/documentação.
       if (vendedor.conta_ativa === false) {
         await supabase.auth.signOut();
 
@@ -201,12 +182,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userFinal: Utilizador = montarUtilizadorVendedor(vendedor, authUser);
 
       guardarUtilizador(userFinal);
-
-      console.log('AUTH PERFIL — vendedor carregado:', userFinal);
       return true;
     }
 
-    const { data: parceiro, error: parceiroError } = await (supabase as any)
+    const { data: parceiro, error: parceiroError } = await supabase
       .from('parceiros_entrega')
       .select('*')
       .eq('user_id', authUser.id)
@@ -229,18 +208,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     }
 
-    console.log('AUTH PERFIL — procurar cliente por id:', authUser.id);
-
     const { data: cliente, error: clienteError } = await supabase
       .from('clientes')
       .select('*')
       .eq('id', authUser.id)
       .maybeSingle();
-
-    console.log('AUTH PERFIL — resposta cliente:', {
-      cliente,
-      clienteError,
-    });
 
     if (clienteError) {
       console.error('Erro ao carregar cliente:', clienteError);
@@ -260,7 +232,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const userFinal = montarUtilizadorCliente(cliente, authUser);
       guardarUtilizador(userFinal);
-      console.log('AUTH PERFIL — cliente carregado:', userFinal);
       return true;
     }
 
@@ -268,22 +239,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (papelMetadata === 'vendedor') {
 
-      console.log(
-        'Aguardar criação do perfil de vendedor...'
-      );
-
       for (let i = 0; i < 10; i++) {
 
         await new Promise(resolve =>
           setTimeout(resolve, 500)
         );
 
-        const { data: vendedorNovo } =
+        const { data: dadosVendedorNovo } =
           await supabase
             .from('vendedores')
-            .select('*')
+            .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
             .eq('user_id', authUser.id)
             .maybeSingle();
+        const vendedorNovo = dadosVendedorNovo as unknown as Vendedor | null;
 
         if (vendedorNovo) {
 
@@ -307,8 +275,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (papelMetadata === 'parceiro_entrega') {
-      console.log('Aguardar criação do perfil de parceiro de entregas...');
-
       for (let i = 0; i < 10; i++) {
         await new Promise(resolve => setTimeout(resolve, 500));
 
@@ -361,7 +327,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const userFinal = montarUtilizadorCliente(clienteCriado, authUser);
     guardarUtilizador(userFinal);
-    console.log('AUTH PERFIL — cliente criado automaticamente:', userFinal);
 
     return true;
   };
@@ -504,17 +469,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       identificador
     );
 
-      console.log('======================');
-      console.log('Entrada:', identificador);
-      console.log('EmailLogin inicial:', emailLogin);
-
     // 1. Login pelo número
     const apenasNumeros = emailLogin.replace(/\D/g, '');
 
-    if (
-      apenasNumeros.length === 9 ||
-      apenasNumeros.length === 12
-    ) {
+    // Aceita o número nacional de 9 dígitos (Angola) ou um número
+    // internacional completo. O limite de 15 segue o formato E.164.
+    if (/^\d{9,15}$/.test(emailLogin)) {
       emailLogin = gerarEmailInterno(apenasNumeros);
     }
 
@@ -527,8 +487,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('email_login')
         .eq('email', emailLogin)
         .maybeSingle();
-
-        console.log('CLIENTE:', cliente);
 
       if (cliente?.email_login) {
         emailLogin = cliente.email_login;
@@ -545,11 +503,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-    console.log('========================');
-    console.log('IDENTIFICADOR:', identificador);
-    console.log('EMAIL LOGIN FINAL:', emailLogin);
-    console.log('========================');
-
     let lastSignInError: any = null;
 
     const attemptSignIn = async (email: string) => {
@@ -607,12 +560,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const emailLogin =
       gerarEmailInterno(dados.telefone || '', dados.indicativo);
 
-    console.log('========== CADASTRO ==========');
-    console.log('EMAIL LOGIN:', emailLogin);
-    console.log('EMAIL OPCIONAL:', emailOpcional);
-    console.log('==============================');
-
-
     const { data, error } = await supabase.auth.signUp({
       email: emailLogin,
       password: dados.senha,
@@ -627,10 +574,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       },
     });
-    console.log('AUTH USER:', data.user);
-    console.log('AUTH SESSION:', data.session);
-    console.log('AUTH ERROR:', error);
-
     if (error || !data.user) {
       if (error?.message === 'User already registered') {
         throw new Error('EMAIL_JA_REGISTADO');
@@ -675,11 +618,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         fotoPerfilUrl =
           urlPublica.publicUrl;
-
-        console.log(
-        'FOTO URL:',
-        fotoPerfilUrl
-        );
       }
     }
 
@@ -696,11 +634,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       atualizado_em: new Date().toISOString(),
     };
-
-    console.log(
-    'NOVO CLIENTE:',
-    novoCliente
-    );
 
     const { error: erroCliente } = await supabase
       .from('clientes')

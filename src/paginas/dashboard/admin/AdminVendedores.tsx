@@ -8,6 +8,7 @@ import { CalendarDays, Mail, MapPin, Phone, ShieldCheck, CheckCircle, Store, XCi
 
 import { Vendedor, PlanoVendedor, TipoVendedor } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { CATALOGO_DOCUMENTOS, obterRequisitosDocumentos } from '@/dados/documentosVendedor';
 
 import {
@@ -45,6 +46,8 @@ export default function AdminVendedores() {
   useEffect(() => {
     carregarVendedores();
   }, []);
+
+  useAtualizacaoTempoReal(['vendedores', 'produtos', 'servicos'], carregarVendedores);
 
   const atualizarVendedorLocal = (vendedorAtualizado: Vendedor) => {
     setVendedores(prev =>

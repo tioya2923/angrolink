@@ -18,6 +18,7 @@ import {
 import { gerarLinkWhatsApp } from '@/lib/whatsapp';
 import { Servico } from '@/tipos';
 import SeloVendedor from '@/componentes/SeloVendedor';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 
 export default function PaginaServico() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,9 @@ export default function PaginaServico() {
 
   const [servico, setServico] = useState<Servico | null>(null);
   const [loading, setLoading] = useState(true);
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(['servicos', 'vendedores'], () => setVersaoTempoReal(v => v + 1));
 
   // ====================================
   // CARREGAR SERVIÇO + REGISTAR VIEW
@@ -80,7 +84,7 @@ export default function PaginaServico() {
     }
 
     carregarServico();
-  }, [id, utilizador?.id, utilizador?.papel, utilizador?.vendedor_id]);
+  }, [id, utilizador?.id, utilizador?.papel, utilizador?.vendedor_id, versaoTempoReal]);
 
   // ====================================
   // REGISTAR CLIQUE WHATSAPP

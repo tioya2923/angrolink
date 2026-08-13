@@ -38,6 +38,7 @@ import {
 import { useAuth } from '@/contextos/AuthContexto';
 import { PapelUtilizador } from '@/tipos';
 import { obterUrlDocumentoParceiro } from '@/services/api';
+import { rotuloEstadoVendedor, vendedorPodeOperarComercialmente } from '@/lib/acessoVendedor';
 
 interface ItemMenu {
   rotulo: string;
@@ -150,6 +151,12 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       icone: UserCircle,
       caminho: '/dashboard/perfil',
     },
+    { rotulo: 'Encomendas', icone: ClipboardList, caminho: '/dashboard/encomendas' },
+    {
+      rotulo: 'Documentos',
+      icone: FileCheck2,
+      caminho: '/dashboard/documentos',
+    },
   ],
 
   cliente: [
@@ -158,6 +165,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       icone: LayoutDashboard,
       caminho: '/dashboard',
     },
+    { rotulo: 'Encomendas', icone: ClipboardList, caminho: '/dashboard/encomendas' },
     {
       rotulo: 'Histórico',
       icone: Clock,
@@ -213,9 +221,7 @@ export default function DashboardLayout({
 
   if (!utilizador) return null;
 
-  const vendedorAprovado =
-    utilizador.papel === 'vendedor' &&
-    utilizador.status_aprovacao === 'aprovado';
+  const vendedorAprovado = utilizador.papel === 'vendedor' && vendedorPodeOperarComercialmente(utilizador);
 
   const menuBase = MENUS[utilizador.papel];
 
@@ -231,14 +237,9 @@ export default function DashboardLayout({
   const inicialNome =
     utilizador.nome?.charAt(0).toUpperCase() || '?';
 
-  const estadoVendedor =
-    utilizador.papel === 'vendedor'
-      ? utilizador.status_aprovacao === 'aprovado'
-        ? 'Aprovado'
-        : utilizador.status_aprovacao === 'suspenso'
-          ? 'Suspenso'
-          : 'Em aprovação'
-      : null;
+  const estadoVendedor = utilizador.papel === 'vendedor'
+    ? rotuloEstadoVendedor(utilizador.status_aprovacao)
+    : null;
 
   const estadoParceiro =
     utilizador.papel === 'parceiro_entrega'
@@ -251,14 +252,14 @@ export default function DashboardLayout({
             : 'Em análise'
       : null;
 
-  const menu =
-    utilizador.papel === 'vendedor' && !vendedorAprovado
-      ? menuBase.filter(
-          item =>
-            item.caminho !== '/dashboard/adicionar' &&
-            item.caminho !== '/dashboard/adicionar-servico'
-        )
-      : menuBase;
+  const menu = utilizador.papel === 'vendedor' && !vendedorAprovado
+    ? menuBase.filter(item => [
+      '/dashboard',
+      '/dashboard/encomendas',
+      '/dashboard/perfil',
+      '/dashboard/documentos',
+    ].includes(item.caminho))
+    : menuBase;
 
   const handleLogout = async () => {
     await logout();
@@ -403,6 +404,8 @@ export default function DashboardLayout({
                       ? '🟢 Conta aprovada'
                       : utilizador.status_aprovacao === 'suspenso'
                       ? '🔴 Conta suspensa'
+                      : utilizador.status_aprovacao === 'rejeitado'
+                      ? '🔴 Cadastro rejeitado'
                       : '🟡 Em aprovação'}
                   </div>
 

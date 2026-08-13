@@ -79,7 +79,6 @@ export default function PaginaCadastroParceiroEntrega() {
       const emailLogin = `${form.indicativo}${form.telefone}@telefone.angrolink`;
       const emailOpcional = normalizarEmail(form.email);
       const authEmail = emailOpcional || emailLogin;
-      const db: any = supabase;
       let authUser: { id: string; email?: string | null } | null = null;
 
       // Uma conta de comprador pode tornar-se também parceira. Primeiro usamos
@@ -166,7 +165,7 @@ export default function PaginaCadastroParceiroEntrega() {
       }
       const provincia = PROVINCIAS.find(p => p.id === form.provincia)?.nome || '';
       const municipio = MUNICIPIOS.find(m => m.id === form.municipio)?.nome || '';
-      const { error: erroSubmissao } = await db.rpc(
+      const { error: erroSubmissao } = await supabase.rpc(
         'criar_pedido_parceiro_entrega',
         {
           p_dados: {

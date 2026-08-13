@@ -7,6 +7,7 @@ import ListaServicos from '@/componentes/ListaServicos';
 import { Produto, Servico } from '@/tipos';
 
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 
 import {
   listarFavoritosProdutos,
@@ -23,6 +24,9 @@ export default function ClienteFavoritos() {
     useState<Servico[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(['favoritos', 'produtos', 'servicos'], () => setVersaoTempoReal(v => v + 1));
 
   const [abaAtiva, setAbaAtiva] =
     useState<'produtos' | 'servicos'>('produtos');
@@ -82,7 +86,7 @@ export default function ClienteFavoritos() {
     }
 
     carregar();
-  }, [utilizador?.id]);
+  }, [utilizador?.id, versaoTempoReal]);
 
   const semFavoritos = produtos.length === 0 && servicos.length === 0;
 

@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { Users, Package, Star, ShieldCheck, MapPin } from 'lucide-react';
 
 import {
@@ -18,6 +19,12 @@ export default function AdminResumo() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(
+    ['clientes', 'vendedores', 'produtos', 'servicos', 'parceiros_entrega'],
+    () => setVersaoTempoReal(v => v + 1),
+  );
 
   useEffect(() => {
     async function carregarDados() {
@@ -41,7 +48,7 @@ export default function AdminResumo() {
     }
 
     carregarDados();
-  }, []);
+  }, [versaoTempoReal]);
 
   const metricas = useMemo(() => {
     const totalVendedores = vendedores.length;

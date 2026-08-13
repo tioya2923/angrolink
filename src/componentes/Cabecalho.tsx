@@ -5,15 +5,17 @@
  */
 
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Leaf, LogIn, LogOut, User, ChevronDown } from 'lucide-react';
+import { Menu, X, Leaf, LogIn, LogOut, User, ChevronDown, ShoppingCart } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contextos/AuthContexto';
 import CategoriaSidebar from '@/componentes/CategoriaSidebar';
+import { useCarrinho } from '@/hooks/useCarrinho';
 
 export default function Cabecalho() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [perfilAberto, setPerfilAberto] = useState(false);
   const { utilizador, autenticado, logout } = useAuth();
+  const { quantidadeItens } = useCarrinho();
   const navigate = useNavigate();
   const perfilRef = useRef<HTMLDivElement>(null);
 
@@ -108,6 +110,11 @@ export default function Cabecalho() {
             </Link>
           ))}
 
+          <Link to="/carrinho" aria-label={`Carrinho com ${quantidadeItens} itens`} className="relative rounded-lg p-2 text-white hover:bg-white/10" title="Carrinho">
+            <ShoppingCart className="size-5" />
+            {quantidadeItens > 0 && <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-amber-400 px-1 text-center text-[10px] font-bold text-green-950">{quantidadeItens > 99 ? '99+' : quantidadeItens}</span>}
+          </Link>
+
           {!autenticado && (
             <>
               <Link to="/login" className="font-corpo text-sm font-medium text-foreground hover:text-primary transition-colors flex items-center gap-1 text-white">
@@ -183,6 +190,9 @@ export default function Cabecalho() {
                 {l.label}
               </Link>
             ))}
+            <Link to="/carrinho" className="flex items-center gap-2 py-2 font-corpo text-base font-medium text-foreground" onClick={fecharMenu}>
+              <ShoppingCart className="size-4" /> Carrinho {quantidadeItens > 0 ? `(${quantidadeItens})` : ''}
+            </Link>
 
             {!autenticado && (
               <>

@@ -17,6 +17,7 @@ import {
 import { Link } from "react-router-dom";
 
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { Produto, Servico } from '@/tipos';
 import CardResumoAnuncio from '@/componentes/CardResumoAnuncio';
 import CardStat from "@/componentes/CardStat";
@@ -56,6 +57,12 @@ export default function VendedorResumo() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
   const [loading, setLoading] = useState(true);
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(
+    ['vendedores', 'produtos', 'servicos', 'historico_contactos', 'historico_contactos_servicos'],
+    () => setVersaoTempoReal(v => v + 1),
+  );
 
   useEffect(() => {
     async function carregarDados() {
@@ -84,7 +91,7 @@ export default function VendedorResumo() {
     }
 
     carregarDados();
-  }, [utilizador?.vendedor_id]);
+  }, [utilizador?.vendedor_id, versaoTempoReal]);
 
   const stats = useMemo(() => {
     const itens = [...produtos, ...servicos];
@@ -278,6 +285,15 @@ export default function VendedorResumo() {
           </div>
         </CardContent>
       </Card>
+
+      {estadoConta === 'rejeitado' && (
+        <section className="rounded-2xl border-2 border-destructive/35 bg-destructive/5 p-5">
+          <h2 className="font-titulo text-lg font-bold">Cadastro rejeitado</h2>
+          <p className="mt-1 font-corpo text-sm text-muted-foreground">A sua conta continua acessível para corrigir a candidatura, mas as funções comerciais permanecem bloqueadas até nova decisão.</p>
+          {utilizador.motivo_rejeicao && <p className="mt-3 font-corpo text-sm"><strong>Motivo:</strong> {utilizador.motivo_rejeicao}</p>}
+          <Link to="/dashboard/documentos" className="mt-4 inline-flex rounded-lg bg-primary px-4 py-2 font-corpo text-sm font-semibold text-primary-foreground">Ver documentos e corrigir</Link>
+        </section>
+      )}
 
       {/* Estado da conta / resumo de atividade */}
       <div className={`border-2 p-4 rounded-md ${vendedorAprovado ? 'border-green-700 bg-green-50' : estadoConta === 'suspenso' ? 'border-red-300 bg-red-50' : 'border-yellow-400 bg-yellow-50'}`}>

@@ -34,6 +34,7 @@ import SeletorTelefone from '@/componentes/SeletorTelefone';
 import RequisitosDocumentos from '@/componentes/RequisitosDocumentos';
 import SeletorFotoPerfil from '@/componentes/SeletorFotoPerfil';
 import { CATALOGO_DOCUMENTOS, documentosObrigatoriosEmFalta, obterRequisitosDocumentos } from '@/dados/documentosVendedor';
+import { submeterDocumentosVendedor, type DocumentoVendedorParaSubmissao } from '@/services/documentosVendedor';
 
 import {
   verificarDuplicados,
@@ -559,10 +560,6 @@ export default function PaginaAnunciar() {
         },
       });
 
-      console.log(authData);
-      console.log(authData.session);
-      console.log(authData.user);
-
       let authUser = authData.user;
 
       // Se uma tentativa anterior criou o utilizador de autenticação mas não
@@ -637,27 +634,6 @@ export default function PaginaAnunciar() {
         fotoPerfilUrl = data.publicUrl;
       }
 
-      const documentosComFotos = structuredClone(formVendedor.documentos) as Record<string, Record<string, string>>;
-      if (tipoVendedorSelecionado) {
-        for (const [documentoId, fotos] of Object.entries(fotosDocumentos)) {
-          for (const lado of ['frente', 'verso'] as const) {
-            const ficheiro = fotos[lado];
-            if (!ficheiro) continue;
-            const extensao = ficheiro.name.split('.').pop() || 'jpg';
-            const caminho = `documentos/${authUser.id}/${documentoId}-${lado}-${crypto.randomUUID()}.${extensao}`;
-            const { error: erroUploadDocumento } = await supabase.storage.from('vendedores').upload(caminho, ficheiro, { contentType: ficheiro.type });
-            if (erroUploadDocumento) throw erroUploadDocumento;
-            const { data } = supabase.storage.from('vendedores').getPublicUrl(caminho);
-            documentosComFotos[documentoId] = { ...documentosComFotos[documentoId], [`foto_${lado}`]: data.publicUrl };
-          }
-        }
-      }
-
-      console.log(
-        'TIPO VENDEDOR:',
-        tipoVendedorSelecionado
-      );
-
       const novoVendedor = {
         user_id: authUser.id,
 
@@ -683,8 +659,6 @@ export default function PaginaAnunciar() {
         endereco_detalhado: formPerfil.endereco || null,
 
         tipo_vendedor: tipoVendedorSelecionado,
-        documentos: documentosComFotos,
-
         plano: 'gratuito',
         verificado: false,
         status_aprovacao: 'pendente',
@@ -726,53 +700,20 @@ export default function PaginaAnunciar() {
         atualizado_em: new Date().toISOString(),
       };
 
-      console.log('NOVO VENDEDOR:', novoVendedor);
-
-      console.log(
-      'ANTES DO INSERT DO VENDEDOR'
-      );
-
-      console.log(novoVendedor);
-
-      let { data, error: vendedorError } = await supabase
+      const { data: vendedorCriado, error: vendedorError } = await supabase
         .from('vendedores')
         .insert(novoVendedor)
-        .select();
-
-      // Compatibilidade temporária: permite concluir o cadastro em bases que
-      // ainda não receberam a migração da coluna "documentos".
-      if (vendedorError?.code === 'PGRST204' && vendedorError.message?.includes("'documentos'")) {
-        const { documentos: _documentos, ...novoVendedorSemDocumentos } = novoVendedor;
-        const resultadoAlternativo = await supabase
-          .from('vendedores')
-          .insert(novoVendedorSemDocumentos)
-          .select();
-
-        data = resultadoAlternativo.data;
-        vendedorError = resultadoAlternativo.error;
-
-        if (!vendedorError) {
-          toast.info('Conta criada. Os dados dos documentos serão guardados após a atualização da base de dados.');
-        }
-      }
-
-        console.log(data);
-        console.log(vendedorError);
-
-        console.log(
-        'DEPOIS DO INSERT'
-        );
-
-        console.log(vendedorError);
+        .select('id')
+        .single();
 
       if (vendedorError) {
 
         console.error('ERRO:', vendedorError);
 
-        console.log('message:', vendedorError?.message);
-        console.log('details:', vendedorError?.details);
-        console.log('hint:', vendedorError?.hint);
-        console.log('code:', vendedorError?.code);
+        if (vendedorError.code === 'PGRST204' && vendedorError.message?.includes("'documentos'")) {
+          toast.error('A base de dados ainda não está preparada para receber os documentos. Aplique a migração antes de aceitar novos pedidos de vendedor.');
+          return;
+        }
 
         toast.error(
           'Não foi possível criar o perfil de vendedor. Verifica os dados e tenta novamente.'
@@ -781,16 +722,29 @@ export default function PaginaAnunciar() {
         return;
       }
 
-      const {
-        data: loginData,
-        error: loginError,
-      } = await supabase.auth.signInWithPassword({
+      const documentosParaSubmissao: DocumentoVendedorParaSubmissao[] = Object.entries(fotosDocumentos)
+        .flatMap(([tipo_documento, fotos]) => {
+          if (!fotos.frente || !fotos.verso) return [];
+          return [{
+            tipo_documento: tipo_documento as DocumentoVendedorParaSubmissao['tipo_documento'],
+            valores: formVendedor.documentos[tipo_documento] || {},
+            frente: fotos.frente,
+            verso: fotos.verso,
+          }];
+        });
+
+      try {
+        await submeterDocumentosVendedor(vendedorCriado.id, documentosParaSubmissao);
+      } catch (erroDocumentos) {
+        console.error('Erro ao submeter documentos privados do vendedor:', erroDocumentos);
+        toast.error('A conta foi criada, mas os documentos não puderam ser enviados. Entre na conta para concluir o envio antes da análise.');
+        return;
+      }
+
+      const { error: loginError } = await supabase.auth.signInWithPassword({
         email: emailLogin,
         password: formVendedor.senha,
       });
-
-      console.log('LOGIN DATA:', loginData);
-      console.log('LOGIN ERROR:', loginError);
 
       if (loginError) {
         console.error(loginError);

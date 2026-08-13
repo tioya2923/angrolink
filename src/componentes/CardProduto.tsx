@@ -16,6 +16,7 @@ import SeloVendedor from '@/componentes/SeloVendedor';
 import { gerarLinkWhatsApp } from '@/lib/whatsapp';
 import { obterBadgeVendedor } from '@/dados/constantes';
 import { useAuth } from '@/contextos/AuthContexto';
+import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
 import { formatarTempoRelativo }
   from '@/lib/datas';
 import { obterPromocao } from '@/lib/precos';
@@ -379,6 +380,12 @@ export default function CardProduto({
             Contactar  <MessageCircle size={15} />
           </a>
         )}
+
+        <AcoesCompraProduto
+          produto={produto}
+          vendedorNome={vendedor?.nome_comercial}
+          modo="card"
+        />
       </div>
     </div>
   );

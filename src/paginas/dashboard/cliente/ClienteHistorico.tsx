@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { History, MessageSquare, Package, Wrench } from 'lucide-react';
 
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { supabase } from '@/services/supabase';
 import { gerarLinkWhatsApp } from '@/lib/whatsapp';
 
@@ -33,6 +34,12 @@ export default function ClienteHistorico() {
 
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(
+    ['historico_contactos', 'historico_contactos_servicos', 'produtos', 'servicos'],
+    () => setVersaoTempoReal(v => v + 1),
+  );
   const [abaAtiva, setAbaAtiva] =
   useState<'produtos' | 'servicos'>(
     'produtos'
@@ -225,7 +232,7 @@ export default function ClienteHistorico() {
     }
 
     carregar();
-  }, [utilizador?.id]);
+  }, [utilizador?.id, versaoTempoReal]);
 
   if (loading) {
     return (

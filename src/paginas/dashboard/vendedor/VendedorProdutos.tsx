@@ -17,6 +17,7 @@ import {
 import { Produto } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { obterPromocao } from '@/lib/precos';
 
 import {
@@ -86,6 +87,8 @@ export default function VendedorProdutos() {
   useEffect(() => {
     carregarProdutos();
   }, [utilizador?.vendedor_id]);
+
+  useAtualizacaoTempoReal(['produtos', 'vendedores'], carregarProdutos);
 
   // =============================
   // REMOVER PRODUTO

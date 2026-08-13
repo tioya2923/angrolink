@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contextos/AuthContexto';
 
@@ -260,9 +260,11 @@ export default function PaginaCriarProduto() {
             {preview && (
               <img
                 src={preview}
+                alt="Pré-visualização do produto"
                 className="w-40 h-40 object-cover border"
               />
-          )}
+            )}
+          </div>
 
           {/* BOTÃO */}
           <button

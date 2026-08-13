@@ -49,9 +49,6 @@ export async function verificarDuplicados(
   const telefoneFormatado =
     telefoneCompleto(telefone, indicativo);
 
-  console.log('Telefone recebido:', telefone);
-  console.log('Telefone formatado:', telefoneFormatado);
-
   const emailNormalizado =
     normalizarEmail(email);
 
@@ -74,9 +71,6 @@ export async function verificarDuplicados(
         telefoneFormatado
       )
       .maybeSingle();
-
-      console.log('Cliente encontrado:', clienteTelefone);
-      console.log('Vendedor encontrado:', vendedorTelefone);
 
   let clienteEmail = null;
   let clienteEmailLogin = null;
@@ -131,21 +125,6 @@ export async function verificarDuplicados(
       .select('id')
       .eq('telefone', telefoneFormatado)
       .maybeSingle());
-
-  console.log('========================');
-  console.log('Telefone recebido:', telefone);
-  console.log('Telefone formatado:', telefoneFormatado);
-  console.log('Email:', emailNormalizado);
-
-  console.log('clienteTelefone:', clienteTelefone);
-  console.log('vendedorTelefone:', vendedorTelefone);
-  console.log('parceiroTelefone:', parceiroTelefone);
-
-  console.log('clienteEmail:', clienteEmail);
-  console.log('vendedorEmail:', vendedorEmail);
-  console.log('parceiroEmail:', parceiroEmail);
-
-  console.log('========================');
 
   return {
 

@@ -30,6 +30,7 @@ import { gerarLinkWhatsApp } from '@/lib/whatsapp';
 
 import { Vendedor, Produto, Servico } from '@/tipos';
 import CardServicoLoja from '@/componentes/CardServicoLoja';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 
 // =============================
 // HELPERS
@@ -63,6 +64,9 @@ export default function PaginaVendedor() {
   const [erro, setErro] = useState<string | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'servicos'>('produtos');
   const [pesquisa, setPesquisa] = useState("");
+  const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+
+  useAtualizacaoTempoReal(['vendedores', 'produtos', 'servicos'], () => setVersaoTempoReal(v => v + 1));
 
   useEffect(() => {
     async function carregar() {
@@ -107,7 +111,7 @@ export default function PaginaVendedor() {
     }
 
     carregar();
-  }, [id]);
+  }, [id, versaoTempoReal]);
 
   // =============================
   // PLANOS

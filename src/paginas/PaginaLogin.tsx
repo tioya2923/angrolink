@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn, UserPlus, ArrowLeft, Leaf } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { enviarRecuperacaoSenha } from '@/services/auth';
 
 export default function PaginaLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const { login, autenticado } = useAuth();
@@ -30,9 +31,10 @@ export default function PaginaLogin() {
 
   useEffect(() => {
     if (autenticado) {
-      navigate('/dashboard');
+      const destino = (location.state as { destino?: string } | null)?.destino;
+      navigate(destino || '/dashboard');
     }
-  }, [autenticado, navigate]);
+  }, [autenticado, location.state, navigate]);
 
   // ----------------------------------
   // LOGIN

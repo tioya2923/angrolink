@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, ClipboardList, Clock3, FileCheck2, MapPin, ShieldAlert, Truck, CircleHelp, Phone, MessageCircle } from 'lucide-react';
 import { useAuth } from '@/contextos/AuthContexto';
 import { useToast } from '@/hooks/use-toast';
+import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
@@ -40,29 +41,39 @@ export default function ParceiroResumo({ secao = 'resumo' }: { secao?: SecaoParc
   const [fotoVeiculoUrl, setFotoVeiculoUrl] = useState<string | null>(null);
   const [fotoPerfilUrl, setFotoPerfilUrl] = useState<string | null>(null);
 
-  useEffect(() => {
+  const carregarParceiro = async () => {
     if (!utilizador?.id) return;
-    fetchMeuParceiroEntrega(utilizador.id)
-      .then(async (dados) => {
-        setParceiro(dados);
-        const caminhoFoto = dados?.veiculos_entrega?.[0]?.foto_veiculo_path;
-        if (caminhoFoto) {
-          try {
-            setFotoVeiculoUrl(await obterUrlDocumentoParceiro(caminhoFoto));
-          } catch {
-            setFotoVeiculoUrl(null);
-          }
+    try {
+      const dados = await fetchMeuParceiroEntrega(utilizador.id);
+      setParceiro(dados);
+      const caminhoFoto = dados?.veiculos_entrega?.[0]?.foto_veiculo_path;
+      if (caminhoFoto) {
+        try {
+          setFotoVeiculoUrl(await obterUrlDocumentoParceiro(caminhoFoto));
+        } catch {
+          setFotoVeiculoUrl(null);
         }
-        if (dados?.foto_perfil_url) {
-          try {
-            setFotoPerfilUrl(await obterUrlDocumentoParceiro(dados.foto_perfil_url));
-          } catch {
-            setFotoPerfilUrl(null);
-          }
+      } else setFotoVeiculoUrl(null);
+      if (dados?.foto_perfil_url) {
+        try {
+          setFotoPerfilUrl(await obterUrlDocumentoParceiro(dados.foto_perfil_url));
+        } catch {
+          setFotoPerfilUrl(null);
         }
-      })
-      .catch(() => toast({ title: 'Não foi possível carregar os seus dados.', variant: 'destructive' }));
+      } else setFotoPerfilUrl(null);
+    } catch {
+      toast({ title: 'Não foi possível carregar os seus dados.', variant: 'destructive' });
+    }
+  };
+
+  useEffect(() => {
+    void carregarParceiro();
   }, [utilizador?.id]);
+
+  useAtualizacaoTempoReal(
+    ['parceiros_entrega', 'veiculos_entrega', 'documentos_parceiro_entrega', 'areas_cobertura_entrega'],
+    carregarParceiro,
+  );
 
   const aprovado = parceiro?.estado === 'aprovado';
   const veiculo = parceiro?.veiculos_entrega?.[0];
@@ -126,7 +137,7 @@ export default function ParceiroResumo({ secao = 'resumo' }: { secao?: SecaoParc
   </div>;
 }
 
-function Resumo({ parceiro, documentos, veiculo, aprovado, mudarDisponibilidade, aGuardar }: any) {
+function Resumo({ parceiro, documentos, veiculo, fotoVeiculoUrl, aprovado, mudarDisponibilidade, aGuardar }: any) {
   const documentosAprovados = documentos.filter((d: any) => d.estado === 'aprovado').length;
   return <>
     <Estado parceiro={parceiro} aprovado={aprovado}/>
@@ -136,7 +147,7 @@ function Resumo({ parceiro, documentos, veiculo, aprovado, mudarDisponibilidade,
       <Indicador rotulo="Documentos" valor={`${documentosAprovados}/${documentos.length}`} descricao="Documentos validados" icone={<FileCheck2/>}/>
       <Indicador rotulo="Zona base" valor={parceiro.areas_cobertura_entrega?.length || 0} descricao="Zona(s) registada(s)" icone={<MapPin/>}/>
     </div>
-    <div className="grid gap-5 lg:grid-cols-2"><Disponibilidade parceiro={parceiro} aprovado={aprovado} mudar={mudarDisponibilidade} aGuardar={aGuardar}/><ResumoVeiculo veiculo={veiculo}/></div>
+    <div className="grid gap-5 lg:grid-cols-2"><Disponibilidade parceiro={parceiro} aprovado={aprovado} mudar={mudarDisponibilidade} aGuardar={aGuardar}/><ResumoVeiculo veiculo={veiculo} fotoVeiculoUrl={fotoVeiculoUrl}/></div>
   </>;
 }
 

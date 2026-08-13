@@ -12,7 +12,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MunicipioProvider } from "@/contextos/MunicipioContexto";
 import { AuthProvider } from "@/contextos/AuthContexto";
+import { CarrinhoProvider } from "@/contextos/CarrinhoContexto";
 import { useAuth } from "@/contextos/AuthContexto";
+import AtualizacoesTempoReal from '@/componentes/AtualizacoesTempoReal';
 
 // Páginas
 import PaginaInicial from "@/paginas/PaginaInicial";
@@ -33,6 +35,8 @@ import PaginaTermos from "@/paginas/PaginaTermos";
 import PaginaPrivacidade from "@/paginas/PaginaPrivacidade";
 import PaginaComoFunciona from "@/paginas/PaginaComoFunciona";
 import PaginaCadastroParceiroEntrega from "@/paginas/PaginaCadastroParceiroEntrega";
+import PaginaCarrinho from "@/paginas/PaginaCarrinho";
+import PaginaCheckoutPendente from "@/paginas/PaginaCheckoutPendente";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,12 +63,14 @@ const App = () => (
     <TooltipProvider>
       <MunicipioProvider>
         <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <MensagensValidacaoNativas />
-            <Routes>
+          <CarrinhoProvider>
+          <AtualizacoesTempoReal>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <MensagensValidacaoNativas />
+              <Routes>
               {/* Páginas públicas */}
               <Route path="/" element={<RotaInicial />} />
               <Route path="/sobre-nos" element={<SobreNos />} />
@@ -79,6 +85,8 @@ const App = () => (
               <Route path="/parceiro-entregas/cadastro" element={<PaginaCadastroParceiroEntrega />} />
               <Route path="/anunciar-servico" element={<PaginaAnunciarServico />} />
               <Route path="/servicos" element={<PaginaServicos />} />
+              <Route path="/carrinho" element={<PaginaCarrinho />} />
+              <Route path="/checkout" element={<PaginaCheckoutPendente />} />
               {/* Autenticação */}
               <Route path="/login" element={<PaginaLogin />} />
               
@@ -87,8 +95,10 @@ const App = () => (
 
               {/* Rota genérica — 404 */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+              </Routes>
+            </BrowserRouter>
+          </AtualizacoesTempoReal>
+          </CarrinhoProvider>
         </AuthProvider>
       </MunicipioProvider>
     </TooltipProvider>

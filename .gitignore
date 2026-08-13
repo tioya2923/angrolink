@@ -15,6 +15,9 @@ dist-ssr
 # Environment variables (contains Supabase keys)
 .env
 
+# Metadados locais da Supabase CLI (projeto ligado, versões e URLs internas)
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -15,6 +15,7 @@ import {
   BUCKET_VENDEDORES,
   SUPABASE_STORAGE_PRODUTOS_URL,
 } from "./supabase";
+import { COLUNAS_VENDEDOR_SEM_DOCUMENTOS } from './vendedores';
 
 // Get the active vendor ID from localStorage or session storage
 const getVendedorAtivoId = (): string | null => {
@@ -38,7 +39,7 @@ async function garantirVendedorAprovado(vendedorId: string) {
   } = await supabase.auth.getUser();
 
   if (!user?.id) {
-    throw new Error('Utilizador não autenticado.');
+    throw new Error('Utilizador nÃ£o autenticado.');
   }
 
   const { data, error } = await supabase
@@ -50,12 +51,12 @@ async function garantirVendedorAprovado(vendedorId: string) {
 
   if (error) {
     console.error('Erro ao validar estado do vendedor:', error);
-    throw new Error('Não foi possível validar o estado do vendedor.');
+    throw new Error('NÃ£o foi possÃ­vel validar o estado do vendedor.');
   }
 
   if (data?.status_aprovacao !== 'aprovado') {
     throw new Error(
-      'A tua conta de vendedor não está aprovada para gerir produtos ou serviços.'
+      'A tua conta de vendedor nÃ£o estÃ¡ aprovada para gerir produtos ou serviÃ§os.'
     );
   }
 }
@@ -73,7 +74,7 @@ const toBool = (v: any, defaultValue = false) => {
 };
 
 
-// Normaliza texto para comparar categorias sem problemas de acentos/maiúsculas.
+// Normaliza texto para comparar categorias sem problemas de acentos/maiÃºsculas.
 export const normalizarTexto = (texto: string) =>
   texto
     .toLowerCase()
@@ -81,7 +82,7 @@ export const normalizarTexto = (texto: string) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-// Normaliza produto para evitar diferenças entre páginas públicas e dashboard.
+// Normaliza produto para evitar diferenÃ§as entre pÃ¡ginas pÃºblicas e dashboard.
 const normalizarProduto = (p: any): Produto => {
   const nomeCategoria = p.categoria?.nome || "Sem categoria";
   const imagem = p.imagem_url || "/placeholder.png";
@@ -153,7 +154,7 @@ export async function fetchProdutos(
     .from("produtos")
     .select(`
       *,
-      vendedor:vendedores!inner (*),
+      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .eq("disponivel", true)
@@ -206,7 +207,7 @@ export async function fetchProdutoPorId(id: string): Promise<Produto | null> {
     .from("produtos")
     .select(`
       *,
-      vendedor:vendedores!inner (*),
+      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .eq("id", id)
@@ -223,8 +224,8 @@ export async function fetchProdutoPorId(id: string): Promise<Produto | null> {
   return normalizarProduto(data);
 }
 
-// Leitura privada usada no formulário de edição. Não aplica os filtros do
-// catálogo público, para que o vendedor possa editar anúncios pausados.
+// Leitura privada usada no formulÃ¡rio de ediÃ§Ã£o. NÃ£o aplica os filtros do
+// catÃ¡logo pÃºblico, para que o vendedor possa editar anÃºncios pausados.
 export async function fetchProdutoParaEdicao(
   id: string,
   vendedorId: string,
@@ -237,7 +238,7 @@ export async function fetchProdutoParaEdicao(
     .maybeSingle();
 
   if (error) {
-    console.error('Erro ao carregar produto para edição:', error);
+    console.error('Erro ao carregar produto para ediÃ§Ã£o:', error);
     return null;
   }
 
@@ -256,7 +257,7 @@ export async function fetchProdutosRelacionados(
     .from("produtos")
     .select(`
       *,
-      vendedor:vendedores!inner (*),
+      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .eq("categoria_id", categoriaId)
@@ -282,7 +283,7 @@ export async function fetchProdutosRelacionados(
 export async function fetchVendedorPorId(id: string): Promise<Vendedor | null> {
   const { data, error } = await supabase
     .from("vendedores")
-    .select("*")
+    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
     .eq("id", id)
     .single();
 
@@ -291,7 +292,7 @@ export async function fetchVendedorPorId(id: string): Promise<Vendedor | null> {
     return null;
   }
 
-  return data as Vendedor;
+  return data as unknown as Vendedor;
 }
 
 // =============================
@@ -341,16 +342,16 @@ export async function fetchCategorias() {
 // =============================
 export async function uploadImagemProduto(file: File) {
   // =============================
-  // VALIDAÇÃO IMAGEM
+  // VALIDAÃ‡ÃƒO IMAGEM
   // =============================
   const tiposPermitidos = ["image/jpeg", "image/png", "image/webp"];
 
   if (!tiposPermitidos.includes(file.type)) {
-    throw new Error("Formato de imagem inválido");
+    throw new Error("Formato de imagem invÃ¡lido");
   }
 
   if (file.size > 3 * 1024 * 1024) {
-    throw new Error("Imagem demasiado grande (máx 3MB)");
+    throw new Error("Imagem demasiado grande (mÃ¡x 3MB)");
   }
 
   const mimeToExt: Record<string, string> = {
@@ -386,7 +387,7 @@ export async function uploadImagemProduto(file: File) {
     .getPublicUrl(fileName);
 
   if (!data?.publicUrl) {
-    throw new Error("Não foi possível gerar URL pública da imagem");
+    throw new Error("NÃ£o foi possÃ­vel gerar URL pÃºblica da imagem");
   }
 
   return data.publicUrl;
@@ -401,11 +402,11 @@ export async function uploadImagemVendedor(file: File) {
   const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
 
   if (!tiposPermitidos.includes(file.type)) {
-    throw new Error('Formato de imagem inválido. Use JPG, PNG ou WEBP.');
+    throw new Error('Formato de imagem invÃ¡lido. Use JPG, PNG ou WEBP.');
   }
 
   if (file.size > 3 * 1024 * 1024) {
-    throw new Error('Imagem demasiado grande (máx 3MB)');
+    throw new Error('Imagem demasiado grande (mÃ¡x 3MB)');
   }
 
   const mimeToExt: Record<string, string> = {
@@ -443,7 +444,7 @@ export async function uploadImagemVendedor(file: File) {
     .getPublicUrl(fileName);
 
   if (!data?.publicUrl) {
-    throw new Error('Não foi possível gerar URL pública da imagem');
+    throw new Error('NÃ£o foi possÃ­vel gerar URL pÃºblica da imagem');
   }
 
   return data.publicUrl;
@@ -452,7 +453,7 @@ export async function uploadImagemVendedor(file: File) {
 // =============================
 // ELIMINAR IMAGEM DO STORAGE
 // =============================
-// Remove do Supabase Storage o ficheiro associado a uma URL pública.
+// Remove do Supabase Storage o ficheiro associado a uma URL pÃºblica.
 export async function deleteImagemProdutoPorUrl(url?: string | null) {
   if (!url) return;
 
@@ -461,7 +462,7 @@ export async function deleteImagemProdutoPorUrl(url?: string | null) {
     const caminhoFicheiro = partes[1];
 
     if (!caminhoFicheiro) {
-      console.warn("Não foi possível extrair o caminho da imagem:", url);
+      console.warn("NÃ£o foi possÃ­vel extrair o caminho da imagem:", url);
       return;
     }
 
@@ -499,41 +500,41 @@ interface CriarProdutoParams {
 
 
 export async function criarProduto(params: CriarProdutoParams) {
-  // Evita guardar URLs externas ou inválidas na coluna imagem_url.
+  // Evita guardar URLs externas ou invÃ¡lidas na coluna imagem_url.
   // =============================
-  // VALIDAÇÃO FORTE
+  // VALIDAÃ‡ÃƒO FORTE
   // =============================
   if (!params.nome_produto?.trim()) {
-    throw new Error("Nome do produto é obrigatório");
+    throw new Error("Nome do produto Ã© obrigatÃ³rio");
   }
 
   if (!params.categoria_id) {
-    throw new Error("Categoria inválida");
+    throw new Error("Categoria invÃ¡lida");
   }
 
   if (!params.preco_aproximado || params.preco_aproximado <= 0) {
-    throw new Error("Preço inválido");
+    throw new Error("PreÃ§o invÃ¡lido");
   }
 
   if (
     params.preco_promocional != null &&
     (params.preco_promocional <= 0 || params.preco_promocional >= params.preco_aproximado)
   ) {
-    throw new Error("Preço promocional deve ser positivo e inferior ao preço normal");
+    throw new Error("PreÃ§o promocional deve ser positivo e inferior ao preÃ§o normal");
   }
 
   if (!params.unidade) {
-    throw new Error("Unidade obrigatória");
+    throw new Error("Unidade obrigatÃ³ria");
   }
 
   //const tiposVendaPermitidos = ["retalho", "grosso", "ambos"];
 
   if (!tiposVendaPermitidos.includes(params.tipo_venda)) {
-    throw new Error("Tipo de venda inválido");
+    throw new Error("Tipo de venda invÃ¡lido");
   }
 
   if (params.quantidade_minima !== undefined && params.quantidade_minima < 1) {
-  throw new Error("Quantidade mínima inválida");
+  throw new Error("Quantidade mÃ­nima invÃ¡lida");
   }
 
 
@@ -541,11 +542,11 @@ export async function criarProduto(params: CriarProdutoParams) {
     params.imagem_url &&
     !params.imagem_url.startsWith(SUPABASE_STORAGE_PRODUTOS_URL)
   ) {
-    throw new Error("URL de imagem inválida");
+    throw new Error("URL de imagem invÃ¡lida");
   }
 
   if (!params.vendedor_id) {
-    throw new Error("Vendedor inválido");
+    throw new Error("Vendedor invÃ¡lido");
   }
 
   console.log('VENDEDOR_ID USADO AO CRIAR:', params.vendedor_id);
@@ -576,7 +577,7 @@ export async function criarProduto(params: CriarProdutoParams) {
     ])
     .select(`
       *,
-      vendedor:vendedores (*),
+      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .single();
@@ -596,7 +597,7 @@ export async function criarProduto(params: CriarProdutoParams) {
 export const updateProduto = async (id: string, dados: any) => {
   const vendedorId = getVendedorAtivoId();
   if (!vendedorId) {
-    throw new Error("Vendedor não autenticado");
+    throw new Error("Vendedor nÃ£o autenticado");
   }
 
   await garantirVendedorAprovado(vendedorId);
@@ -611,7 +612,7 @@ export const updateProduto = async (id: string, dados: any) => {
     .eq("vendedor_id", vendedorId)
     .select(`
       *,
-      vendedor:vendedores (*),
+      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .single();
@@ -637,7 +638,7 @@ export const updateProduto = async (id: string, dados: any) => {
 export const deleteProduto = async (id: string) => {
   const vendedorId = getVendedorAtivoId();
   if (!vendedorId) {
-    throw new Error("Vendedor não autenticado");
+    throw new Error("Vendedor nÃ£o autenticado");
   }
 
   await garantirVendedorAprovado(vendedorId);
@@ -657,7 +658,7 @@ export const deleteProduto = async (id: string) => {
 };
 
 // =============================
-// SERVIÇOS
+// SERVIÃ‡OS
 // =============================
 
 interface CriarServicoParams {
@@ -688,11 +689,11 @@ const normalizarServico = (s: any): Servico => {
 
 export async function criarServico(params: CriarServicoParams) {
   if (!params.nome_servico?.trim()) {
-    throw new Error("Nome do serviço é obrigatório");
+    throw new Error("Nome do serviÃ§o Ã© obrigatÃ³rio");
   }
 
   if (!params.vendedor_id) {
-    throw new Error("Vendedor inválido");
+    throw new Error("Vendedor invÃ¡lido");
   }
 
   await garantirVendedorAprovado(params.vendedor_id);
@@ -722,13 +723,13 @@ export async function criarServico(params: CriarServicoParams) {
   ])
   .select(`
     *,
-    vendedor:vendedores (*)
+    vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
   `)
   .single();
 
   if (error) {
-    console.error("Erro ao criar serviço:", error);
-    throw new Error("Erro ao criar serviço");
+    console.error("Erro ao criar serviÃ§o:", error);
+    throw new Error("Erro ao criar serviÃ§o");
   }
 
   return normalizarServico(data);
@@ -739,7 +740,7 @@ export async function fetchServicos(): Promise<Servico[]> {
     .from("servicos")
     .select(`
       *,
-      vendedor:vendedores!inner (*)
+      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
     `)
     .eq("disponivel", true)
     .eq("publicado", true)
@@ -747,7 +748,7 @@ export async function fetchServicos(): Promise<Servico[]> {
     .order("criado_em", { ascending: false });
 
   if (error) {
-    console.error("Erro ao buscar serviços:", error);
+    console.error("Erro ao buscar serviÃ§os:", error);
     return [];
   }
 
@@ -761,13 +762,13 @@ export async function fetchServicosPorVendedor(
     .from("servicos")
     .select(`
       *,
-      vendedor:vendedores (*)
+      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
     `)
     .eq("vendedor_id", vendedorId)
     .order("criado_em", { ascending: false });
 
   if (error) {
-    console.error("Erro ao buscar serviços do vendedor:", JSON.stringify(error, null, 2));
+    console.error("Erro ao buscar serviÃ§os do vendedor:", JSON.stringify(error, null, 2));
     return [];
   }
 
@@ -777,7 +778,7 @@ export async function fetchServicosPorVendedor(
 export async function updateServico(id: string, dados: any) {
   const vendedorId = getVendedorAtivoId();
   if (!vendedorId) {
-    throw new Error("Vendedor não autenticado");
+    throw new Error("Vendedor nÃ£o autenticado");
   }
 
   await garantirVendedorAprovado(vendedorId);
@@ -789,12 +790,12 @@ export async function updateServico(id: string, dados: any) {
     .eq("vendedor_id", vendedorId)
     .select(`
       *,
-      vendedor:vendedores (*)
+      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
     `)
     .single();
 
   if (error) {
-    console.error("Erro ao atualizar serviço:", error);
+    console.error("Erro ao atualizar serviÃ§o:", error);
     throw error;
   }
 
@@ -804,7 +805,7 @@ export async function updateServico(id: string, dados: any) {
 export async function deleteServico(id: string) {
   const vendedorId = getVendedorAtivoId();
   if (!vendedorId) {
-    throw new Error("Vendedor não autenticado");
+    throw new Error("Vendedor nÃ£o autenticado");
   }
 
   await garantirVendedorAprovado(vendedorId);
@@ -816,7 +817,7 @@ export async function deleteServico(id: string) {
     .eq("vendedor_id", vendedorId);
 
   if (error) {
-    console.error("Erro ao eliminar serviço:", error);
+    console.error("Erro ao eliminar serviÃ§o:", error);
     throw error;
   }
 
@@ -828,7 +829,7 @@ export async function fetchServicoPorId(id: string): Promise<Servico | null> {
     .from("servicos")
     .select(`
       *,
-      vendedor:vendedores!inner (*)
+      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
     `)
     .eq("id", id)
     .eq("disponivel", true)
@@ -837,14 +838,14 @@ export async function fetchServicoPorId(id: string): Promise<Servico | null> {
     .single();
 
   if (error) {
-    console.error("Erro ao buscar serviço:", error);
+    console.error("Erro ao buscar serviÃ§o:", error);
     return null;
   }
 
   return normalizarServico(data);
 }
 
-// Leitura privada usada no formulário de edição de serviços.
+// Leitura privada usada no formulÃ¡rio de ediÃ§Ã£o de serviÃ§os.
 export async function fetchServicoParaEdicao(
   id: string,
   vendedorId: string,
@@ -857,7 +858,7 @@ export async function fetchServicoParaEdicao(
     .maybeSingle();
 
   if (error) {
-    console.error('Erro ao carregar serviço para edição:', error);
+    console.error('Erro ao carregar serviÃ§o para ediÃ§Ã£o:', error);
     return null;
   }
 
@@ -884,7 +885,7 @@ export async function updateVendedor(vendedorId: string, dados: any) {
 }
 
 // =============================
-// ESTATÍSTICAS — PRODUTOS
+// ESTATÃSTICAS â€” PRODUTOS
 // =============================
 export async function incrementarVisualizacaoProduto(id: string) {
 
@@ -916,11 +917,11 @@ export async function incrementarCliqueWhatsappProduto(id: string) {
 }
 
 // =============================
-// ESTATÍSTICAS — SERVIÇOS
+// ESTATÃSTICAS â€” SERVIÃ‡OS
 // =============================
 export async function incrementarVisualizacaoServico(id: string) {
 
-  console.log("RPC Serviço ->", id);
+  console.log("RPC ServiÃ§o ->", id);
 
   const { data, error } = await supabase.rpc('incrementar_visualizacao_servico', {
     servico_id_param: id,
@@ -930,7 +931,7 @@ export async function incrementarVisualizacaoServico(id: string) {
   console.log("RPC ERROR:", error);
 
   if (error) {
-    console.error('Erro ao incrementar visualização do serviço:', error);
+    console.error('Erro ao incrementar visualizaÃ§Ã£o do serviÃ§o:', error);
   }
 }
 
@@ -940,13 +941,13 @@ export async function incrementarCliqueWhatsappServico(id: string) {
   });
 
   if (error) {
-    console.error('Erro ao incrementar clique WhatsApp do serviço:', error);
+    console.error('Erro ao incrementar clique WhatsApp do serviÃ§o:', error);
   }
 }
 
 
 // =============================
-// HISTÓRICO DE CONTACTOS
+// HISTÃ“RICO DE CONTACTOS
 // =============================
 
 export async function guardarHistoricoContacto({
@@ -976,13 +977,13 @@ export async function guardarHistoricoContacto({
 
   if (erroBusca) {
     console.error(
-      'Erro ao verificar histórico:',
+      'Erro ao verificar histÃ³rico:',
       erroBusca
     );
     return;
   }
 
-  // Já existe → atualiza apenas o último contacto
+  // JÃ¡ existe â†’ atualiza apenas o Ãºltimo contacto
   if (existente) {
     console.log('Vou atualizar...');
 
@@ -995,7 +996,7 @@ export async function guardarHistoricoContacto({
 
     if (error) {
       console.error(
-        'Erro ao atualizar histórico:',
+        'Erro ao atualizar histÃ³rico:',
         error
       );
     }
@@ -1005,7 +1006,7 @@ export async function guardarHistoricoContacto({
     return;
   }
 
-  // Não existe → cria o histórico
+  // NÃ£o existe â†’ cria o histÃ³rico
   const { error, } = await supabase
   
     .from('historico_contactos')
@@ -1026,14 +1027,14 @@ export async function guardarHistoricoContacto({
 
   if (error) {
     console.error(
-      'Erro ao guardar histórico:',
+      'Erro ao guardar histÃ³rico:',
       error
     );
   }
 }
 
 // =============================
-// VISUALIZAÇÕES DE PRODUTOS POR CLIENTE
+// VISUALIZAÃ‡Ã•ES DE PRODUTOS POR CLIENTE
 // =============================
 
 export async function guardarVisualizacaoProduto({
@@ -1054,14 +1055,14 @@ export async function guardarVisualizacaoProduto({
     });
 
   if (error) {
-    console.error('Erro ao guardar visualização do produto:', error);
+    console.error('Erro ao guardar visualizaÃ§Ã£o do produto:', error);
   }
 }
 
 
 
 // =============================
-// VISUALIZAÇÕES DE SERVIÇOS POR CLIENTE
+// VISUALIZAÃ‡Ã•ES DE SERVIÃ‡OS POR CLIENTE
 // =============================
 
 export async function guardarVisualizacaoServico({
@@ -1082,19 +1083,19 @@ export async function guardarVisualizacaoServico({
     });
 
   if (error) {
-    console.error('Erro ao guardar visualização do serviço:', error);
+    console.error('Erro ao guardar visualizaÃ§Ã£o do serviÃ§o:', error);
   }
 }
 
 
 // =============================
-// ADMIN — VENDEDOR APROVAÇÃO
+// ADMIN â€” VENDEDOR APROVAÃ‡ÃƒO
 // =============================
 
 export async function fetchVendedoresAdmin(): Promise<Vendedor[]> {
   const { data, error } = await supabase
     .from('vendedores')
-    .select('*')
+    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
     .order('criado_em', { ascending: false });
 
   if (error) {
@@ -1128,7 +1129,7 @@ export async function atualizarEstadoVendedor(
 
   if (estado === 'rejeitado') {
     const motivo = motivoRejeicao?.trim();
-    if (!motivo) throw new Error('Indique o motivo da rejeição.');
+    if (!motivo) throw new Error('Indique o motivo da rejeiÃ§Ã£o.');
     dadosAtualizacao.motivo_rejeicao = motivo;
   } else {
     dadosAtualizacao.motivo_rejeicao = null;
@@ -1138,7 +1139,7 @@ export async function atualizarEstadoVendedor(
     .from('vendedores')
     .update(dadosAtualizacao)
     .eq('id', vendedorId)
-    .select('*')
+    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
     .single();
 
   if (error) {
@@ -1150,7 +1151,7 @@ export async function atualizarEstadoVendedor(
 }
 
 // =============================
-// ADMIN — PARCEIROS DE ENTREGAS
+// ADMIN â€” PARCEIROS DE ENTREGAS
 // =============================
 
 export type EstadoParceiroAdmin =
@@ -1163,7 +1164,7 @@ export type EstadoParceiroAdmin =
   | 'documentacao_expirada';
 
 export async function fetchParceirosEntregaAdmin() {
-  const db: any = supabase;
+  const db = supabase;
   const { data: parceiros, error } = await db
     .from('parceiros_entrega')
     .select('*')
@@ -1176,7 +1177,7 @@ export async function fetchParceirosEntregaAdmin() {
 
   if (!parceiros?.length) return [];
 
-  // Carregamento explícito: a cache de relações do PostgREST pode devolver
+  // Carregamento explÃ­cito: a cache de relaÃ§Ãµes do PostgREST pode devolver
   // listas vazias num select aninhado, embora os dados existam nas tabelas.
   const ids = parceiros.map((parceiro: any) => parceiro.id);
   const [veiculos, areas, documentos] = await Promise.all([
@@ -1203,11 +1204,11 @@ export async function atualizarEstadoParceiroEntrega(
   motivo?: string | null,
   adminId?: string | null,
 ) {
-  const db: any = supabase;
+  const db = supabase;
   const motivoLimpo = motivo?.trim() || null;
 
   if ((estado === 'rejeitado' || estado === 'suspenso') && !motivoLimpo) {
-    throw new Error('Indique o motivo desta decisão.');
+    throw new Error('Indique o motivo desta decisÃ£o.');
   }
 
   if (estado === 'aprovado') {
@@ -1264,9 +1265,9 @@ export async function atualizarEstadoDocumentoParceiro(
   adminId?: string | null,
   motivo?: string | null,
 ) {
-  const db: any = supabase;
+  const db = supabase;
   const motivoLimpo = motivo?.trim() || null;
-  if (estado === 'rejeitado' && !motivoLimpo) throw new Error('Indique o motivo da rejeição do documento.');
+  if (estado === 'rejeitado' && !motivoLimpo) throw new Error('Indique o motivo da rejeiÃ§Ã£o do documento.');
 
   const { data, error } = await db
     .from('documentos_parceiro_entrega')
@@ -1295,11 +1296,11 @@ export async function atualizarEstadoDocumentoParceiro(
 
 export async function reenviarDocumentoParceiro(documentoId: string, frente: File, verso: File) {
   const { data: auth, error: erroAuth } = await supabase.auth.getUser();
-  if (erroAuth || !auth.user) throw new Error('Sessão inválida. Entre novamente na sua conta.');
+  if (erroAuth || !auth.user) throw new Error('SessÃ£o invÃ¡lida. Entre novamente na sua conta.');
 
   const enviar = async (ficheiro: File, lado: 'frente' | 'verso') => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(ficheiro.type) || ficheiro.size > 3 * 1024 * 1024) {
-      throw new Error('Use imagens JPG, PNG ou WEBP até 3 MB.');
+      throw new Error('Use imagens JPG, PNG ou WEBP atÃ© 3 MB.');
     }
     const extensao = ficheiro.name.split('.').pop() || 'jpg';
     const caminho = `${auth.user!.id}/reenvio-${documentoId}-${lado}-${crypto.randomUUID()}.${extensao}`;
@@ -1309,7 +1310,7 @@ export async function reenviarDocumentoParceiro(documentoId: string, frente: Fil
   };
 
   const [frentePath, versoPath] = await Promise.all([enviar(frente, 'frente'), enviar(verso, 'verso')]);
-  const db: any = supabase;
+  const db = supabase;
   const { error } = await db.rpc('reenviar_documento_parceiro', {
     p_documento_id: documentoId,
     p_frente_path: frentePath,
@@ -1319,9 +1320,9 @@ export async function reenviarDocumentoParceiro(documentoId: string, frente: Fil
 }
 
 export async function obterUrlDocumentoParceiro(path: string) {
-  // Registos antigos podem guardar a URL pública que era gerada no cadastro.
-  // O bucket é privado; convertemos essa URL de volta ao caminho do ficheiro
-  // para gerar sempre uma URL assinada válida.
+  // Registos antigos podem guardar a URL pÃºblica que era gerada no cadastro.
+  // O bucket Ã© privado; convertemos essa URL de volta ao caminho do ficheiro
+  // para gerar sempre uma URL assinada vÃ¡lida.
   const marcadorBucket = '/documentos-parceiros/';
   const inicioCaminho = path.indexOf(marcadorBucket);
   const caminho = inicioCaminho >= 0
@@ -1337,7 +1338,7 @@ export async function obterUrlDocumentoParceiro(path: string) {
 }
 
 export async function fetchMeuParceiroEntrega(userId: string) {
-  const db: any = supabase;
+  const db = supabase;
   const { data: parceiro, error } = await db
     .from('parceiros_entrega')
     .select('*')
@@ -1347,8 +1348,8 @@ export async function fetchMeuParceiroEntrega(userId: string) {
   if (error) throw error;
   if (!parceiro) return null;
 
-  // Consultas separadas evitam que uma relação ainda não atualizada na cache
-  // do PostgREST faça o painel parecer vazio após o cadastro.
+  // Consultas separadas evitam que uma relaÃ§Ã£o ainda nÃ£o atualizada na cache
+  // do PostgREST faÃ§a o painel parecer vazio apÃ³s o cadastro.
   const [veiculos, areas, documentos] = await Promise.all([
     db.from('veiculos_entrega').select('*').eq('parceiro_id', parceiro.id),
     db.from('areas_cobertura_entrega').select('*').eq('parceiro_id', parceiro.id),
@@ -1368,7 +1369,7 @@ export async function fetchMeuParceiroEntrega(userId: string) {
 }
 
 export async function atualizarMeuParceiroEntrega(parceiroId: string, dados: Record<string, unknown>) {
-  const db: any = supabase;
+  const db = supabase;
   const { data, error } = await db
     .from('parceiros_entrega')
     .update(dados)
@@ -1381,7 +1382,7 @@ export async function atualizarMeuParceiroEntrega(parceiroId: string, dados: Rec
 }
 
 export async function atualizarVeiculoEntrega(veiculoId: string, dados: Record<string, unknown>) {
-  const db: any = supabase;
+  const db = supabase;
   const { data, error } = await db
     .from('veiculos_entrega')
     .update(dados)
@@ -1394,7 +1395,7 @@ export async function atualizarVeiculoEntrega(veiculoId: string, dados: Record<s
 }
 
 export async function atualizarAreaCoberturaEntrega(areaId: string, dados: Record<string, unknown>) {
-  const db: any = supabase;
+  const db = supabase;
   const { data, error } = await db
     .from('areas_cobertura_entrega')
     .update(dados)
@@ -1414,8 +1415,8 @@ export async function uploadFotoPerfilParceiro(parceiroId: string, ficheiro: Fil
     .upload(caminho, ficheiro, { contentType: ficheiro.type });
   if (uploadError) throw uploadError;
 
-  // O bucket é privado: guardamos o caminho e a interface cria uma URL
-  // assinada temporária apenas para o dono ou administrador autorizado.
+  // O bucket Ã© privado: guardamos o caminho e a interface cria uma URL
+  // assinada temporÃ¡ria apenas para o dono ou administrador autorizado.
   return caminho;
 }
 
@@ -1423,7 +1424,7 @@ export async function atualizarDisponibilidadeParceiroEntrega(
   parceiroId: string,
   disponibilidade: boolean,
 ) {
-  const db: any = supabase;
+  const db = supabase;
   const { data, error } = await db
     .from('parceiros_entrega')
     .update({ disponibilidade })
@@ -1448,7 +1449,7 @@ export async function eliminarVendedorAdmin(id: string) {
 }
 
 // =============================
-// ADMIN — UTILIZADORES
+// ADMIN â€” UTILIZADORES
 // =============================
 export async function fetchUtilizadoresAdmin() {
   const { data: clientes, error: clientesError } = await supabase
@@ -1466,7 +1467,7 @@ export async function fetchUtilizadoresAdmin() {
 
   const { data: vendedores, error: vendedoresError } = await supabase
     .from('vendedores')
-    .select('*')
+    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
     .order('criado_em', { ascending: false });
 
   console.log('ADMIN VENDEDORES:', vendedores);
@@ -1499,7 +1500,7 @@ export async function eliminarClienteAdmin(id: string) {
 
 
 // =============================
-// ADMIN — PRODUTOS
+// ADMIN â€” PRODUTOS
 // =============================
 
 export async function fetchProdutosAdmin(): Promise<Produto[]> {
@@ -1507,7 +1508,7 @@ export async function fetchProdutosAdmin(): Promise<Produto[]> {
     .from('produtos')
     .select(`
       *,
-      vendedor:vendedores (*),
+      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .order('criado_em', { ascending: false });
@@ -1527,7 +1528,7 @@ export async function updateProdutoAdmin(id: string, dados: any) {
     .eq('id', id)
     .select(`
       *,
-      vendedor:vendedores (*),
+      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .single();
@@ -1542,7 +1543,7 @@ export async function updateProdutoAdmin(id: string, dados: any) {
 
 
 // =============================
-// ADMIN — GESTÃO DE VENDEDORES
+// ADMIN â€” GESTÃƒO DE VENDEDORES
 // =============================
 
 export async function updateVendedorAdmin(
@@ -1556,7 +1557,7 @@ export async function updateVendedorAdmin(
       atualizado_em: new Date().toISOString(),
     })
     .eq('id', id)
-    .select('*')
+    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
     .single();
 
   if (error) {
@@ -1568,7 +1569,7 @@ export async function updateVendedorAdmin(
 }
 
 // =============================
-// HISTÓRICO DE CONTACTOS — SERVIÇOS
+// HISTÃ“RICO DE CONTACTOS â€” SERVIÃ‡OS
 // =============================
 
 export async function guardarHistoricoContactoServico({
@@ -1594,13 +1595,13 @@ export async function guardarHistoricoContactoServico({
 
   if (erroBusca) {
     console.error(
-      'Erro ao verificar histórico:',
+      'Erro ao verificar histÃ³rico:',
       erroBusca
     );
     return;
   }
 
-  // Já existe → atualiza apenas o último contacto
+  // JÃ¡ existe â†’ atualiza apenas o Ãºltimo contacto
   if (existente) {
     const { error } = await supabase
       .from('historico_contactos_servicos')
@@ -1611,7 +1612,7 @@ export async function guardarHistoricoContactoServico({
 
     if (error) {
       console.error(
-        'Erro ao atualizar histórico:',
+        'Erro ao atualizar histÃ³rico:',
         error
       );
     }
@@ -1619,7 +1620,7 @@ export async function guardarHistoricoContactoServico({
     return;
   }
 
-  // Não existe → cria o histórico
+  // NÃ£o existe â†’ cria o histÃ³rico
   const { error } = await supabase
     .from('historico_contactos_servicos')
     .insert({
@@ -1628,7 +1629,7 @@ export async function guardarHistoricoContactoServico({
       vendedor_id:
         servico.vendedor_id || null,
       nome_servico:
-        servico.nome_servico || 'Serviço',
+        servico.nome_servico || 'ServiÃ§o',
       nome_prestador:
         servico.vendedor?.nome_comercial ||
         servico.nome_prestador ||
@@ -1639,14 +1640,14 @@ export async function guardarHistoricoContactoServico({
 
   if (error) {
     console.error(
-      'Erro ao guardar histórico:',
+      'Erro ao guardar histÃ³rico:',
       error
     );
   }
 }
 
 // =============================
-// HISTÓRICO RECEBIDO — PRODUTOS
+// HISTÃ“RICO RECEBIDO â€” PRODUTOS
 // =============================
 
 export async function fetchHistoricoContactosVendedor(
@@ -1676,7 +1677,7 @@ export async function fetchHistoricoContactosVendedor(
     });
 
   if (error) {
-    console.error("Erro ao buscar histórico de produtos:", error);
+    console.error("Erro ao buscar histÃ³rico de produtos:", error);
     return [];
   }
 
@@ -1684,7 +1685,7 @@ export async function fetchHistoricoContactosVendedor(
 }
 
 // =============================
-// HISTÓRICO RECEBIDO — SERVIÇOS
+// HISTÃ“RICO RECEBIDO â€” SERVIÃ‡OS
 // =============================
 
 export async function fetchHistoricoContactosServicosVendedor(
@@ -1714,7 +1715,7 @@ export async function fetchHistoricoContactosServicosVendedor(
     });
 
   if (error) {
-    console.error("Erro ao buscar histórico de serviços:", error);
+    console.error("Erro ao buscar histÃ³rico de serviÃ§os:", error);
     return [];
   }
 
@@ -1722,7 +1723,7 @@ export async function fetchHistoricoContactosServicosVendedor(
 }
 
 // =============================
-// HISTÓRICO DE PESQUISAS
+// HISTÃ“RICO DE PESQUISAS
 // =============================
 
 export async function guardarHistoricoPesquisa({
@@ -1754,12 +1755,12 @@ export async function guardarHistoricoPesquisa({
     });
 
   if (error) {
-    console.error('Erro ao guardar histórico de pesquisa:', error);
+    console.error('Erro ao guardar histÃ³rico de pesquisa:', error);
   }
 }
 
 // =============================
-// DESTAQUES — PRODUTOS
+// DESTAQUES â€” PRODUTOS
 // =============================
 
 export async function destacarProdutoGratis(produtoId: string) {
@@ -1769,7 +1770,7 @@ export async function destacarProdutoGratis(produtoId: string) {
 
   if (error) {
     console.error('Erro ao destacar produto:', error);
-    throw new Error(error.message || 'Não foi possível destacar o produto.');
+    throw new Error(error.message || 'NÃ£o foi possÃ­vel destacar o produto.');
   }
 
   return true;
@@ -1784,7 +1785,7 @@ export async function removerDestaqueProduto(produtoId: string) {
     console.error('Erro ao remover destaque do produto:', error);
 
     throw new Error(
-      error.message || 'Não foi possível remover o destaque do produto.'
+      error.message || 'NÃ£o foi possÃ­vel remover o destaque do produto.'
     );
   }
 
@@ -1792,7 +1793,7 @@ export async function removerDestaqueProduto(produtoId: string) {
 }
 
 // =============================
-// DESTAQUES — SERVIÇOS
+// DESTAQUES â€” SERVIÃ‡OS
 // =============================
 
 export async function destacarServicoGratis(servicoId: string) {
@@ -1801,10 +1802,10 @@ export async function destacarServicoGratis(servicoId: string) {
   });
 
   if (error) {
-    console.error('Erro ao destacar serviço:', error);
+    console.error('Erro ao destacar serviÃ§o:', error);
 
     throw new Error(
-      error.message || 'Não foi possível destacar o serviço.'
+      error.message || 'NÃ£o foi possÃ­vel destacar o serviÃ§o.'
     );
   }
 
@@ -1817,10 +1818,10 @@ export async function removerDestaqueServico(servicoId: string) {
   });
 
   if (error) {
-    console.error('Erro ao remover destaque do serviço:', error);
+    console.error('Erro ao remover destaque do serviÃ§o:', error);
 
     throw new Error(
-      error.message || 'Não foi possível remover o destaque do serviço.'
+      error.message || 'NÃ£o foi possÃ­vel remover o destaque do serviÃ§o.'
     );
   }
 
@@ -1829,7 +1830,7 @@ export async function removerDestaqueServico(servicoId: string) {
 
 
 // =============================
-// FAVORITOS — PRODUTOS
+// FAVORITOS â€” PRODUTOS
 // =============================
 
 export async function adicionarFavoritoProduto(
@@ -1906,7 +1907,7 @@ export async function listarFavoritosProdutos(
       produto_id,
       produtos (
         *,
-        vendedor:vendedores (*),
+        vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
         categoria:categorias (*)
       )
     `)
@@ -1925,7 +1926,7 @@ export async function listarFavoritosProdutos(
 }
 
 // =============================
-// FAVORITOS — SERVIÇOS
+// FAVORITOS â€” SERVIÃ‡OS
 // =============================
 
 export async function adicionarFavoritoServico(
@@ -1993,7 +1994,7 @@ export async function listarFavoritosServicos(
       servico_id,
       servicos (
         *,
-        vendedor:vendedores (*)
+        vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
       )
     `)
     .eq('utilizador_id', utilizadorId)
@@ -2008,7 +2009,7 @@ export async function listarFavoritosServicos(
 }
 
 // =============================
-// ADMIN — RANKINGS
+// ADMIN â€” RANKINGS
 // =============================
 
 export async function fetchRankingProdutosMaisClicados(limite = 10) {
@@ -2171,7 +2172,7 @@ export async function fetchRankingCategoriasMaisProcuradas(limite = 10) {
 
 
 // =============================
-// ADMIN — VERIFICAÇÃO DE VENDEDORES
+// ADMIN â€” VERIFICAÃ‡ÃƒO DE VENDEDORES
 // =============================
 
 export async function atualizarVerificacaoVendedor(
@@ -2185,11 +2186,11 @@ export async function atualizarVerificacaoVendedor(
       atualizado_em: new Date().toISOString(),
     })
     .eq('id', vendedorId)
-    .select('*')
+    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
     .single();
 
   if (error) {
-    console.error('Erro ao atualizar verificação do vendedor:', error);
+    console.error('Erro ao atualizar verificaÃ§Ã£o do vendedor:', error);
     throw error;
   }
 
@@ -2207,11 +2208,11 @@ export async function atualizarPermissaoDestaqueVendedor(
       atualizado_em: new Date().toISOString(),
     })
     .eq('id', vendedorId)
-    .select('*')
+    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
     .single();
 
   if (error) {
-    console.error('Erro ao atualizar permissão de destaque:', error);
+    console.error('Erro ao atualizar permissÃ£o de destaque:', error);
     throw error;
   }
 
@@ -2256,7 +2257,7 @@ function normalizarTipoVendedor(tipo: unknown): Vendedor['tipo_vendedor'] {
   return TIPOS_VENDEDOR_LEGADOS[valor] || valor as Vendedor['tipo_vendedor'];
 }
 
-/** Sugestões públicas, limitadas e já filtradas a vendedores aprovados. */
+/** SugestÃµes pÃºblicas, limitadas e jÃ¡ filtradas a vendedores aprovados. */
 export async function fetchSugestoesPesquisa(termo: string): Promise<SugestaoPesquisa[]> {
   const pesquisa = termo.trim();
   if (!pesquisa) return [];
