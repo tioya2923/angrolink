@@ -3,7 +3,7 @@
  * Carrega e atualiza dados reais do vendedor no Supabase.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Save,
   ShieldCheck,
@@ -30,11 +30,13 @@ import CardDadosTipo from "@/componentes/perfil/CardDadosTipo";
 import CardSeguranca from "@/componentes/perfil/CardSeguranca";
 import CardZonaPerigo from "@/componentes/perfil/CardZonaPerigo";
 
-import { TIPOS_VENDEDOR, PROVINCIAS, MUNICIPIOS } from '@/dados/constantes';
+import { TIPOS_VENDEDOR } from '@/dados/constantes';
 import { useToast } from '@/hooks/use-toast';
+import { useFiltroTerritorialAngola } from '@/hooks/useFiltroTerritorialAngola';
+import { resolverSelecaoTerritorialExistente, type EstadoSelecaoTerritorial } from '@/services/territorioAngola';
 
 import {
-  fetchVendedorPorId,
+  fetchMeuVendedor,
   updateVendedor,
   uploadImagemVendedor,
 } from '@/services/api';
@@ -52,13 +54,16 @@ import { supabase } from '@/services/supabase';
 import { Vendedor, TipoVendedor } from '@/tipos';
 import RequisitosDocumentos from '@/componentes/RequisitosDocumentos';
 
+const mensagemErroSeguroPerfil = () => 'Não foi possível atualizar o perfil. Tente novamente.';
+
 export default function VendedorPerfil() {
-  const { utilizador, logout } = useAuth();
+  const { utilizador, logout, recarregarPerfil } = useAuth();
   const { toast } = useToast();
 
   const [vendedor, setVendedor] = useState<Vendedor | null>(null);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const submissaoEmCurso = useRef(false);
 
   const [senhaAtual, setSenhaAtual] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -73,8 +78,12 @@ export default function VendedorPerfil() {
   const [email, setEmail] = useState('');
   const [descricao, setDescricao] = useState('');
   const [tipoVendedor, setTipoVendedor] = useState('');
-  const [provincia, setProvincia] = useState('');
-  const [municipio, setMunicipio] = useState('');
+  const filtroTerritorial = useFiltroTerritorialAngola();
+  const { definirSelecao } = filtroTerritorial;
+  const [provinciaOriginal, setProvinciaOriginal] = useState<string | null>(null);
+  const [municipioOriginal, setMunicipioOriginal] = useState<string | null>(null);
+  const [estadoTerritorialOriginal, setEstadoTerritorialOriginal] = useState<EstadoSelecaoTerritorial>('INCOMPLETO');
+  const [territorioAlterado, setTerritorioAlterado] = useState(false);
   const [mercado, setMercado] = useState('');
 
   // Campos opcionais gerais
@@ -112,11 +121,8 @@ export default function VendedorPerfil() {
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [removerFoto, setRemoverFoto] = useState(false);
 
-  const municipiosFiltrados = MUNICIPIOS.filter(
-    m => m.provincia_id === PROVINCIAS.find(p => p.nome === provincia)?.id
-  );
-
   const statusAprovacao = (vendedor as any)?.status_aprovacao || 'pendente';
+  const identidadeVerificada = Boolean(vendedor?.aprovado_em);
   const contaPendente = statusAprovacao === 'pendente';
   const contaRejeitada = statusAprovacao === 'rejeitado';
   const contaSuspensa = statusAprovacao === 'suspenso';
@@ -131,6 +137,20 @@ export default function VendedorPerfil() {
   const isPrestadorServico =
     tipoVendedor === 'prestador_servico';
 
+  const inicializarTerritorio = useCallback(async (provinciaTexto: string | null, municipioTexto: string | null) => {
+    setProvinciaOriginal(provinciaTexto);
+    setMunicipioOriginal(municipioTexto);
+    setTerritorioAlterado(false);
+
+    try {
+      const resultado = await resolverSelecaoTerritorialExistente(provinciaTexto, municipioTexto);
+      setEstadoTerritorialOriginal(resultado.estado);
+      definirSelecao(resultado.provincia?.id ?? '', resultado.municipio?.id ?? '');
+    } catch {
+      setEstadoTerritorialOriginal('INCOMPLETO');
+    }
+  }, [definirSelecao]);
+
   useEffect(() => {
     async function carregarVendedor() {
       if (!utilizador?.vendedor_id) {
@@ -141,7 +161,7 @@ export default function VendedorPerfil() {
       try {
         setLoading(true);
 
-        const data = await fetchVendedorPorId(utilizador.vendedor_id);
+        const data = await fetchMeuVendedor();
 
         if (!data) {
           toast({
@@ -158,8 +178,7 @@ export default function VendedorPerfil() {
         setEmail(data.email || '');
         setDescricao(data.descricao || '');
         setTipoVendedor(data.tipo_vendedor || '');
-        setProvincia(data.provincia || '');
-        setMunicipio(data.municipio || '');
+        await inicializarTerritorio(data.provincia, data.municipio);
         setMercado(data.mercado_bairro || '');
 
         setBairro(data.bairro || '');
@@ -223,7 +242,7 @@ export default function VendedorPerfil() {
     }
 
     carregarVendedor();
-  }, [utilizador?.vendedor_id, toast]);
+  }, [inicializarTerritorio, utilizador?.vendedor_id, toast]);
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -267,6 +286,8 @@ export default function VendedorPerfil() {
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (submissaoEmCurso.current || guardando) return;
+
     if (!utilizador?.vendedor_id) {
       toast({
         title: 'Vendedor inválido',
@@ -284,8 +305,17 @@ export default function VendedorPerfil() {
       return;
     }
 
+    const provinciaSelecionada = filtroTerritorial.provinciaSelecionada;
+    const municipioSelecionado = filtroTerritorial.municipioSelecionado;
+    if (territorioAlterado && (!provinciaSelecionada || !municipioSelecionado)) {
+      toast({ title: 'Selecione uma província e um município válidos.', variant: 'destructive' });
+      return;
+    }
+
+    submissaoEmCurso.current = true;
+    setGuardando(true);
+
     try {
-      setGuardando(true);
 
       let foto_perfil = vendedor?.foto_perfil || null;
 
@@ -294,7 +324,17 @@ export default function VendedorPerfil() {
       }
 
       if (!removerFoto && fotoFile) {
-        foto_perfil = await uploadImagemVendedor(fotoFile);
+        try {
+          foto_perfil = await uploadImagemVendedor(fotoFile);
+        } catch (erro) {
+          console.error('Erro ao enviar fotografia do vendedor:', erro);
+          toast({
+            title: 'Não foi possível atualizar a fotografia.',
+            description: 'Tente novamente.',
+            variant: 'destructive',
+          });
+          return;
+        }
       }
 
       const horarioAtendimento = `${diasAtendimento}, ${horaAbertura} - ${horaFecho}`;
@@ -309,8 +349,8 @@ export default function VendedorPerfil() {
         nome_responsavel: nomeResponsavel.trim() || null,
         email: email.trim() || null,
         descricao,
-        provincia,
-        municipio,
+        provincia: territorioAlterado ? provinciaSelecionada?.nome ?? null : provinciaOriginal,
+        municipio: territorioAlterado ? municipioSelecionado?.nome ?? null : municipioOriginal,
         mercado_bairro: mercado,
         foto_perfil,
 
@@ -353,6 +393,7 @@ export default function VendedorPerfil() {
       setFotoFile(null);
       setRemoverFoto(false);
       setFotoPreview(atualizado.foto_perfil || null);
+      await recarregarPerfil();
 
       toast({
         title: 'Perfil atualizado!',
@@ -360,19 +401,16 @@ export default function VendedorPerfil() {
           ? 'As alterações foram guardadas. A conta continua em análise pela equipa ANGROLINK.'
           : 'As alterações foram guardadas com sucesso.',
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error('ERRO PERFIL COMPLETO:', err);
 
       toast({
         title: 'Erro ao guardar perfil',
-        description:
-          err?.message ||
-          err?.details ||
-          err?.hint ||
-          'Erro ao atualizar. Verifica permissões, RLS ou campos da tabela.',
+        description: mensagemErroSeguroPerfil(),
         variant: 'destructive',
       });
     } finally {
+      submissaoEmCurso.current = false;
       setGuardando(false);
     }
   };
@@ -608,6 +646,7 @@ export default function VendedorPerfil() {
             <Input
               value={nomeComercial}
               onChange={e => setNomeComercial(e.target.value)}
+              readOnly={identidadeVerificada}
               className="border-2 border-border"
               placeholder={
                 isPrestadorServico
@@ -615,6 +654,11 @@ export default function VendedorPerfil() {
                   : 'Ex: Horta da Dona Maria'
               }
             />
+            {identidadeVerificada && (
+              <p className="text-xs text-muted-foreground">
+                Nome comercial aprovado. Para alterar este dado, contacte o Apoio ANGROLINK.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -625,11 +669,17 @@ export default function VendedorPerfil() {
                 </Label>
 
                 <Input
-                  value={nomeResponsavel}
-                  onChange={e => setNomeResponsavel(e.target.value)}
+              value={nomeResponsavel}
+              onChange={e => setNomeResponsavel(e.target.value)}
+                  readOnly={identidadeVerificada}
                   className="border-2 border-border"
                   placeholder="Ex: João Manuel"
                 />
+                {identidadeVerificada && (
+                  <p className="text-xs text-muted-foreground">
+                    Nome do responsável verificado. Para alterar este dado, contacte o Apoio ANGROLINK.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -703,16 +753,17 @@ export default function VendedorPerfil() {
             <div className="space-y-2">
               <Label className="font-corpo text-sm">Província</Label>
               <select
-                value={provincia}
+                value={filtroTerritorial.provinciaId}
+                disabled={filtroTerritorial.aCarregarProvincias}
                 onChange={e => {
-                  setProvincia(e.target.value);
-                  setMunicipio('');
+                  setTerritorioAlterado(true);
+                  filtroTerritorial.selecionarProvincia(e.target.value);
                 }}
                 className="w-full border-2 border-border bg-background font-corpo text-sm px-3 py-2"
               >
-                <option value="">Selecionar província</option>
-                {PROVINCIAS.map(p => (
-                  <option key={p.id} value={p.nome}>
+                <option value="">{filtroTerritorial.aCarregarProvincias ? 'A carregar províncias...' : 'Selecione a província'}</option>
+                {filtroTerritorial.provincias.map(p => (
+                  <option key={p.id} value={p.id}>
                     {p.nome}
                   </option>
                 ))}
@@ -722,22 +773,26 @@ export default function VendedorPerfil() {
             <div className="space-y-2">
               <Label className="font-corpo text-sm">Município</Label>
               <select
-                value={municipio}
-                onChange={e => setMunicipio(e.target.value)}
-                disabled={!provincia}
+                value={filtroTerritorial.municipioId}
+                onChange={e => { setTerritorioAlterado(true); filtroTerritorial.selecionarMunicipio(e.target.value); }}
+                disabled={!filtroTerritorial.provinciaId || filtroTerritorial.aCarregarMunicipios || Boolean(filtroTerritorial.erroMunicipios)}
                 className="w-full border-2 border-border bg-background font-corpo text-sm px-3 py-2 disabled:opacity-50"
               >
                 <option value="">
-                  {provincia ? 'Selecionar município' : 'Escolha primeiro a província'}
+                  {!filtroTerritorial.provinciaId ? 'Selecione primeiro a província' : filtroTerritorial.aCarregarMunicipios ? 'A carregar municípios...' : 'Selecione o município'}
                 </option>
-                {municipiosFiltrados.map(m => (
-                  <option key={m.id} value={m.nome}>
+                {filtroTerritorial.municipios.map(m => (
+                  <option key={m.id} value={m.id}>
                     {m.nome}
                   </option>
                 ))}
               </select>
             </div>
           </div>
+          {estadoTerritorialOriginal === 'LEGADO' && !territorioAlterado && <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-800">Localização antiga: será preservada até escolher uma nova localização.</p>}
+          {estadoTerritorialOriginal === 'INCOMPLETO' && !territorioAlterado && <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-800">Localização incompleta: o valor existente será preservado.</p>}
+          {filtroTerritorial.erroProvincias && <p className="text-xs text-destructive">{filtroTerritorial.erroProvincias} <button type="button" onClick={() => void filtroTerritorial.carregarProvincias()} className="font-semibold underline">Tentar novamente</button></p>}
+          {filtroTerritorial.erroMunicipios && <p className="text-xs text-destructive">{filtroTerritorial.erroMunicipios} <button type="button" onClick={filtroTerritorial.recarregarMunicipios} className="font-semibold underline">Tentar novamente</button></p>}
 
           <div className="space-y-2">
             <Label className="font-corpo text-sm">Mercado / Zona comercial</Label>

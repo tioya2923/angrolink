@@ -18,7 +18,8 @@ import {
   gerarEmailInterno,
   normalizarIdentificadorLogin,
 } from '@/lib/verificacoesConta';
-import { COLUNAS_VENDEDOR_SEM_DOCUMENTOS } from '@/services/vendedores';
+import { verificarAdminNoServidor } from '@/lib/autorizacaoAdmin';
+import { fetchMeuVendedor } from '@/services/api';
 
 const STORAGE_KEY = 'angrolink_auth_user';
 const STORAGE_TIPO_COMPRADOR = 'angrolink_tipo_comprador';
@@ -126,6 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     papel: 'parceiro_entrega',
     parceiro_entrega_id: parceiro.id,
     estado_parceiro_entrega: parceiro.estado,
+    motivo_suspensao: parceiro.motivo_suspensao || null,
     conta_ativa: parceiro.estado !== 'suspenso' && parceiro.estado !== 'rejeitado',
   });
 
@@ -135,14 +137,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    if (
-      authUser.email === 'admin@angrolink.ao' ||
-      authUser.user_metadata?.papel === 'admin'
-    ) {
+    const ehAdmin = await verificarAdminNoServidor(async () => {
+      const { data, error } = await supabase.rpc('eh_admin');
+      if (error) console.error('Erro ao validar papel administrativo:', error);
+      return { data, error };
+    });
+
+    if (ehAdmin) {
       const adminUser: Utilizador = {
         id: authUser.id,
         nome: authUser.user_metadata?.nome || 'Administrador',
-        email: authUser.email || 'admin@angrolink.ao',
+        email: authUser.email || '',
         telefone: authUser.user_metadata?.telefone || '',
         provincia: '',
         municipio: '',
@@ -153,15 +158,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return true;
     }
 
-    const { data: dadosVendedor, error: vendedorError } = await supabase
-      .from('vendedores')
-      .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-      .eq('user_id', authUser.id)
-      .maybeSingle();
-    const vendedor = dadosVendedor as unknown as (Vendedor & { conta_ativa: boolean | null }) | null;
+    const vendedor = await fetchMeuVendedor() as (Vendedor & { conta_ativa: boolean | null }) | null;
 
-    if (vendedorError) {
-      console.error('Erro ao carregar vendedor:', vendedorError);
+    if (!vendedor && authUser.user_metadata?.papel === 'vendedor') {
+      console.warn('Perfil do vendedor ainda não foi criado.');
+    }
+
+    if (vendedor === undefined) {
+      console.error('Erro ao carregar vendedor.');
       return false;
     }
 
@@ -245,13 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(resolve, 500)
         );
 
-        const { data: dadosVendedorNovo } =
-          await supabase
-            .from('vendedores')
-            .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-            .eq('user_id', authUser.id)
-            .maybeSingle();
-        const vendedorNovo = dadosVendedorNovo as unknown as Vendedor | null;
+        const vendedorNovo = await fetchMeuVendedor();
 
         if (vendedorNovo) {
 
@@ -478,31 +476,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       emailLogin = gerarEmailInterno(apenasNumeros);
     }
 
-    // 2. Login por email opcional
-    else if (!emailLogin.endsWith('@telefone.angrolink')) {
-
-      // Procurar em clientes
-      const { data: cliente } = await supabase
-        .from('clientes')
-        .select('email_login')
-        .eq('email', emailLogin)
-        .maybeSingle();
-
-      if (cliente?.email_login) {
-        emailLogin = cliente.email_login;
-      } else {
-        // Procurar em vendedores
-        const { data: vendedor } = await supabase
-          .from('vendedores')
-          .select('email_login')
-          .eq('email', emailLogin)
-          .maybeSingle();
-
-        if (vendedor?.email_login) {
-          emailLogin = vendedor.email_login;
-        }
-      }
-    }
+    // O email introduzido é enviado diretamente para Auth. Não consultamos
+    // perfis de cliente ou vendedor antes da sessão: esses campos são privados
+    // e não devem servir como mecanismo público de descoberta de contas.
     let lastSignInError: any = null;
 
     const attemptSignIn = async (email: string) => {

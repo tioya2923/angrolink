@@ -17,10 +17,9 @@ dinheiro.
 - `configuracoes_financeiras`: política de comissão usada apenas na criação
   de novos pagamentos. O valor é congelado no pagamento criado.
 
-Todos os valores usam cêntimos inteiros. A configuração inicial é `0` pontos
-base de comissão e `0` horas de prazo de repasse, por ainda não existir uma
-decisão comercial aprovada. Alterar essa configuração só deverá afetar novas
-intenções de pagamento.
+Todos os valores usam cêntimos inteiros. A política piloto aprovada é `500`
+pontos-base (5%) de comissão e `48` horas de janela de segurança de repasse.
+Alterar essa configuração só deverá afetar novas intenções de pagamento.
 
 ## Limites de acesso
 

@@ -23,7 +23,7 @@ type Ordenacao = 'recentes' | 'destaque';
 export default function PaginaPesquisa() {
   const [searchParams] = useSearchParams();
 
-  const { municipioNome } = useMunicipio();
+  const { municipioNome, provinciaNome } = useMunicipio();
   const { tipoComprador } = useAuth();
 
   const termoPesquisa = searchParams.get('q') || '';
@@ -71,6 +71,7 @@ export default function PaginaPesquisa() {
           categoria: categoriaId || undefined,
           tipoComprador,
           pesquisa: termoPesquisa || undefined,
+          provincia: provinciaNome || undefined,
           municipio: municipioNome || undefined,
         });
 
@@ -80,7 +81,7 @@ export default function PaginaPesquisa() {
           cliente_id: undefined,
           termo: termoPesquisa || null,
           categoria_id: categoriaId || null,
-          provincia: null,
+          provincia: provinciaNome || null,
           municipio: municipioNome || null,
           tipo_comprador: tipoComprador || null,
         });
@@ -94,7 +95,7 @@ export default function PaginaPesquisa() {
     }
 
     carregarProdutos();
-  }, [categoriaId, tipoComprador, termoPesquisa, municipioNome]);
+  }, [categoriaId, tipoComprador, termoPesquisa, municipioNome, provinciaNome]);
 
   // =============================
   // FILTROS + ORDENAÇÃO

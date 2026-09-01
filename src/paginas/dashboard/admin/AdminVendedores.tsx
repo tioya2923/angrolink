@@ -4,7 +4,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { CalendarDays, Mail, MapPin, Phone, ShieldCheck, CheckCircle, Store, XCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { CalendarDays, Eye, Mail, MapPin, Phone, ShieldCheck, CheckCircle, Store, XCircle } from 'lucide-react';
 
 import { Vendedor, PlanoVendedor, TipoVendedor } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
@@ -133,7 +134,6 @@ export default function AdminVendedores() {
 
       const atualizado = await updateVendedorAdmin(id, {
         plano,
-        pode_destacar: plano === 'destaque' || plano === 'premium',
       });
 
       atualizarVendedorLocal(atualizado);
@@ -295,6 +295,13 @@ export default function AdminVendedores() {
 
                 {/* Ações */}
                 <div className="flex flex-wrap gap-2">
+                  <Link
+                    to={`/dashboard/vendedores/${v.id}`}
+                    className="flex items-center gap-1 border-2 border-border px-3 py-1.5 font-corpo text-xs transition-colors hover:border-primary hover:text-primary"
+                  >
+                    <Eye size={14} />
+                    Ver vendedor
+                  </Link>
                   {(v as any).status_aprovacao === 'pendente' && (
                     <BotaoAcao
                       onClick={() => alterarStatus(v.id, 'aprovado')}

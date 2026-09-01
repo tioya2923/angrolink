@@ -4,7 +4,7 @@
  * quantidade mínima nem tipo de venda.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   useNavigate,
   useParams,
@@ -15,9 +15,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
-import { PROVINCIAS, MUNICIPIOS } from '@/dados/constantes';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
+import { useFiltroTerritorialAngola } from '@/hooks/useFiltroTerritorialAngola';
+import { resolverSelecaoTerritorialExistente } from '@/services/territorioAngola';
 
 import {
   criarServico,
@@ -68,14 +69,30 @@ export default function VendedorAdicionarServico() {
   const [precoEstimado, setPrecoEstimado] = useState('');
   const [precoPromocional, setPrecoPromocional] = useState('');
 
-  const [provincia, setProvincia] = useState('');
-  const [municipio, setMunicipio] = useState('');
+  const filtroTerritorial = useFiltroTerritorialAngola();
+  const { definirSelecao } = filtroTerritorial;
+  const [provinciaOriginal, setProvinciaOriginal] = useState<string | null>(null);
+  const [municipioOriginal, setMunicipioOriginal] = useState<string | null>(null);
+  const [territorioAlterado, setTerritorioAlterado] = useState(false);
   const [zonaAtuacao, setZonaAtuacao] = useState('');
   const [disponivel, setDisponivel] = useState(true);
 
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [removerImagem, setRemoverImagem] = useState(false);
+
+  const inicializarTerritorio = useCallback(async (provinciaTexto: string | null, municipioTexto: string | null) => {
+    setProvinciaOriginal(provinciaTexto);
+    setMunicipioOriginal(municipioTexto);
+    setTerritorioAlterado(false);
+
+    try {
+      const resultado = await resolverSelecaoTerritorialExistente(provinciaTexto, municipioTexto);
+      definirSelecao(resultado.provincia?.id ?? '', resultado.municipio?.id ?? '');
+    } catch {
+      definirSelecao('', '');
+    }
+  }, [definirSelecao]);
 
   useEffect(() => {
     if (!id || !utilizador?.vendedor_id) {
@@ -104,6 +121,8 @@ export default function VendedorAdicionarServico() {
       }
 
       setServicoEditando(servico);
+      setProvinciaOriginal(servico.provincia ?? null);
+      setMunicipioOriginal(servico.municipio ?? null);
       setCarregandoEdicao(false);
     }
 
@@ -128,19 +147,14 @@ export default function VendedorAdicionarServico() {
         : ''
     );
 
-    setProvincia(servicoEditando.provincia || '');
-    setMunicipio(servicoEditando.municipio || '');
+    void inicializarTerritorio(servicoEditando.provincia, servicoEditando.municipio);
     setZonaAtuacao(servicoEditando.zona_atuacao || '');
     setDisponivel(servicoEditando.disponivel ?? true);
 
     if (servicoEditando.imagem_url) {
       setImagemPreview(servicoEditando.imagem_url);
     }
-  }, [servicoEditando]);
-
-  const municipiosFiltrados = MUNICIPIOS.filter(
-    m => m.provincia_id === PROVINCIAS.find(p => p.nome === provincia)?.id
-  );
+  }, [inicializarTerritorio, servicoEditando]);
 
   const handleImagemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -236,17 +250,12 @@ export default function VendedorAdicionarServico() {
       return;
     }
 
-    if (!provincia) {
+    const provinciaSelecionada = filtroTerritorial.provinciaSelecionada;
+    const municipioSelecionado = filtroTerritorial.municipioSelecionado;
+    const usarNomeCanonico = !isEdit || territorioAlterado;
+    if (usarNomeCanonico && (!provinciaSelecionada || !municipioSelecionado)) {
       toast({
-        title: 'Seleciona a província',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!municipio) {
-      toast({
-        title: 'Seleciona o município',
+        title: 'Selecione uma província e um município válidos.',
         variant: 'destructive',
       });
       return;
@@ -275,8 +284,8 @@ export default function VendedorAdicionarServico() {
         descricao,
         preco_estimado: Number(precoEstimado),
         preco_promocional: precoPromocional ? Number(precoPromocional) : null,
-        provincia,
-        municipio,
+        provincia: usarNomeCanonico ? provinciaSelecionada?.nome ?? null : provinciaOriginal,
+        municipio: usarNomeCanonico ? municipioSelecionado?.nome ?? null : municipioOriginal,
         zona_atuacao: zonaAtuacao,
         imagem_url: removerImagem
           ? null
@@ -505,18 +514,19 @@ export default function VendedorAdicionarServico() {
             <Label>Província *</Label>
 
             <select
-              value={provincia}
+              value={filtroTerritorial.provinciaId}
+              disabled={filtroTerritorial.aCarregarProvincias}
               onChange={e => {
-                setProvincia(e.target.value);
-                setMunicipio('');
+                setTerritorioAlterado(true);
+                filtroTerritorial.selecionarProvincia(e.target.value);
               }}
               className="w-full border-2 px-3 py-2"
               required
             >
-              <option value="">Selecionar província</option>
+              <option value="">{filtroTerritorial.aCarregarProvincias ? 'A carregar províncias...' : 'Selecione a província'}</option>
 
-              {PROVINCIAS.map(p => (
-                <option key={p.id} value={p.nome}>
+              {filtroTerritorial.provincias.map(p => (
+                <option key={p.id} value={p.id}>
                   {p.nome}
                 </option>
               ))}
@@ -527,24 +537,26 @@ export default function VendedorAdicionarServico() {
             <Label>Município *</Label>
 
             <select
-              value={municipio}
-              onChange={e => setMunicipio(e.target.value)}
-              disabled={!provincia}
+              value={filtroTerritorial.municipioId}
+              onChange={e => { setTerritorioAlterado(true); filtroTerritorial.selecionarMunicipio(e.target.value); }}
+              disabled={!filtroTerritorial.provinciaId || filtroTerritorial.aCarregarMunicipios || Boolean(filtroTerritorial.erroMunicipios)}
               className="w-full border-2 px-3 py-2 disabled:opacity-50"
               required
             >
               <option value="">
-                {provincia ? 'Selecionar município' : 'Escolha província primeiro'}
+                {!filtroTerritorial.provinciaId ? 'Selecione primeiro a província' : filtroTerritorial.aCarregarMunicipios ? 'A carregar municípios...' : 'Selecione o município'}
               </option>
 
-              {municipiosFiltrados.map(m => (
-                <option key={m.id} value={m.nome}>
+              {filtroTerritorial.municipios.map(m => (
+                <option key={m.id} value={m.id}>
                   {m.nome}
                 </option>
               ))}
             </select>
           </div>
         </div>
+        {filtroTerritorial.erroProvincias && <p className="text-xs text-destructive">{filtroTerritorial.erroProvincias} <button type="button" onClick={() => void filtroTerritorial.carregarProvincias()} className="font-semibold underline">Tentar novamente</button></p>}
+        {filtroTerritorial.erroMunicipios && <p className="text-xs text-destructive">{filtroTerritorial.erroMunicipios} <button type="button" onClick={filtroTerritorial.recarregarMunicipios} className="font-semibold underline">Tentar novamente</button></p>}
 
         {/* ZONA */}
         <div className="space-y-2">

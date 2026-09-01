@@ -1,0 +1,497 @@
+-- TAXONOMIA TERRITORIAL SERVER-SIDE V1
+-- Fonte jurídica: Lei n.º 8/25, de 16 de setembro de 2025.
+-- Esta migration é aditiva: não altera campos territoriais textuais legados.
+
+begin;
+
+create table if not exists public.provincias_angola (
+  id uuid primary key default gen_random_uuid(),
+  codigo_oficial text not null unique,
+  numero_oficial text not null unique,
+  nome text not null,
+  ativo boolean not null default true,
+  ordem integer not null check (ordem > 0),
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+
+create table if not exists public.municipios_angola (
+  id uuid primary key default gen_random_uuid(),
+  provincia_id uuid not null references public.provincias_angola(id) on delete restrict,
+  codigo_oficial text not null unique,
+  numero_oficial text not null,
+  nome text not null,
+  ativo boolean not null default true,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now(),
+  constraint municipios_angola_numero_por_provincia_unico unique (provincia_id, numero_oficial),
+  constraint municipios_angola_nome_por_provincia_unico unique (provincia_id, nome)
+);
+
+create index if not exists municipios_angola_provincia_id_idx
+  on public.municipios_angola (provincia_id);
+
+create or replace function public.atualizar_atualizado_em_taxonomia_territorial()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  new.atualizado_em = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists atualizar_provincia_angola_em on public.provincias_angola;
+create trigger atualizar_provincia_angola_em before update on public.provincias_angola
+for each row execute function public.atualizar_atualizado_em_taxonomia_territorial();
+
+drop trigger if exists atualizar_municipio_angola_em on public.municipios_angola;
+create trigger atualizar_municipio_angola_em before update on public.municipios_angola
+for each row execute function public.atualizar_atualizado_em_taxonomia_territorial();
+
+with dados(codigo_oficial, numero_oficial, nome, ordem) as (
+values
+  ('BGO', '04', 'Bengo', 4),
+  ('BIE', '14', 'Bié', 14),
+  ('BLA', '16', 'Benguela', 16),
+  ('CDA', '01', 'Cabinda', 1),
+  ('CDO', '21', 'Cuando', 21),
+  ('CGO', '20', 'Cubango', 20),
+  ('CNE', '19', 'Cunene', 19),
+  ('CNO', '07', 'Cuanza Norte', 7),
+  ('CSU', '08', 'Cuanza Sul', 8),
+  ('HBO', '15', 'Huambo', 15),
+  ('HLA', '18', 'Huíla', 18),
+  ('IBE', '06', 'Icolo e Bengo', 6),
+  ('LDA', '05', 'Luanda', 5),
+  ('LNO', '10', 'Lunda Norte', 10),
+  ('LSU', '11', 'Lunda Sul', 11),
+  ('MCO', '12', 'Moxico', 12),
+  ('MJE', '09', 'Malanje', 9),
+  ('MLE', '13', 'Moxico Leste', 13),
+  ('NBE', '17', 'Namibe', 17),
+  ('UGE', '03', 'Uíge', 3),
+  ('ZRE', '02', 'Zaire', 2)
+)
+insert into public.provincias_angola (codigo_oficial, numero_oficial, nome, ordem)
+select codigo_oficial, numero_oficial, nome, ordem from dados
+on conflict (codigo_oficial) do nothing;
+
+with dados(codigo_provincia, numero_municipio, nome) as (
+values
+  ('CDA', '01', 'Cabinda'),
+  ('CDA', '02', 'Cacongo'),
+  ('CDA', '03', 'Buco Zau'),
+  ('CDA', '04', 'Belize'),
+  ('CDA', '05', 'Miconje'),
+  ('CDA', '06', 'Massabi'),
+  ('CDA', '07', 'Necuto'),
+  ('CDA', '08', 'Tando Zinze'),
+  ('CDA', '09', 'Liambo'),
+  ('CDA', '10', 'Ngoio'),
+  ('ZRE', '01', 'Soyo'),
+  ('ZRE', '02', 'Mbanza Kongo'),
+  ('ZRE', '03', 'Nzeto'),
+  ('ZRE', '04', 'Tomboco'),
+  ('ZRE', '05', 'Cuimba'),
+  ('ZRE', '06', 'Nóqui'),
+  ('ZRE', '07', 'Luvo'),
+  ('ZRE', '08', 'Lufico'),
+  ('ZRE', '09', 'Quêlo'),
+  ('ZRE', '10', 'Serra de Canda'),
+  ('ZRE', '11', 'Quindeje'),
+  ('UGE', '01', 'Dange Quitexe'),
+  ('UGE', '02', 'Bungo'),
+  ('UGE', '03', 'Ambuíla'),
+  ('UGE', '04', 'Negage'),
+  ('UGE', '05', 'Puri'),
+  ('UGE', '06', 'Maquela do Zombo'),
+  ('UGE', '07', 'Damba'),
+  ('UGE', '08', 'Sanza Pombo'),
+  ('UGE', '09', 'Bembe'),
+  ('UGE', '10', 'Milunga'),
+  ('UGE', '11', 'Songo'),
+  ('UGE', '12', 'Quimbele'),
+  ('UGE', '13', 'Cangola'),
+  ('UGE', '14', 'Uíge'),
+  ('UGE', '15', 'Mucaba'),
+  ('UGE', '16', 'Nova Esperança'),
+  ('UGE', '17', 'Sacandica'),
+  ('UGE', '18', 'Nsosso'),
+  ('UGE', '19', 'Lucunga'),
+  ('UGE', '20', 'Quipedro'),
+  ('UGE', '21', 'Massau'),
+  ('UGE', '22', 'Vista Alegre'),
+  ('UGE', '23', 'Alto Zaza'),
+  ('BGO', '01', 'Dande'),
+  ('BGO', '02', 'Quibaxe'),
+  ('BGO', '03', 'Muxaluando'),
+  ('BGO', '04', 'Bula Atumba'),
+  ('BGO', '05', 'Ambriz'),
+  ('BGO', '06', 'Pango Aluquém'),
+  ('BGO', '07', 'Barra do Dande'),
+  ('BGO', '08', 'Piri'),
+  ('BGO', '09', 'Quicunzo'),
+  ('BGO', '10', 'Nambuangongo'),
+  ('BGO', '11', 'Úcua'),
+  ('BGO', '12', 'Panguila'),
+  ('LDA', '01', 'Ingombota'),
+  ('LDA', '02', 'Cacuaco'),
+  ('LDA', '03', 'Cazenga'),
+  ('LDA', '04', 'Viana'),
+  ('LDA', '05', 'Belas'),
+  ('LDA', '06', 'Kilamba Kiaxi'),
+  ('LDA', '07', 'Talatona'),
+  ('LDA', '08', 'Mussulo'),
+  ('LDA', '09', 'Sambizanga'),
+  ('LDA', '10', 'Rangel'),
+  ('LDA', '11', 'Maianga'),
+  ('LDA', '12', 'Samba'),
+  ('LDA', '13', 'Camama'),
+  ('LDA', '14', 'Mulenvos'),
+  ('LDA', '15', 'Kilamba'),
+  ('LDA', '16', 'Hoji ya Henda'),
+  ('IBE', '01', 'Catete'),
+  ('IBE', '02', 'Quiçama'),
+  ('IBE', '03', 'Calumbo'),
+  ('IBE', '04', 'Cabiri'),
+  ('IBE', '05', 'Cabo Ledo'),
+  ('IBE', '06', 'Bom Jesus'),
+  ('IBE', '07', 'Sequele'),
+  ('CNO', '01', 'Cazengo'),
+  ('CNO', '02', 'Golungo Alto'),
+  ('CNO', '03', 'Cambambe'),
+  ('CNO', '04', 'Samba Cajú'),
+  ('CNO', '05', 'Ambaca'),
+  ('CNO', '06', 'Lucala'),
+  ('CNO', '07', 'Banga'),
+  ('CNO', '08', 'Bolongongo'),
+  ('CNO', '09', 'Quiculungo'),
+  ('CNO', '10', 'Ngonguembo'),
+  ('CNO', '11', 'Massangano'),
+  ('CNO', '12', 'Cêrca'),
+  ('CNO', '13', 'Tango'),
+  ('CNO', '14', 'Terreiro'),
+  ('CNO', '15', 'Aldeia Nova'),
+  ('CNO', '16', 'Caculo Cabaça'),
+  ('CNO', '17', 'Luinga'),
+  ('CSU', '01', 'Sumbe'),
+  ('CSU', '02', 'Calulo'),
+  ('CSU', '03', 'Gabela'),
+  ('CSU', '04', 'Cassongue'),
+  ('CSU', '05', 'Porto Amboim'),
+  ('CSU', '06', 'Quibala'),
+  ('CSU', '07', 'Seles'),
+  ('CSU', '08', 'Waku Kungo'),
+  ('CSU', '09', 'Mussende'),
+  ('CSU', '10', 'Quilenda'),
+  ('CSU', '11', 'Ebo'),
+  ('CSU', '12', 'Conda'),
+  ('CSU', '13', 'Quirimbo'),
+  ('CSU', '14', 'Munenga'),
+  ('CSU', '15', 'Quissongo'),
+  ('CSU', '16', 'Gungo'),
+  ('CSU', '17', 'Sanga'),
+  ('CSU', '18', 'Gangula'),
+  ('CSU', '19', 'Pambangala'),
+  ('CSU', '20', 'Condé'),
+  ('CSU', '21', 'Amboiva'),
+  ('CSU', '22', 'Lonhe'),
+  ('CSU', '23', 'Quenha'),
+  ('CSU', '24', 'Boa Entrada'),
+  ('MJE', '01', 'Calandula'),
+  ('MJE', '02', 'Malanje'),
+  ('MJE', '03', 'Cacuso'),
+  ('MJE', '04', 'Massango'),
+  ('MJE', '05', 'Marimba'),
+  ('MJE', '06', 'Quela'),
+  ('MJE', '07', 'Quirima'),
+  ('MJE', '08', 'Cangandala'),
+  ('MJE', '09', 'Cahombo'),
+  ('MJE', '10', 'Kunda dya Baze'),
+  ('MJE', '11', 'Cambundi Catembo'),
+  ('MJE', '12', 'Caculama'),
+  ('MJE', '13', 'Kiwaba Nzoji'),
+  ('MJE', '14', 'Luquembo'),
+  ('MJE', '15', 'Cateco Cangola'),
+  ('MJE', '16', 'Mbanji ya Ngola'),
+  ('MJE', '17', 'Cuale'),
+  ('MJE', '18', 'Pungo a Ndongo'),
+  ('MJE', '19', 'Ngola Luiji'),
+  ('MJE', '20', 'Quihuhu'),
+  ('MJE', '21', 'Xandel'),
+  ('MJE', '22', 'Cambo Suinginge'),
+  ('MJE', '23', 'Milando'),
+  ('MJE', '24', 'Quitapa'),
+  ('MJE', '25', 'Capunda'),
+  ('MJE', '26', 'Muquixe'),
+  ('MJE', '27', 'Quêssua'),
+  ('LNO', '01', 'Cuilo'),
+  ('LNO', '02', 'Dundo'),
+  ('LNO', '03', 'Lubalo'),
+  ('LNO', '04', 'Capenda Camulemba'),
+  ('LNO', '05', 'Cuango'),
+  ('LNO', '06', 'Lucapa'),
+  ('LNO', '07', 'Cambulo'),
+  ('LNO', '08', 'Xá Muteba'),
+  ('LNO', '09', 'Caungula'),
+  ('LNO', '10', 'Lóvua'),
+  ('LNO', '11', 'Chitato'),
+  ('LNO', '12', 'Xá Cassau'),
+  ('LNO', '13', 'Camaxilo'),
+  ('LNO', '14', 'Luangue'),
+  ('LNO', '15', 'Luremo'),
+  ('LNO', '16', 'Canzar'),
+  ('LNO', '17', 'Cassanje Calucala'),
+  ('LNO', '18', 'Mussungue'),
+  ('LNO', '19', 'Cafunfo'),
+  ('LSU', '01', 'Saurimo'),
+  ('LSU', '02', 'Muconda'),
+  ('LSU', '03', 'Cacolo'),
+  ('LSU', '04', 'Dala'),
+  ('LSU', '05', 'Chiluage'),
+  ('LSU', '06', 'Cassai-Sul'),
+  ('LSU', '07', 'Xassengue'),
+  ('LSU', '08', 'Alto Chicapa'),
+  ('LSU', '09', 'Sombo'),
+  ('LSU', '10', 'Muriege'),
+  ('LSU', '11', 'Luma Cassai'),
+  ('LSU', '12', 'Cazage'),
+  ('LSU', '13', 'Muangueji'),
+  ('LSU', '14', 'Cassengo'),
+  ('MCO', '01', 'Luena'),
+  ('MCO', '02', 'Cangamba'),
+  ('MCO', '03', 'Lumbala Nguimbo'),
+  ('MCO', '04', 'Camanongue'),
+  ('MCO', '05', 'Léua'),
+  ('MCO', '06', 'Lutembo'),
+  ('MCO', '07', 'Lucusse'),
+  ('MCO', '08', 'Cangumbe'),
+  ('MCO', '09', 'Chiúme'),
+  ('MCO', '10', 'Alto Cuito'),
+  ('MCO', '11', 'Ninda'),
+  ('MCO', '12', 'Lutuai'),
+  ('MLE', '01', 'Cazombo'),
+  ('MLE', '02', 'Luacano'),
+  ('MLE', '03', 'Cameia'),
+  ('MLE', '04', 'Luau'),
+  ('MLE', '05', 'Nana Candundo'),
+  ('MLE', '06', 'Macondo'),
+  ('MLE', '07', 'Caianda'),
+  ('MLE', '08', 'Lóvua do Zambeze'),
+  ('MLE', '09', 'Lago Dilolo'),
+  ('BIE', '01', 'Andulo'),
+  ('BIE', '02', 'Chitembo'),
+  ('BIE', '03', 'Cuito'),
+  ('BIE', '04', 'Camacupa'),
+  ('BIE', '05', 'Chinguar'),
+  ('BIE', '06', 'Catabola'),
+  ('BIE', '07', 'Cunhinga'),
+  ('BIE', '08', 'Cuemba'),
+  ('BIE', '09', 'Nharea'),
+  ('BIE', '10', 'Luando'),
+  ('BIE', '11', 'Ringoma'),
+  ('BIE', '12', 'Mumbué'),
+  ('BIE', '13', 'Calucinga'),
+  ('BIE', '14', 'Chicala'),
+  ('BIE', '15', 'Chipeta'),
+  ('BIE', '16', 'Umpulo'),
+  ('BIE', '17', 'Lúbia'),
+  ('BIE', '18', 'Cambândua'),
+  ('BIE', '19', 'Belo Horizonte'),
+  ('HBO', '01', 'Bailundo'),
+  ('HBO', '02', 'Huambo'),
+  ('HBO', '03', 'Londuimbali'),
+  ('HBO', '04', 'Caála'),
+  ('HBO', '05', 'Chicala Choloanga'),
+  ('HBO', '06', 'Cachiungo'),
+  ('HBO', '07', 'Mungo'),
+  ('HBO', '08', 'Longonjo'),
+  ('HBO', '09', 'Ucuma'),
+  ('HBO', '10', 'Ecunha'),
+  ('HBO', '11', 'Chinjenje'),
+  ('HBO', '12', 'Bimbe'),
+  ('HBO', '13', 'Sambo'),
+  ('HBO', '14', 'Galanga'),
+  ('HBO', '15', 'Alto Hama'),
+  ('HBO', '16', 'Chilata'),
+  ('HBO', '17', 'Cuima'),
+  ('BLA', '01', 'Benguela'),
+  ('BLA', '02', 'Ganda'),
+  ('BLA', '03', 'Lobito'),
+  ('BLA', '04', 'Catumbela'),
+  ('BLA', '05', 'Bocoio'),
+  ('BLA', '06', 'Balombo'),
+  ('BLA', '07', 'Cubal'),
+  ('BLA', '08', 'Baía Farta'),
+  ('BLA', '09', 'Caimbambo'),
+  ('BLA', '10', 'Chongorói'),
+  ('BLA', '11', 'Egito Praia'),
+  ('BLA', '12', 'Chindumbo'),
+  ('BLA', '13', 'Dombe Grande'),
+  ('BLA', '14', 'Capupa'),
+  ('BLA', '15', 'Biópio'),
+  ('BLA', '16', 'Chila'),
+  ('BLA', '17', 'Chicuma'),
+  ('BLA', '18', 'Babaera'),
+  ('BLA', '19', 'Iambala'),
+  ('BLA', '20', 'Catengue'),
+  ('BLA', '21', 'Bolonguera'),
+  ('BLA', '22', 'Canhamela'),
+  ('BLA', '23', 'Navegantes'),
+  ('NBE', '01', 'Moçâmedes'),
+  ('NBE', '02', 'Tômbwa'),
+  ('NBE', '03', 'Bibala'),
+  ('NBE', '04', 'Virei'),
+  ('NBE', '05', 'Camucuio'),
+  ('NBE', '06', 'Lucira'),
+  ('NBE', '07', 'Iona'),
+  ('NBE', '08', 'Sacomar'),
+  ('NBE', '09', 'Cacimbas'),
+  ('HLA', '01', 'Caconda'),
+  ('HLA', '02', 'Gambos'),
+  ('HLA', '03', 'Humpata'),
+  ('HLA', '04', 'Lubango'),
+  ('HLA', '05', 'Cuvango'),
+  ('HLA', '06', 'Quipungo'),
+  ('HLA', '07', 'Chibia'),
+  ('HLA', '08', 'Quilengues'),
+  ('HLA', '09', 'Caluquembe'),
+  ('HLA', '10', 'Matala'),
+  ('HLA', '11', 'Jamba Mineira'),
+  ('HLA', '12', 'Chipindo'),
+  ('HLA', '13', 'Chicomba'),
+  ('HLA', '14', 'Cacula'),
+  ('HLA', '15', 'Dongo'),
+  ('HLA', '16', 'Hoque'),
+  ('HLA', '17', 'Capelongo'),
+  ('HLA', '18', 'Chituto'),
+  ('HLA', '19', 'Capunda Cavilongo'),
+  ('HLA', '20', 'Viti Vivali'),
+  ('HLA', '21', 'Galangue'),
+  ('HLA', '22', 'Palanca'),
+  ('HLA', '23', 'Chicungo'),
+  ('CNE', '01', 'Ombadja'),
+  ('CNE', '02', 'Cuanhama'),
+  ('CNE', '03', 'Curoca'),
+  ('CNE', '04', 'Cahama'),
+  ('CNE', '05', 'Cuvelai'),
+  ('CNE', '06', 'Namacunde'),
+  ('CNE', '07', 'Chiéde'),
+  ('CNE', '08', 'Nehone'),
+  ('CNE', '09', 'Humbe'),
+  ('CNE', '10', 'Mupa'),
+  ('CNE', '11', 'Naulila'),
+  ('CNE', '12', 'Chitado'),
+  ('CNE', '13', 'Cafima'),
+  ('CNE', '14', 'Chissuata'),
+  ('CGO', '01', 'Menongue'),
+  ('CGO', '02', 'Cuchi'),
+  ('CGO', '03', 'Calai'),
+  ('CGO', '04', 'Nancova'),
+  ('CGO', '05', 'Cuangar'),
+  ('CGO', '06', 'Savate'),
+  ('CGO', '07', 'Caiundo'),
+  ('CGO', '08', 'Longa'),
+  ('CGO', '09', 'Cutato'),
+  ('CGO', '10', 'Chinguanja'),
+  ('CGO', '11', 'Mavengue'),
+  ('CDO', '01', 'Cuito Cuanavale'),
+  ('CDO', '02', 'Dirico'),
+  ('CDO', '03', 'Mavinga'),
+  ('CDO', '04', 'Rivungo'),
+  ('CDO', '05', 'Xipundo'),
+  ('CDO', '06', 'Dima'),
+  ('CDO', '07', 'Luiana'),
+  ('CDO', '08', 'Mucusso'),
+  ('CDO', '09', 'Luengue')
+)
+insert into public.municipios_angola (provincia_id, codigo_oficial, numero_oficial, nome)
+select p.id, 'AO' || dados.codigo_provincia || p.numero_oficial || dados.numero_municipio, dados.numero_municipio, dados.nome
+from dados join public.provincias_angola p on p.codigo_oficial = dados.codigo_provincia
+on conflict (codigo_oficial) do nothing;
+
+do $$
+declare
+  v_provincias integer;
+  v_municipios integer;
+  v_territorios_criticos integer;
+begin
+  select count(*) into v_provincias from public.provincias_angola where ativo;
+  select count(*) into v_municipios from public.municipios_angola where ativo;
+  if v_provincias <> 21 or v_municipios <> 326 then
+    raise exception 'Seed territorial inválido: esperadas 21 províncias e 326 municípios; obtidos % e %', v_provincias, v_municipios;
+  end if;
+
+  select count(*) into v_territorios_criticos
+  from (values
+    ('AOLNO1013', 'Lunda Norte', 'Camaxilo'),
+    ('AOCNE1902', 'Cunene', 'Cuanhama'),
+    ('AOBGO0411', 'Bengo', 'Úcua'),
+    ('AOLDA0506', 'Luanda', 'Kilamba Kiaxi'),
+    ('AOLDA0515', 'Luanda', 'Kilamba'),
+    ('AOBIE1413', 'Bié', 'Calucinga'),
+    ('AOLNO1019', 'Lunda Norte', 'Cafunfo'),
+    ('AONBE1702', 'Namibe', 'Tômbwa')
+  ) as esperado(codigo_municipio, provincia_nome, municipio_nome)
+  join public.municipios_angola m
+    on m.codigo_oficial = esperado.codigo_municipio
+   and m.nome = esperado.municipio_nome
+  join public.provincias_angola p
+    on p.id = m.provincia_id
+   and p.nome = esperado.provincia_nome;
+
+  if v_territorios_criticos <> 8 then
+    raise exception 'Seed territorial contém códigos críticos com nome ou província divergente';
+  end if;
+end;
+$$;
+
+create or replace function public.normalizar_texto_territorial(p_texto text)
+returns text language sql immutable strict set search_path = public as $$
+  select nullif(lower(regexp_replace(btrim(p_texto), '\s+', ' ', 'g')), '');
+$$;
+
+create or replace function public.resolver_territorio_angola(p_provincia text, p_municipio text)
+returns table(provincia_id uuid, provincia_nome text, provincia_codigo text, municipio_id uuid, municipio_nome text, municipio_codigo text)
+language sql stable security definer set search_path = public as $$
+  select p.id, p.nome, p.codigo_oficial, m.id, m.nome, m.codigo_oficial
+  from public.provincias_angola p
+  join public.municipios_angola m on m.provincia_id = p.id
+  where p.ativo and m.ativo
+    and public.normalizar_texto_territorial(p.nome) = public.normalizar_texto_territorial(p_provincia)
+    and public.normalizar_texto_territorial(m.nome) = public.normalizar_texto_territorial(p_municipio);
+$$;
+
+create or replace function public.territorio_angola_valido(p_provincia text, p_municipio text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists(select 1 from public.resolver_territorio_angola(p_provincia, p_municipio));
+$$;
+
+create or replace function public.listar_provincias_angola()
+returns table(id uuid, codigo_oficial text, nome text, ordem integer)
+language sql stable security definer set search_path = public as $$
+  select p.id, p.codigo_oficial, p.nome, p.ordem
+  from public.provincias_angola p where p.ativo order by p.ordem, p.nome;
+$$;
+
+create or replace function public.listar_municipios_angola(p_provincia_id uuid)
+returns table(id uuid, codigo_oficial text, nome text, provincia_id uuid)
+language sql stable security definer set search_path = public as $$
+  select m.id, m.codigo_oficial, m.nome, m.provincia_id
+  from public.municipios_angola m join public.provincias_angola p on p.id = m.provincia_id
+  where m.provincia_id = p_provincia_id and p.ativo and m.ativo
+  order by m.numero_oficial, m.nome;
+$$;
+
+alter table public.provincias_angola enable row level security;
+alter table public.municipios_angola enable row level security;
+
+revoke all on table public.provincias_angola, public.municipios_angola from public, anon, authenticated;
+revoke all on function public.normalizar_texto_territorial(text) from public, anon, authenticated;
+revoke all on function public.resolver_territorio_angola(text, text) from public, anon, authenticated;
+revoke all on function public.territorio_angola_valido(text, text) from public, anon, authenticated;
+revoke all on function public.listar_provincias_angola() from public, anon, authenticated;
+revoke all on function public.listar_municipios_angola(uuid) from public, anon, authenticated;
+grant execute on function public.listar_provincias_angola() to anon, authenticated;
+grant execute on function public.listar_municipios_angola(uuid) to anon, authenticated;
+
+commit;

@@ -15,6 +15,7 @@ import { AuthProvider } from "@/contextos/AuthContexto";
 import { CarrinhoProvider } from "@/contextos/CarrinhoContexto";
 import { useAuth } from "@/contextos/AuthContexto";
 import AtualizacoesTempoReal from '@/componentes/AtualizacoesTempoReal';
+import { NotificacoesProvider } from '@/contextos/NotificacoesContexto';
 
 // Páginas
 import PaginaInicial from "@/paginas/PaginaInicial";
@@ -28,7 +29,7 @@ import ScrollToTop from "@/componentes/ScrollToTop";
 import MensagensValidacaoNativas from "@/componentes/MensagensValidacaoNativas";
 import NotFound from "./pages/NotFound.tsx";
 import PaginaServico from "@/paginas/PaginaServico";
-import PaginaAnunciarServico from "@/paginas/PaginaAnunciarServico";
+import PaginaAnunciarServicoCompat from "@/paginas/PaginaAnunciarServicoCompat";
 import PaginaServicos from "@/paginas/PaginaServicos";
 import SobreNos from "@/paginas/SobreNos";
 import PaginaTermos from "@/paginas/PaginaTermos";
@@ -64,10 +65,11 @@ const App = () => (
       <MunicipioProvider>
         <AuthProvider>
           <CarrinhoProvider>
-          <AtualizacoesTempoReal>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+          <BrowserRouter>
+            <NotificacoesProvider>
+              <AtualizacoesTempoReal>
+                <Toaster />
+                <Sonner />
               <ScrollToTop />
               <MensagensValidacaoNativas />
               <Routes>
@@ -83,7 +85,7 @@ const App = () => (
               <Route path="/vendedor/:id" element={<PaginaVendedor />} />
               <Route path="/anunciar" element={<PaginaAnunciar />} />
               <Route path="/parceiro-entregas/cadastro" element={<PaginaCadastroParceiroEntrega />} />
-              <Route path="/anunciar-servico" element={<PaginaAnunciarServico />} />
+              <Route path="/anunciar-servico" element={<PaginaAnunciarServicoCompat />} />
               <Route path="/servicos" element={<PaginaServicos />} />
               <Route path="/carrinho" element={<PaginaCarrinho />} />
               <Route path="/checkout" element={<PaginaCheckoutPendente />} />
@@ -96,8 +98,9 @@ const App = () => (
               {/* Rota genérica — 404 */}
               <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </AtualizacoesTempoReal>
+              </AtualizacoesTempoReal>
+            </NotificacoesProvider>
+          </BrowserRouter>
           </CarrinhoProvider>
         </AuthProvider>
       </MunicipioProvider>

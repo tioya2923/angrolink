@@ -91,6 +91,32 @@ export interface DocumentoVendedorParaSubmissao {
   verso?: File | null;
 }
 
+/**
+ * Valida o lote completo antes de iniciar qualquer upload. Isto evita uma
+ * candidatura aparentemente concluída com documentos obrigatórios ausentes
+ * ou repetidos.
+ */
+export function validarDocumentosParaSubmissao(documentos: DocumentoVendedorParaSubmissao[]) {
+  if (documentos.length === 0) {
+    throw new Error('Envie pelo menos um documento antes de concluir o cadastro.');
+  }
+
+  const tipos = new Set<string>();
+  for (const documento of documentos) {
+    if (tipos.has(documento.tipo_documento)) {
+      throw new Error('Cada tipo de documento só pode ser enviado uma vez.');
+    }
+    tipos.add(documento.tipo_documento);
+
+    if (!documento.frente || !documento.verso) {
+      throw new Error('Envie a foto da frente e do verso de cada documento.');
+    }
+
+    validarImagemDocumentoVendedor(documento.frente);
+    validarImagemDocumentoVendedor(documento.verso);
+  }
+}
+
 export function validarImagemDocumentoVendedor(ficheiro: Pick<File, 'type' | 'size'>) {
   const formatos = ['image/jpeg', 'image/png', 'image/webp'];
   if (!formatos.includes(ficheiro.type)) {
@@ -160,6 +186,7 @@ export async function submeterDocumentosVendedor(
   vendedorId: string,
   documentos: DocumentoVendedorParaSubmissao[],
 ) {
+  validarDocumentosParaSubmissao(documentos);
   const utilizador = await obterUtilizadorAutenticado();
   const registos: DocumentoVendedorInsert[] = [];
 

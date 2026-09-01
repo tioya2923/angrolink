@@ -16,7 +16,10 @@ export type LocalLevantamentoVendedor = {
 
 const paraCentimos = (valor: number | null) => Math.round(Number(valor ?? 0) * 100);
 
-export async function atualizarEstadoItensCarrinho(itens: ItemCarrinho[]): Promise<ItemCarrinho[]> {
+export async function atualizarEstadoItensCarrinho(
+  itens: ItemCarrinho[],
+  vendedorAutenticadoId?: string | null,
+): Promise<ItemCarrinho[]> {
   if (itens.length === 0) return [];
   const ids = itens.map((item) => item.produto_id);
   const { data, error } = await supabase
@@ -31,7 +34,7 @@ export async function atualizarEstadoItensCarrinho(itens: ItemCarrinho[]): Promi
 
   return itens.map((item) => {
     const produto = produtos.get(item.produto_id);
-    if (!produto || produto.vendedor_id !== item.vendedor_id) return { ...item, disponivel: false };
+    if (!produto || produto.vendedor_id !== item.vendedor_id || produto.vendedor_id === vendedorAutenticadoId) return { ...item, disponivel: false };
     const precoRetalho = produto.preco_promocional !== null && produto.preco_promocional > 0 && produto.preco_promocional < (produto.preco_aproximado ?? 0)
       ? produto.preco_promocional
       : produto.preco_aproximado;

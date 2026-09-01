@@ -11,12 +11,15 @@ import {
   fetchVendedoresAdmin,
   fetchProdutosAdmin,
 } from '@/services/api';
+import { listarDisputasAdmin, listarEncomendasAdmin, type DisputaAdminResumo, type EncomendaAdminResumo } from '@/services/admin360';
 
 import { Vendedor, Produto } from '@/tipos';
 
 export default function AdminResumo() {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [encomendas, setEncomendas] = useState<EncomendaAdminResumo[]>([]);
+  const [disputas, setDisputas] = useState<DisputaAdminResumo[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [versaoTempoReal, setVersaoTempoReal] = useState(0);
@@ -32,13 +35,17 @@ export default function AdminResumo() {
         setLoading(true);
         setErro(null);
 
-        const [vendedoresData, produtosData] = await Promise.all([
+        const [vendedoresData, produtosData, encomendasData, disputasData] = await Promise.all([
           fetchVendedoresAdmin(),
           fetchProdutosAdmin(),
+          listarEncomendasAdmin(),
+          listarDisputasAdmin(),
         ]);
 
         setVendedores(vendedoresData || []);
         setProdutos(produtosData || []);
+        setEncomendas(encomendasData);
+        setDisputas(disputasData);
       } catch (err) {
         console.error('Erro ao carregar resumo admin:', err);
         setErro('Erro ao carregar dados do painel.');
@@ -62,6 +69,9 @@ export default function AdminResumo() {
     ).length;
 
     const produtosDisponiveis = produtos.filter(p => p.disponivel).length;
+    const disputasAbertas = disputas.filter(d => d.estado === 'aberta').length;
+    const disputasEmAnalise = disputas.filter(d => d.estado === 'em_analise').length;
+    const pagamentosPendentes = encomendas.filter(e => e.estado_pagamento === 'pendente').length;
 
     const porMunicipio = produtos.reduce<Record<string, number>>((acc, p) => {
       const municipio = p.municipio || 'Sem município';
@@ -76,9 +86,13 @@ export default function AdminResumo() {
       vendedoresVerificados,
       vendedoresPendentes,
       produtosDisponiveis,
+      encomendas: encomendas.length,
+      disputasAbertas,
+      disputasEmAnalise,
+      pagamentosPendentes,
       porMunicipio,
     };
-  }, [vendedores, produtos]);
+  }, [vendedores, produtos, encomendas, disputas]);
 
   if (loading) {
     return (
@@ -127,6 +141,10 @@ export default function AdminResumo() {
           rotulo="Verificados"
           valor={metricas.vendedoresVerificados}
         />
+        <CardMetrica icone={Package} rotulo="Encomendas" valor={metricas.encomendas} />
+        <CardMetrica icone={ShieldCheck} rotulo="Disputas abertas" valor={metricas.disputasAbertas} />
+        <CardMetrica icone={ShieldCheck} rotulo="Em análise" valor={metricas.disputasEmAnalise} />
+        <CardMetrica icone={Package} rotulo="Pagamentos pendentes" valor={metricas.pagamentosPendentes} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -1,4 +1,6 @@
 import type { Database } from '@/types/database.types';
+import type { DadosRenovacaoDocumentoParceiro } from '@/dominio/documentosParceiro';
+import type { AtributosLogisticosProduto } from '@/dominio/logisticaProduto';
 
 type ProdutoInsert = Database['public']['Tables']['produtos']['Insert'];
 type ProdutoUpdate = Database['public']['Tables']['produtos']['Update'];
@@ -7,15 +9,24 @@ type ServicoInsert = Database['public']['Tables']['servicos']['Insert'];
 type ServicoUpdate = Database['public']['Tables']['servicos']['Update'];
 
 type VendedorUpdate = Database['public']['Tables']['vendedores']['Update'];
+type VeiculoEntregaUpdate = Database['public']['Tables']['veiculos_entrega']['Update'];
 
-import { Produto, Vendedor, Servico } from "@/tipos";
+export interface DadosOperacionaisVeiculoAtualizaveis {
+  capacidade_kg: number;
+  capacidade_volume_m3: number | null;
+  possui_refrigeracao: boolean;
+  possui_caixa_carga: boolean;
+  aceita_paletes: boolean;
+}
+
+import { PlanoVendedor, Produto, Vendedor, Servico } from "@/tipos";
 import {
   supabase,
   BUCKET_PRODUTOS,
   BUCKET_VENDEDORES,
   SUPABASE_STORAGE_PRODUTOS_URL,
 } from "./supabase";
-import { COLUNAS_VENDEDOR_SEM_DOCUMENTOS } from './vendedores';
+import { COLUNAS_VENDEDOR_PUBLICAS, listarVendedoresPublicos } from './vendedores';
 
 // Get the active vendor ID from localStorage or session storage
 const getVendedorAtivoId = (): string | null => {
@@ -34,27 +45,12 @@ const getVendedorAtivoId = (): string | null => {
 };
 
 async function garantirVendedorAprovado(vendedorId: string) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.id) {
-    throw new Error('Utilizador nÃ£o autenticado.');
-  }
-
-  const { data, error } = await supabase
-    .from('vendedores')
-    .select('id, user_id, status_aprovacao')
-    .eq('id', vendedorId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (error) {
-    console.error('Erro ao validar estado do vendedor:', error);
+  const vendedor = await fetchMeuVendedor();
+  if (!vendedor || vendedor.id !== vendedorId) {
     throw new Error('NÃ£o foi possÃ­vel validar o estado do vendedor.');
   }
 
-  if (data?.status_aprovacao !== 'aprovado') {
+  if (vendedor.status_aprovacao !== 'aprovado') {
     throw new Error(
       'A tua conta de vendedor nÃ£o estÃ¡ aprovada para gerir produtos ou serviÃ§os.'
     );
@@ -132,11 +128,34 @@ const normalizarVendedor = (v: any): Vendedor => {
   } as Vendedor;
 };
 
+type ItemPublicoComVendedorId = {
+  vendedor_id: string | null;
+};
+
+async function associarVendedoresPublicos<T extends ItemPublicoComVendedorId>(
+  itens: T[],
+): Promise<Array<T & { vendedor: Vendedor }>> {
+  const vendedores = await listarVendedoresPublicos(
+    itens.flatMap((item) => item.vendedor_id ? [item.vendedor_id] : []),
+  );
+  const vendedoresPorId = new Map(
+    vendedores.map((vendedor) => [vendedor.id, normalizarVendedor(vendedor)]),
+  );
+
+  return itens.flatMap((item) => {
+    const vendedor = item.vendedor_id
+      ? vendedoresPorId.get(item.vendedor_id)
+      : undefined;
+    return vendedor ? [{ ...item, vendedor }] : [];
+  });
+}
+
 // =============================
 // FILTROS
 // =============================
 
 interface FetchProdutosParams {
+  provincia?: string;
   municipio?: string;
   tipoComprador?: "casa" | "negocio";
   categoria?: string;
@@ -154,16 +173,18 @@ export async function fetchProdutos(
     .from("produtos")
     .select(`
       *,
-      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .eq("disponivel", true)
     .eq("publicado", true)
-    .eq("vendedor.status_aprovacao", "aprovado")
     .order("criado_em", { ascending: false });
 
   if (params?.categoria) {
     query = query.eq("categoria_id", params.categoria);
+  }
+
+  if (params?.provincia) {
+    query = query.ilike("provincia", `%${params.provincia}%`);
   }
 
   if (params?.municipio) {
@@ -181,7 +202,7 @@ export async function fetchProdutos(
     throw new Error("Erro ao carregar produtos");
   }
 
-  let produtos = (data || []).map(normalizarProduto);
+  let produtos = (await associarVendedoresPublicos(data || [])).map(normalizarProduto);
 
   if (params?.tipoComprador === "casa") {
     produtos = produtos.filter(
@@ -207,13 +228,11 @@ export async function fetchProdutoPorId(id: string): Promise<Produto | null> {
     .from("produtos")
     .select(`
       *,
-      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .eq("id", id)
     .eq("disponivel", true)
     .eq("publicado", true)
-    .eq("vendedor.status_aprovacao", "aprovado")
     .single();
 
   if (error) {
@@ -221,7 +240,8 @@ export async function fetchProdutoPorId(id: string): Promise<Produto | null> {
     return null;
   }
 
-  return normalizarProduto(data);
+  const [produto] = await associarVendedoresPublicos([data]);
+  return produto ? normalizarProduto(produto) : null;
 }
 
 // Leitura privada usada no formulÃ¡rio de ediÃ§Ã£o. NÃ£o aplica os filtros do
@@ -257,14 +277,12 @@ export async function fetchProdutosRelacionados(
     .from("produtos")
     .select(`
       *,
-      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
       categoria:categorias (*)
     `)
     .eq("categoria_id", categoriaId)
     .neq("id", excluirId)
     .eq("disponivel", true)
     .eq("publicado", true)
-    .eq("vendedor.status_aprovacao", "aprovado")
     .order("criado_em", { ascending: false })
     .limit(4);
 
@@ -273,7 +291,7 @@ export async function fetchProdutosRelacionados(
     return [];
   }
 
-  return (data || []).map(normalizarProduto);
+  return (await associarVendedoresPublicos(data || [])).map(normalizarProduto);
 }
 
 // =============================
@@ -281,18 +299,13 @@ export async function fetchProdutosRelacionados(
 // =============================
 
 export async function fetchVendedorPorId(id: string): Promise<Vendedor | null> {
-  const { data, error } = await supabase
-    .from("vendedores")
-    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-    .eq("id", id)
-    .single();
-
-  if (error) {
+  try {
+    const [vendedor] = await listarVendedoresPublicos([id]);
+    return vendedor ? normalizarVendedor(vendedor) : null;
+  } catch (error) {
     console.error("Erro ao buscar vendedor:", error);
     return null;
   }
-
-  return data as unknown as Vendedor;
 }
 
 // =============================
@@ -316,7 +329,7 @@ export async function fetchProdutosPorVendedor(
     return [];
   }
 
-  return (data || []).map(normalizarProduto);
+  return (await associarVendedoresPublicos(data || [])).map(normalizarProduto);
 }
 
 // =============================
@@ -364,7 +377,14 @@ export async function uploadImagemProduto(file: File) {
     mimeToExt[file.type] ||
     file.name.split('.').pop()?.toLowerCase() ||
     'jpg';
-  const fileName = `${Date.now()}-${Math.random()
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  const utilizadorId = authData.user?.id;
+
+  if (authError || !utilizadorId) {
+    throw new Error("Inicie sessão para enviar uma imagem de produto.");
+  }
+
+  const fileName = `${utilizadorId}/${Date.now()}-${Math.random()
     .toString(36)
     .substring(2)}.${extensao}`;
   const { error } = await supabase.storage
@@ -420,9 +440,14 @@ export async function uploadImagemVendedor(file: File) {
     file.name.split('.').pop()?.toLowerCase() ||
     'jpg';
 
-  const fileName = `${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2)}.${extensao}`;
+  const { data: dadosAuth, error: erroAuth } = await supabase.auth.getUser();
+  const user = dadosAuth.user;
+
+  if (erroAuth || !user) {
+    throw new Error('Não foi possível identificar a sessão para enviar a imagem.');
+  }
+
+  const fileName = `${user.id}/perfil-${crypto.randomUUID()}.${extensao}`;
 
   const { error } = await supabase.storage
     .from(BUCKET_VENDEDORES)
@@ -434,9 +459,7 @@ export async function uploadImagemVendedor(file: File) {
 
   if (error) {
     console.error('Erro upload imagem vendedor:', error);
-    throw new Error(
-      `Erro upload imagem vendedor: ${error.message || 'desconhecido'}`
-    );
+    throw new Error('Não foi possível enviar a imagem.');
   }
 
   const { data } = supabase.storage
@@ -482,7 +505,7 @@ export async function deleteImagemProdutoPorUrl(url?: string | null) {
 // CRIAR PRODUTO
 // =============================
 
-interface CriarProdutoParams {
+interface CriarProdutoParams extends Partial<AtributosLogisticosProduto> {
   vendedor_id: string;
   nome_produto: string;
   descricao?: string;
@@ -496,6 +519,12 @@ interface CriarProdutoParams {
   provincia: string;
   imagem_url?: string | null;
   quantidade_minima?: number;
+}
+
+export async function fetchMeuVendedor(): Promise<Vendedor | null> {
+  const { data, error } = await supabase.rpc('obter_meu_vendedor');
+  if (error) { console.error('Erro ao buscar o próprio vendedor:', error); return null; }
+  return data?.[0] ? normalizarVendedor(data[0]) : null;
 }
 
 
@@ -570,6 +599,11 @@ export async function criarProduto(params: CriarProdutoParams) {
         provincia: params.provincia,
         imagem_url: params.imagem_url || null,
         quantidade_minima: params.quantidade_minima ?? 1,
+        peso_por_unidade_comercial_kg: params.peso_por_unidade_comercial_kg ?? null,
+        volume_por_unidade_comercial_m3: params.volume_por_unidade_comercial_m3 ?? null,
+        requer_refrigeracao: params.requer_refrigeracao ?? null,
+        requer_caixa_carga: params.requer_caixa_carga ?? null,
+        requer_paletes: params.requer_paletes ?? null,
         vendedor_id: params.vendedor_id,
         disponivel: true,
         destaque: false,
@@ -577,7 +611,7 @@ export async function criarProduto(params: CriarProdutoParams) {
     ])
     .select(`
       *,
-      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
+      vendedor:vendedores (${COLUNAS_VENDEDOR_PUBLICAS}),
       categoria:categorias (*)
     `)
     .single();
@@ -594,7 +628,7 @@ export async function criarProduto(params: CriarProdutoParams) {
 // ATUALIZAR PRODUTO
 // =============================
 
-export const updateProduto = async (id: string, dados: any) => {
+export const updateProduto = async (id: string, dados: ProdutoUpdate) => {
   const vendedorId = getVendedorAtivoId();
   if (!vendedorId) {
     throw new Error("Vendedor nÃ£o autenticado");
@@ -612,7 +646,7 @@ export const updateProduto = async (id: string, dados: any) => {
     .eq("vendedor_id", vendedorId)
     .select(`
       *,
-      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
+      vendedor:vendedores (${COLUNAS_VENDEDOR_PUBLICAS}),
       categoria:categorias (*)
     `)
     .single();
@@ -723,7 +757,7 @@ export async function criarServico(params: CriarServicoParams) {
   ])
   .select(`
     *,
-    vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
+    vendedor:vendedores (${COLUNAS_VENDEDOR_PUBLICAS})
   `)
   .single();
 
@@ -739,12 +773,10 @@ export async function fetchServicos(): Promise<Servico[]> {
   const { data, error } = await supabase
     .from("servicos")
     .select(`
-      *,
-      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
+      *
     `)
     .eq("disponivel", true)
     .eq("publicado", true)
-    .eq("vendedor.status_aprovacao", "aprovado")
     .order("criado_em", { ascending: false });
 
   if (error) {
@@ -752,7 +784,7 @@ export async function fetchServicos(): Promise<Servico[]> {
     return [];
   }
 
-  return (data || []).map(normalizarServico);
+  return (await associarVendedoresPublicos(data || [])).map(normalizarServico);
 }
 
 export async function fetchServicosPorVendedor(
@@ -760,10 +792,7 @@ export async function fetchServicosPorVendedor(
 ): Promise<Servico[]> {
   const { data, error } = await supabase
     .from("servicos")
-    .select(`
-      *,
-      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
-    `)
+    .select('*')
     .eq("vendedor_id", vendedorId)
     .order("criado_em", { ascending: false });
 
@@ -772,7 +801,7 @@ export async function fetchServicosPorVendedor(
     return [];
   }
 
-  return (data || []).map(normalizarServico);
+  return (await associarVendedoresPublicos(data || [])).map(normalizarServico);
 }
 
 export async function updateServico(id: string, dados: any) {
@@ -790,7 +819,7 @@ export async function updateServico(id: string, dados: any) {
     .eq("vendedor_id", vendedorId)
     .select(`
       *,
-      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
+      vendedor:vendedores (${COLUNAS_VENDEDOR_PUBLICAS})
     `)
     .single();
 
@@ -828,13 +857,11 @@ export async function fetchServicoPorId(id: string): Promise<Servico | null> {
   const { data, error } = await supabase
     .from("servicos")
     .select(`
-      *,
-      vendedor:vendedores!inner (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
+      *
     `)
     .eq("id", id)
     .eq("disponivel", true)
     .eq("publicado", true)
-    .eq("vendedor.status_aprovacao", "aprovado")
     .single();
 
   if (error) {
@@ -842,7 +869,8 @@ export async function fetchServicoPorId(id: string): Promise<Servico | null> {
     return null;
   }
 
-  return normalizarServico(data);
+  const [servico] = await associarVendedoresPublicos([data]);
+  return servico ? normalizarServico(servico) : null;
 }
 
 // Leitura privada usada no formulÃ¡rio de ediÃ§Ã£o de serviÃ§os.
@@ -869,19 +897,24 @@ export async function fetchServicoParaEdicao(
 // ATUALIZAR VENDEDOR
 // =============================
 export async function updateVendedor(vendedorId: string, dados: any) {
-  const { data, error } = await supabase
+  const vendedor = await fetchMeuVendedor();
+  if (!vendedor || vendedor.id !== vendedorId) {
+    throw new Error('Não tens permissão para atualizar este perfil.');
+  }
+
+  const { error } = await supabase
     .from("vendedores")
     .update(dados)
-    .eq("id", vendedorId)
-    .select("*")
-    .single();
+    .eq("id", vendedorId);
 
   if (error) {
     console.error("Erro ao atualizar vendedor:", error);
     throw error;
   }
 
-  return data as Vendedor;
+  const atualizado = await fetchMeuVendedor();
+  if (!atualizado) throw new Error('Não foi possível confirmar a atualização do perfil.');
+  return atualizado;
 }
 
 // =============================
@@ -1093,61 +1126,32 @@ export async function guardarVisualizacaoServico({
 // =============================
 
 export async function fetchVendedoresAdmin(): Promise<Vendedor[]> {
-  const { data, error } = await supabase
-    .from('vendedores')
-    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-    .order('criado_em', { ascending: false });
+  const { data, error } = await supabase.rpc('listar_vendedores_admin');
 
   if (error) {
     console.error('Erro ao buscar vendedores:', error);
     return [];
   }
 
-  return (data || []).map(normalizarVendedor);
+  return (data ?? []).map(normalizarVendedor);
 }
 
 export async function atualizarEstadoVendedor(
   vendedorId: string,
   estado: VendedorUpdate['status_aprovacao'],
-  adminId?: string | null,
+  _adminId?: string | null,
   motivoRejeicao?: string | null,
 ) {
-  const dadosAtualizacao: VendedorUpdate = {
-    status_aprovacao: estado,
-    atualizado_em: new Date().toISOString(),
-  };
-
-  if (estado === 'aprovado') {
-    dadosAtualizacao.aprovado_em = new Date().toISOString();
-    dadosAtualizacao.aprovado_por = adminId || null;
-  }
-
-  if (estado === 'rejeitado' || estado === 'suspenso') {
-    dadosAtualizacao.verificado = false;
-    dadosAtualizacao.pode_destacar = false;
-  }
-
-  if (estado === 'rejeitado') {
-    const motivo = motivoRejeicao?.trim();
-    if (!motivo) throw new Error('Indique o motivo da rejeiÃ§Ã£o.');
-    dadosAtualizacao.motivo_rejeicao = motivo;
-  } else {
-    dadosAtualizacao.motivo_rejeicao = null;
-  }
-
-  const { data, error } = await supabase
-    .from('vendedores')
-    .update(dadosAtualizacao)
-    .eq('id', vendedorId)
-    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-    .single();
+  const { error } = await supabase.rpc('atualizar_estado_vendedor_admin', { p_vendedor_id: vendedorId, p_estado: estado, p_motivo_rejeicao: motivoRejeicao?.trim() || undefined });
 
   if (error) {
     console.error('Erro ao atualizar estado:', error);
     throw error;
   }
 
-  return normalizarVendedor(data);
+  const atualizado = (await fetchVendedoresAdmin()).find((v) => v.id === vendedorId);
+  if (!atualizado) throw new Error('Não foi possível confirmar a atualização do vendedor.');
+  return atualizado;
 }
 
 // =============================
@@ -1294,7 +1298,12 @@ export async function atualizarEstadoDocumentoParceiro(
   return data;
 }
 
-export async function reenviarDocumentoParceiro(documentoId: string, frente: File, verso: File) {
+export async function reenviarDocumentoParceiro(
+  documentoId: string,
+  frente: File,
+  verso: File,
+  renovacao?: DadosRenovacaoDocumentoParceiro,
+) {
   const { data: auth, error: erroAuth } = await supabase.auth.getUser();
   if (erroAuth || !auth.user) throw new Error('SessÃ£o invÃ¡lida. Entre novamente na sua conta.');
 
@@ -1309,14 +1318,33 @@ export async function reenviarDocumentoParceiro(documentoId: string, frente: Fil
     return caminho;
   };
 
-  const [frentePath, versoPath] = await Promise.all([enviar(frente, 'frente'), enviar(verso, 'verso')]);
-  const db = supabase;
-  const { error } = await db.rpc('reenviar_documento_parceiro', {
-    p_documento_id: documentoId,
-    p_frente_path: frentePath,
-    p_verso_path: versoPath,
-  });
-  if (error) throw error;
+  const novosCaminhos: string[] = [];
+  try {
+    const frentePath = await enviar(frente, 'frente');
+    novosCaminhos.push(frentePath);
+    const versoPath = await enviar(verso, 'verso');
+    novosCaminhos.push(versoPath);
+
+    const resultado = renovacao
+      ? await supabase.rpc('reenviar_documento_parceiro', {
+          p_documento_id: documentoId,
+          p_frente_path: frentePath,
+          p_verso_path: versoPath,
+          p_numero_documento: renovacao.numeroDocumento?.trim() || '',
+          p_validade: renovacao.validade,
+        })
+      : await supabase.rpc('reenviar_documento_parceiro', {
+          p_documento_id: documentoId,
+          p_frente_path: frentePath,
+          p_verso_path: versoPath,
+        });
+    if (resultado.error) throw resultado.error;
+  } catch (erro) {
+    if (novosCaminhos.length) {
+      await supabase.storage.from('documentos-parceiros').remove(novosCaminhos);
+    }
+    throw erro;
+  }
 }
 
 export async function obterUrlDocumentoParceiro(path: string) {
@@ -1381,16 +1409,57 @@ export async function atualizarMeuParceiroEntrega(parceiroId: string, dados: Rec
   return data;
 }
 
-export async function atualizarVeiculoEntrega(veiculoId: string, dados: Record<string, unknown>) {
+export async function atualizarVeiculoEntrega(
+  veiculoId: string,
+  dados: DadosOperacionaisVeiculoAtualizaveis,
+) {
+  if (!Number.isFinite(dados.capacidade_kg) || dados.capacidade_kg <= 0) {
+    throw new Error('Indique uma capacidade máxima de carga válida.');
+  }
+  if (
+    dados.capacidade_volume_m3 !== null &&
+    (!Number.isFinite(dados.capacidade_volume_m3) ||
+      dados.capacidade_volume_m3 <= 0)
+  ) {
+    throw new Error('Indique um volume aproximado válido ou deixe o campo em branco.');
+  }
+  if (
+    typeof dados.possui_refrigeracao !== 'boolean' ||
+    typeof dados.possui_caixa_carga !== 'boolean' ||
+    typeof dados.aceita_paletes !== 'boolean'
+  ) {
+    throw new Error('Indique claramente o equipamento disponível no veículo.');
+  }
+
+  const dadosPermitidos: VeiculoEntregaUpdate = {
+    capacidade_kg: dados.capacidade_kg,
+    capacidade_volume_m3: dados.capacidade_volume_m3,
+    possui_refrigeracao: dados.possui_refrigeracao,
+    possui_caixa_carga: dados.possui_caixa_carga,
+    aceita_paletes: dados.aceita_paletes,
+  };
   const db = supabase;
-  const { data, error } = await db
+  const { data: atualizado, error } = await db
     .from('veiculos_entrega')
-    .update(dados)
+    .update(dadosPermitidos)
     .eq('id', veiculoId)
     .select('*')
     .single();
 
   if (error) throw error;
+  if (!atualizado) {
+    throw new Error('Não foi possível confirmar a atualização do veículo.');
+  }
+
+  // A resposta do UPDATE confirma a escrita; esta leitura separada é a fonte
+  // de verdade usada pelo painel e evita mostrar estado otimista/stale.
+  const { data, error: erroLeitura } = await db
+    .from('veiculos_entrega')
+    .select('*')
+    .eq('id', atualizado.id)
+    .single();
+
+  if (erroLeitura) throw erroLeitura;
   return data;
 }
 
@@ -1407,9 +1476,18 @@ export async function atualizarAreaCoberturaEntrega(areaId: string, dados: Recor
   return data;
 }
 
-export async function uploadFotoPerfilParceiro(parceiroId: string, ficheiro: File) {
+export async function uploadFotoPerfilParceiro(ficheiro: File) {
+  const {
+    data: { user },
+    error: erroSessao,
+  } = await supabase.auth.getUser();
+
+  if (erroSessao || !user) {
+    throw new Error('Sessão inválida. Inicie sessão novamente para atualizar a fotografia.');
+  }
+
   const extensao = ficheiro.name.split('.').pop() || 'jpg';
-  const caminho = `${parceiroId}/perfil-${crypto.randomUUID()}.${extensao}`;
+  const caminho = `${user.id}/perfil-${crypto.randomUUID()}.${extensao}`;
   const { error: uploadError } = await supabase.storage
     .from('documentos-parceiros')
     .upload(caminho, ficheiro, { contentType: ficheiro.type });
@@ -1437,51 +1515,12 @@ export async function atualizarDisponibilidadeParceiroEntrega(
 }
 
 export async function eliminarVendedorAdmin(id: string) {
-  const { error } = await supabase
-    .from('vendedores')
-    .delete()
-    .eq('id', id);
+  const { error } = await supabase.rpc('eliminar_vendedor_admin', { p_vendedor_id: id });
 
   if (error) {
     console.error('Erro ao eliminar vendedor:', error);
     throw error;
   }
-}
-
-// =============================
-// ADMIN â€” UTILIZADORES
-// =============================
-export async function fetchUtilizadoresAdmin() {
-  const { data: clientes, error: clientesError } = await supabase
-    .from('clientes')
-    .select('*')
-    .order('criado_em', { ascending: false });
-
-  console.log('ADMIN CLIENTES:', clientes);
-  console.log('ADMIN CLIENTES ERROR:', clientesError);
-
-  if (clientesError) {
-    console.error('Erro ao buscar compradores:', clientesError);
-    throw clientesError;
-  }
-
-  const { data: vendedores, error: vendedoresError } = await supabase
-    .from('vendedores')
-    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-    .order('criado_em', { ascending: false });
-
-  console.log('ADMIN VENDEDORES:', vendedores);
-  console.log('ADMIN VENDEDORES ERROR:', vendedoresError);
-
-  if (vendedoresError) {
-    console.error('Erro ao buscar vendedores:', vendedoresError);
-    throw vendedoresError;
-  }
-
-  return {
-    clientes: clientes || [],
-    vendedores: vendedores || [],
-  };
 }
 
 export async function eliminarClienteAdmin(id: string) {
@@ -1504,33 +1543,32 @@ export async function eliminarClienteAdmin(id: string) {
 // =============================
 
 export async function fetchProdutosAdmin(): Promise<Produto[]> {
-  const { data, error } = await supabase
-    .from('produtos')
-    .select(`
-      *,
-      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
-      categoria:categorias (*)
-    `)
-    .order('criado_em', { ascending: false });
+  const [{ data, error }, vendedores] = await Promise.all([
+    supabase
+      .from('produtos')
+      .select('*, categoria:categorias (*)')
+      .order('criado_em', { ascending: false }),
+    fetchVendedoresAdmin(),
+  ]);
 
   if (error) {
     console.error('Erro ao buscar produtos admin:', error);
     throw error;
   }
 
-  return (data || []).map(normalizarProduto);
+  const vendedoresPorId = new Map(vendedores.map((vendedor) => [vendedor.id, vendedor]));
+  return (data || []).map((produto) => normalizarProduto({
+    ...produto,
+    vendedor: vendedoresPorId.get(produto.vendedor_id) || null,
+  }));
 }
 
-export async function updateProdutoAdmin(id: string, dados: any) {
+export async function updateProdutoAdmin(id: string, dados: ProdutoUpdate) {
   const { data, error } = await supabase
     .from('produtos')
     .update(dados)
     .eq('id', id)
-    .select(`
-      *,
-      vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
-      categoria:categorias (*)
-    `)
+    .select('*, categoria:categorias (*)')
     .single();
 
   if (error) {
@@ -1538,7 +1576,9 @@ export async function updateProdutoAdmin(id: string, dados: any) {
     throw error;
   }
 
-  return normalizarProduto(data);
+  const vendedores = await fetchVendedoresAdmin();
+  const vendedor = vendedores.find((item) => item.id === data.vendedor_id) || null;
+  return normalizarProduto({ ...data, vendedor });
 }
 
 
@@ -1548,24 +1588,21 @@ export async function updateProdutoAdmin(id: string, dados: any) {
 
 export async function updateVendedorAdmin(
   id: string,
-  dados: VendedorUpdate
+  dados: { plano: PlanoVendedor },
 ): Promise<Vendedor> {
-  const { data, error } = await supabase
-    .from('vendedores')
-    .update({
-      ...dados,
-      atualizado_em: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-    .single();
+  const { error } = await supabase.rpc('atualizar_plano_vendedor_admin', {
+    p_vendedor_id: id,
+    p_plano: dados.plano,
+  });
 
   if (error) {
     console.error('Erro ao atualizar vendedor admin:', error);
     throw error;
   }
 
-  return normalizarVendedor(data);
+  const atualizado = (await fetchVendedoresAdmin()).find((v) => v.id === id);
+  if (!atualizado) throw new Error('Não foi possível confirmar a atualização do vendedor.');
+  return atualizado;
 }
 
 // =============================
@@ -1651,37 +1688,16 @@ export async function guardarHistoricoContactoServico({
 // =============================
 
 export async function fetchHistoricoContactosVendedor(
-  vendedorId: string
+  _vendedorId: string
 ) {
-  const { data, error } = await supabase
-    .from("historico_contactos")
-    .select(`
-      *,
-      clientes (
-        nome,
-        telefone,
-        email,
-        municipio,
-        provincia,
-        foto_perfil
-      ),
-      produtos (
-        id,
-        nome_produto,
-        imagem_url
-      )
-    `)
-    .eq("vendedor_id", vendedorId)
-    .order("atualizado_em", {
-      ascending: false,
-    });
+  const { data, error } = await supabase.rpc('listar_contactos_produtos_vendedor');
 
   if (error) {
     console.error("Erro ao buscar histÃ³rico de produtos:", error);
     return [];
   }
 
-  return data || [];
+  return data ?? [];
 }
 
 // =============================
@@ -1689,37 +1705,16 @@ export async function fetchHistoricoContactosVendedor(
 // =============================
 
 export async function fetchHistoricoContactosServicosVendedor(
-  vendedorId: string
+  _vendedorId: string
 ) {
-  const { data, error } = await supabase
-    .from("historico_contactos_servicos")
-    .select(`
-      *,
-      clientes (
-        nome,
-        telefone,
-        email,
-        municipio,
-        provincia,
-        foto_perfil
-      ),
-      servicos (
-        id,
-        nome_servico,
-        imagem_url
-      )
-    `)
-    .eq("vendedor_id", vendedorId)
-    .order("atualizado_em", {
-      ascending: false,
-    });
+  const { data, error } = await supabase.rpc('listar_contactos_servicos_vendedor');
 
   if (error) {
     console.error("Erro ao buscar histÃ³rico de serviÃ§os:", error);
     return [];
   }
 
-  return data || [];
+  return data ?? [];
 }
 
 // =============================
@@ -1907,7 +1902,7 @@ export async function listarFavoritosProdutos(
       produto_id,
       produtos (
         *,
-        vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS}),
+        vendedor:vendedores (${COLUNAS_VENDEDOR_PUBLICAS}),
         categoria:categorias (*)
       )
     `)
@@ -1994,7 +1989,7 @@ export async function listarFavoritosServicos(
       servico_id,
       servicos (
         *,
-        vendedor:vendedores (${COLUNAS_VENDEDOR_SEM_DOCUMENTOS})
+        vendedor:vendedores (${COLUNAS_VENDEDOR_PUBLICAS})
       )
     `)
     .eq('utilizador_id', utilizadorId)
@@ -2013,78 +2008,80 @@ export async function listarFavoritosServicos(
 // =============================
 
 export async function fetchRankingProdutosMaisClicados(limite = 10) {
-  const { data, error } = await supabase
-    .from('produtos')
-    .select(`
-      id,
-      nome_produto,
-      preco_aproximado,
-      municipio,
-      provincia,
-      cliques_whatsapp,
-      visualizacoes,
-      destaque,
-      disponivel,
-      imagem_url,
-      vendedor:vendedores (
+  const [{ data, error }, vendedores] = await Promise.all([
+    supabase
+      .from('produtos')
+      .select(`
         id,
-        nome_comercial,
-        telefone_whatsapp,
-        verificado,
-        status_aprovacao
-      ),
-      categoria:categorias (
-        id,
-        nome
-      )
-    `)
-    .order('cliques_whatsapp', { ascending: false })
-    .limit(limite);
+        vendedor_id,
+        nome_produto,
+        preco_aproximado,
+        municipio,
+        provincia,
+        cliques_whatsapp,
+        visualizacoes,
+        destaque,
+        disponivel,
+        imagem_url,
+        categoria:categorias (
+          id,
+          nome
+        )
+      `)
+      .order('cliques_whatsapp', { ascending: false })
+      .limit(limite),
+    fetchVendedoresAdmin(),
+  ]);
 
   if (error) {
     console.error('Erro ao buscar ranking de produtos:', error);
     return [];
   }
 
-  return data || [];
+  const vendedoresPorId = new Map(vendedores.map((vendedor) => [vendedor.id, vendedor]));
+  return (data || []).map((produto) => ({
+    ...produto,
+    vendedor: vendedoresPorId.get(produto.vendedor_id) || null,
+  }));
 }
 
 export async function fetchRankingVendedoresMaisAtivos(limite = 10) {
-  const { data, error } = await supabase
-    .from('vendedores')
-    .select(`
-      id,
-      nome_comercial,
-      telefone_whatsapp,
-      municipio,
-      provincia,
-      tipo_vendedor,
-      verificado,
-      status_aprovacao,
-      plano,
-      produtos (
-        id,
-        cliques_whatsapp,
-        visualizacoes,
-        disponivel
-      ),
-      servicos (
-        id,
-        cliques_whatsapp,
-        visualizacoes,
-        disponivel
-      )
-    `)
-    .limit(100);
+  const [vendedores, produtosResultado, servicosResultado] = await Promise.all([
+    fetchVendedoresAdmin(),
+    supabase
+      .from('produtos')
+      .select('vendedor_id, cliques_whatsapp, visualizacoes, disponivel'),
+    supabase
+      .from('servicos')
+      .select('vendedor_id, cliques_whatsapp, visualizacoes, disponivel'),
+  ]);
 
-  if (error) {
-    console.error('Erro ao buscar ranking de vendedores:', error);
+  if (produtosResultado.error || servicosResultado.error) {
+    console.error('Erro ao buscar ranking de vendedores:', produtosResultado.error ?? servicosResultado.error);
     return [];
   }
 
-  const ranking = (data || []).map((vendedor: any) => {
-    const produtos = vendedor.produtos || [];
-    const servicos = vendedor.servicos || [];
+  type ProdutoRanking = NonNullable<typeof produtosResultado.data>[number];
+  type ServicoRanking = NonNullable<typeof servicosResultado.data>[number];
+  const produtosPorVendedor = new Map<string, ProdutoRanking[]>();
+  for (const produto of produtosResultado.data ?? []) {
+    if (!produto.vendedor_id) continue;
+    const produtos = produtosPorVendedor.get(produto.vendedor_id) ?? [];
+    produtos.push(produto);
+    produtosPorVendedor.set(produto.vendedor_id, produtos);
+  }
+
+  const servicosPorVendedor = new Map<string, ServicoRanking[]>();
+  for (const servico of servicosResultado.data ?? []) {
+    if (!servico.vendedor_id) continue;
+    const servicos = servicosPorVendedor.get(servico.vendedor_id) ?? [];
+    servicos.push(servico);
+    servicosPorVendedor.set(servico.vendedor_id, servicos);
+  }
+
+  const ranking = vendedores.map((vendedor) => {
+    const produtos = produtosPorVendedor.get(vendedor.id) ?? [];
+    const servicos = servicosPorVendedor.get(vendedor.id) ?? [];
 
     const totalProdutos = produtos.length;
     const totalServicos = servicos.length;
@@ -2179,44 +2176,19 @@ export async function atualizarVerificacaoVendedor(
   vendedorId: string,
   verificado: boolean
 ) {
-  const { data, error } = await supabase
-    .from('vendedores')
-    .update({
-      verificado,
-      atualizado_em: new Date().toISOString(),
-    })
-    .eq('id', vendedorId)
-    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-    .single();
+  const { error } = await supabase.rpc('atualizar_verificacao_vendedor_admin', {
+    p_vendedor_id: vendedorId,
+    p_verificado: verificado,
+  });
 
   if (error) {
     console.error('Erro ao atualizar verificaÃ§Ã£o do vendedor:', error);
     throw error;
   }
 
-  return normalizarVendedor(data);
-}
-
-export async function atualizarPermissaoDestaqueVendedor(
-  vendedorId: string,
-  podeDestacar: boolean
-) {
-  const { data, error } = await supabase
-    .from('vendedores')
-    .update({
-      pode_destacar: podeDestacar,
-      atualizado_em: new Date().toISOString(),
-    })
-    .eq('id', vendedorId)
-    .select(COLUNAS_VENDEDOR_SEM_DOCUMENTOS)
-    .single();
-
-  if (error) {
-    console.error('Erro ao atualizar permissÃ£o de destaque:', error);
-    throw error;
-  }
-
-  return normalizarVendedor(data);
+  const atualizado = (await fetchVendedoresAdmin()).find((v) => v.id === vendedorId);
+  if (!atualizado) throw new Error('Não foi possível confirmar a atualização do vendedor.');
+  return atualizado;
 }
 
 export async function fetchResumoCliente(clienteId: string) {
@@ -2257,7 +2229,7 @@ function normalizarTipoVendedor(tipo: unknown): Vendedor['tipo_vendedor'] {
   return TIPOS_VENDEDOR_LEGADOS[valor] || valor as Vendedor['tipo_vendedor'];
 }
 
-/** SugestÃµes pÃºblicas, limitadas e jÃ¡ filtradas a vendedores aprovados. */
+/** SugestÃµes pÃºblicas, limitadas e filtradas pelas políticas de catálogo. */
 export async function fetchSugestoesPesquisa(termo: string): Promise<SugestaoPesquisa[]> {
   const pesquisa = termo.trim();
   if (!pesquisa) return [];
@@ -2265,19 +2237,17 @@ export async function fetchSugestoesPesquisa(termo: string): Promise<SugestaoPes
   const [produtosRes, servicosRes] = await Promise.all([
     supabase
       .from('produtos')
-      .select('id, nome_produto, vendedor:vendedores!inner(status_aprovacao)')
+      .select('id, nome_produto')
       .ilike('nome_produto', `%${pesquisa}%`)
       .eq('disponivel', true)
       .eq('publicado', true)
-      .eq('vendedor.status_aprovacao', 'aprovado')
       .limit(5),
     supabase
       .from('servicos')
-      .select('id, nome_servico, vendedor:vendedores!inner(status_aprovacao)')
+      .select('id, nome_servico')
       .ilike('nome_servico', `%${pesquisa}%`)
       .eq('disponivel', true)
       .eq('publicado', true)
-      .eq('vendedor.status_aprovacao', 'aprovado')
       .limit(5),
   ]);
 

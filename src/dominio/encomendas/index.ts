@@ -3,6 +3,8 @@ export const ESTADOS_ENCOMENDA = [
   'confirmada',
   'em_preparacao',
   'pronta_para_levantamento',
+  'recolhida',
+  'chegou_destino',
   'levantada',
   'concluida',
   'recusada',
@@ -10,7 +12,7 @@ export const ESTADOS_ENCOMENDA = [
 ] as const;
 
 export type EstadoEncomenda = typeof ESTADOS_ENCOMENDA[number];
-export type ModalidadeRecebimentoEncomenda = 'levantamento';
+export type ModalidadeRecebimentoEncomenda = 'levantamento' | 'entrega';
 export type AtorEncomenda = 'cliente' | 'vendedor';
 export type ContextoDetalheEncomenda = 'cliente' | 'vendedor';
 
@@ -24,7 +26,7 @@ export interface MotivoEncerramentoEncomenda {
 const ROTULOS_ESTADO: Record<EstadoEncomenda, string> = {
   aguardando_confirmacao: 'Aguardando confirmação', confirmada: 'Confirmada',
   em_preparacao: 'Em preparação', pronta_para_levantamento: 'Pronta para levantamento',
-  levantada: 'Levantada', concluida: 'Concluída', recusada: 'Recusada', cancelada: 'Cancelada',
+  recolhida: 'Recolhida pelo entregador', chegou_destino: 'Entregador chegou ao destino', levantada: 'Levantada', concluida: 'Concluída', recusada: 'Recusada', cancelada: 'Cancelada',
 };
 
 export function rotuloEstadoEncomenda(estado: string) {
@@ -62,7 +64,7 @@ export function obterMotivoEncerramentoEncomenda(
 }
 
 export function classeEstadoEncomenda(estado: string) {
-  if (['levantada', 'concluida', 'confirmada'].includes(estado)) return 'bg-green-100 text-green-800 border-green-200';
+  if (['levantada', 'recolhida', 'chegou_destino', 'concluida', 'confirmada'].includes(estado)) return 'bg-green-100 text-green-800 border-green-200';
   if (estado === 'pronta_para_levantamento') return 'bg-amber-100 text-amber-800 border-amber-200';
   if (estado === 'em_preparacao') return 'bg-blue-100 text-blue-800 border-blue-200';
   if (['recusada', 'cancelada'].includes(estado)) return 'bg-red-100 text-red-800 border-red-200';
@@ -78,8 +80,37 @@ export function rotuloEventoEncomenda(evento: string) {
     codigo_levantamento_regenerado: 'Código de levantamento renovado',
     tentativa_levantamento_falhou: 'Tentativa de levantamento falhou',
     levantamento_confirmado: 'Levantamento confirmado', encomenda_concluida: 'Encomenda concluída',
+    problema_reportado: 'Problema reportado pelo cliente',
+    entregador_atribuido: 'Entregador atribuído', entregador_aceitou: 'Entregador aceitou a tarefa',
+    entregador_recusou: 'Entregador recusou a tarefa',
+    entregador_chegou_origem: 'Entregador chegou para recolha', encomenda_recolhida: 'Encomenda recolhida pelo entregador',
+    entregador_chegou_destino: 'Entregador chegou ao destino', codigo_entrega_gerado: 'Código de entrega gerado',
+    codigo_entrega_regenerado: 'Código de entrega renovado', tentativa_entrega_falhou: 'Tentativa de entrega falhou', entrega_confirmada: 'Entrega confirmada',
+    atribuicao_liberada_admin: 'Atribuição reorganizada pela operação', incidente_operacional_aberto: 'Incidente operacional registado', incidente_operacional_resolvido: 'Incidente operacional resolvido',
   };
   return rotulos[evento] ?? 'Atualização da encomenda';
+}
+
+export function rotuloTipoProblemaEncomenda(tipo: string) {
+  const rotulos: Record<string, string> = {
+    produto_danificado: 'Produto danificado',
+    produto_incorreto: 'Produto incorreto',
+    quantidade_incorreta: 'Quantidade incorreta',
+    qualidade_inadequada: 'Qualidade inadequada',
+    produto_em_falta: 'Produto em falta',
+    outro: 'Outro problema',
+  };
+  return rotulos[tipo] ?? 'Problema reportado';
+}
+
+export function rotuloEstadoDisputaEncomenda(estado: string) {
+  const rotulos: Record<string, string> = {
+    aberta: 'Aberto', em_analise: 'Em análise',
+    resolvida_sem_reembolso: 'Resolvido sem reembolso',
+    resolvida_reembolso_parcial: 'Resolvido com reembolso parcial',
+    resolvida_reembolso_total: 'Resolvido com reembolso total', cancelada: 'Cancelado',
+  };
+  return rotulos[estado] ?? 'Em análise';
 }
 
 export function formatarDataEncomenda(data: string) {
@@ -97,15 +128,23 @@ export interface ItemEncomendaSolicitado {
 
 export interface CriarEncomendaLevantamentoInput {
   itens: ItemEncomendaSolicitado[];
+  idempotencyKey: string;
   modalidade?: ModalidadeRecebimentoEncomenda;
   nomeDestinatario?: string;
   telefoneDestinatario?: string;
   observacoesCliente?: string;
 }
 
+export interface CriarEncomendaEntregaInput {
+  itens: ItemEncomendaSolicitado[]; idempotencyKey: string; nomeDestinatario: string; telefoneDestinatario: string;
+  provincia: string; municipio: string; bairro: string; enderecoDetalhado: string;
+  pontoReferencia?: string; instrucoesEntrega?: string; observacoesCliente?: string;
+}
+
 const transicoesPorAtor: Record<AtorEncomenda, Partial<Record<EstadoEncomenda, EstadoEncomenda[]>>> = {
   cliente: {
     aguardando_confirmacao: ['cancelada'],
+    levantada: ['concluida'],
   },
   vendedor: {
     aguardando_confirmacao: ['confirmada', 'recusada'],

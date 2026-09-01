@@ -119,6 +119,7 @@ export interface Vendedor {
   data_fim_plano?: string | null;
 
   status_aprovacao?: StatusVendedorAprovacao;
+  aprovado_em?: string | null;
   motivo_rejeicao?: string | null;
 
   criado_em?: string;
@@ -265,6 +266,7 @@ export interface Utilizador {
   vendedor_id?: string;
   parceiro_entrega_id?: string;
   estado_parceiro_entrega?: EstadoParceiroEntrega;
+  motivo_suspensao?: string | null;
 
   tipo_comprador?: TipoComprador;
 

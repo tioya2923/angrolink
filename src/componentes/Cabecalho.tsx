@@ -10,6 +10,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contextos/AuthContexto';
 import CategoriaSidebar from '@/componentes/CategoriaSidebar';
 import { useCarrinho } from '@/hooks/useCarrinho';
+import NotificacoesMenu from '@/componentes/NotificacoesMenu';
 
 export default function Cabecalho() {
   const [menuAberto, setMenuAberto] = useState(false);
@@ -115,6 +116,8 @@ export default function Cabecalho() {
             {quantidadeItens > 0 && <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-amber-400 px-1 text-center text-[10px] font-bold text-green-950">{quantidadeItens > 99 ? '99+' : quantidadeItens}</span>}
           </Link>
 
+          {autenticado && utilizador && <NotificacoesMenu />}
+
           {!autenticado && (
             <>
               <Link to="/login" className="font-corpo text-sm font-medium text-foreground hover:text-primary transition-colors flex items-center gap-1 text-white">
@@ -170,13 +173,16 @@ export default function Cabecalho() {
         </nav>
 
         {/* Mobile toggle */}
-        <button
-          onClick={() => setMenuAberto(!menuAberto)}
-          className="md:hidden p-2 text-white hover:text-green-200 transition-colors"
-          aria-label="Abrir menu"
-        >
-          {menuAberto ? <X size={24} /> : <Menu size={24} />}
-        </button>
+        <div className="flex items-center gap-1 md:hidden">
+          {autenticado && utilizador && <NotificacoesMenu />}
+          <button
+            onClick={() => setMenuAberto(!menuAberto)}
+            className="p-2 text-white hover:text-green-200 transition-colors"
+            aria-label="Abrir menu"
+          >
+            {menuAberto ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile menu */}

@@ -4,6 +4,7 @@ import {
   documentoVendedorPodeSerAnalisado,
   documentoVendedorPodeSerReenviado,
   separarValoresDocumentoVendedor,
+  validarDocumentosParaSubmissao,
   validarRejeicaoCandidaturaVendedor,
   validarImagemDocumentoVendedor,
 } from '@/services/documentosVendedor';
@@ -26,6 +27,19 @@ describe('documentos de vendedor', () => {
     expect(() => validarImagemDocumentoVendedor({ type: 'image/png', size: 3 * 1024 * 1024 })).not.toThrow();
     expect(() => validarImagemDocumentoVendedor({ type: 'application/pdf', size: 100 })).toThrow('JPG, PNG ou WEBP');
     expect(() => validarImagemDocumentoVendedor({ type: 'image/jpeg', size: 3 * 1024 * 1024 + 1 })).toThrow('3 MB');
+  });
+
+  it('recusa um lote documental vazio, duplicado ou sem frente e verso antes do upload', () => {
+    const imagem = { type: 'image/png', size: 1024 } as File;
+
+    expect(() => validarDocumentosParaSubmissao([])).toThrow('pelo menos um documento');
+    expect(() => validarDocumentosParaSubmissao([
+      { tipo_documento: 'bi', valores: {}, frente: imagem, verso: imagem },
+      { tipo_documento: 'bi', valores: {}, frente: imagem, verso: imagem },
+    ])).toThrow('só pode ser enviado uma vez');
+    expect(() => validarDocumentosParaSubmissao([
+      { tipo_documento: 'bi', valores: {}, frente: imagem, verso: null },
+    ])).toThrow('frente e do verso');
   });
 
   it('usa caminhos novos em cada reenvio e não sobrescreve o original', () => {

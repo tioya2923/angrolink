@@ -46,7 +46,7 @@ export default function PaginaCarrinho() {
   const temIndisponivel = itens.some((item) => !item.disponivel);
   const continuar = async () => {
     if (!utilizador) { navigate('/login', { state: { destino: '/checkout' } }); return; }
-    if (utilizador.papel !== 'cliente') { toast({ title: 'A finalização está disponível apenas para contas de cliente.', variant: 'destructive' }); return; }
+    if (utilizador.papel !== 'cliente' && utilizador.papel !== 'vendedor') { toast({ title: 'A finalização está disponível apenas para contas de cliente ou vendedor.', variant: 'destructive' }); return; }
     const resultado = await revalidar();
     if (!resultado.concluido) return;
     if (resultado.alterado) { toast({ title: 'O carrinho foi atualizado. Reveja os produtos antes de continuar.' }); return; }

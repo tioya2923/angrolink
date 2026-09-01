@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
 
-import { PROVINCIAS, MUNICIPIOS } from '@/dados/constantes';
+import { useFiltroTerritorialAngola } from '@/hooks/useFiltroTerritorialAngola';
 import { useToast } from '@/hooks/use-toast';
 import { telefoneCompleto } from '@/lib/verificacoesConta';
 
@@ -44,17 +44,13 @@ export default function PaginaAnunciarServico() {
   const [telefoneWhatsapp, setTelefoneWhatsapp] = useState('');
   const [indicativoWhatsapp, setIndicativoWhatsapp] = useState('244');
 
-  const [provincia, setProvincia] = useState('');
-  const [municipio, setMunicipio] = useState('');
   const [zonaAtuacao, setZonaAtuacao] = useState('');
 
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const municipiosFiltrados = MUNICIPIOS.filter(
-    m => m.provincia_id === PROVINCIAS.find(p => p.nome === provincia)?.id
-  );
+  const filtroTerritorial = useFiltroTerritorialAngola();
 
   const handleImagemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -125,8 +121,8 @@ export default function PaginaAnunciarServico() {
         tipo_servico: tipoServico,
         descricao,
         preco_estimado: precoEstimado ? Number(precoEstimado) : undefined,
-        provincia,
-        municipio,
+        provincia: filtroTerritorial.provinciaSelecionada?.nome ?? '',
+        municipio: filtroTerritorial.municipioSelecionado?.nome ?? '',
         zona_atuacao: zonaAtuacao,
         imagem_url,
 
@@ -302,39 +298,39 @@ export default function PaginaAnunciarServico() {
           {/* LOCALIZAÇÃO */}
           <div className="grid grid-cols-2 gap-3">
             <select
-              value={provincia}
-              onChange={e => {
-                setProvincia(e.target.value);
-                setMunicipio('');
-              }}
+              value={filtroTerritorial.provinciaId}
+              onChange={e => filtroTerritorial.selecionarProvincia(e.target.value)}
+              disabled={filtroTerritorial.aCarregarProvincias}
               className="w-full border-2 px-3 py-2"
             >
               <option value="">Selecionar província</option>
 
-              {PROVINCIAS.map(p => (
-                <option key={p.id} value={p.nome}>
+              {filtroTerritorial.provincias.map(p => (
+                <option key={p.id} value={p.id}>
                   {p.nome}
                 </option>
               ))}
             </select>
 
             <select
-              value={municipio}
-              onChange={e => setMunicipio(e.target.value)}
-              disabled={!provincia}
+              value={filtroTerritorial.municipioId}
+              onChange={e => filtroTerritorial.selecionarMunicipio(e.target.value)}
+              disabled={!filtroTerritorial.provinciaId || filtroTerritorial.aCarregarMunicipios || Boolean(filtroTerritorial.erroMunicipios)}
               className="w-full border-2 px-3 py-2"
             >
               <option value="">
-                {provincia ? 'Selecionar município' : 'Escolha província primeiro'}
+                {!filtroTerritorial.provinciaId ? 'Escolha província primeiro' : filtroTerritorial.aCarregarMunicipios ? 'A carregar municípios...' : 'Selecionar município'}
               </option>
 
-              {municipiosFiltrados.map(m => (
-                <option key={m.id} value={m.nome}>
+              {filtroTerritorial.municipios.map(m => (
+                <option key={m.id} value={m.id}>
                   {m.nome}
                 </option>
               ))}
             </select>
           </div>
+          {filtroTerritorial.erroProvincias && <p className="text-xs text-destructive">{filtroTerritorial.erroProvincias} <button type="button" onClick={() => void filtroTerritorial.carregarProvincias()} className="font-semibold underline">Tentar novamente</button></p>}
+          {filtroTerritorial.erroMunicipios && <p className="text-xs text-destructive">{filtroTerritorial.erroMunicipios} <button type="button" onClick={filtroTerritorial.recarregarMunicipios} className="font-semibold underline">Tentar novamente</button></p>}
 
           <div className="space-y-2">
             <Label>Zona de atuação</Label>

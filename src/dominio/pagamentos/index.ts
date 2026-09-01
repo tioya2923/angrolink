@@ -14,6 +14,45 @@ export type EstadoPagamento =
   | 'reembolsado_parcialmente'
   | 'reembolsado';
 
+export function rotuloEstadoPagamento(estado: string): string {
+  const rotulos: Record<EstadoPagamento, string> = {
+    pendente: 'Pendente',
+    a_processar: 'A processar',
+    confirmado: 'Pago',
+    falhado: 'Falhou',
+    cancelado: 'Cancelado',
+    expirado: 'Expirado',
+    reembolsado_parcialmente: 'Reembolsado parcialmente',
+    reembolsado: 'Reembolsado',
+  };
+
+  return rotulos[estado as EstadoPagamento] ?? 'Estado por confirmar';
+}
+
+export function rotuloMetodoPagamento(metodo: string): string {
+  const rotulos: Record<MetodoPagamento, string> = {
+    online: 'Pagamento online',
+    pagamento_na_entrega: 'Pagamento na entrega',
+    digital_na_entrega: 'Pagamento digital na entrega',
+    pagamento_no_levantamento: 'Pagar no levantamento',
+  };
+
+  return rotulos[metodo as MetodoPagamento] ?? 'Método por confirmar';
+}
+
+export function rotuloEstadoRepasse(estado: string | null): string {
+  const rotulos: Record<EstadoRepasse, string> = {
+    pendente: 'Pendente',
+    disponivel: 'Disponível',
+    processando: 'Em processamento',
+    concluido: 'Concluído',
+    falhado: 'Falhou',
+    cancelado: 'Cancelado',
+  };
+
+  return estado ? (rotulos[estado as EstadoRepasse] ?? 'Estado por confirmar') : 'Repasse ainda não disponível';
+}
+
 export type EstadoRepasse =
   | 'pendente'
   | 'disponivel'

@@ -15,7 +15,7 @@ dist-ssr
 # Environment variables (contains Supabase keys)
 .env
 
-# Metadados locais da Supabase CLI (projeto ligado, versões e URLs internas)
+# Metadados locais da Supabase CLI (projeto ligado, versÃµes e URLs internas)
 supabase/.temp/
 
 # Editor directories and files
@@ -28,3 +28,6 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+.env.*
+!.env.example
+file-input*.txt

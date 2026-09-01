@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { useAuth } from '@/contextos/AuthContexto';
+import { parceiroEstaSuspenso, parceiroPodeAcederAreaOperacional } from '@/lib/acessoParceiroEntrega';
 import DashboardLayout from './DashboardLayout';
 
 import AdminResumo from './admin/AdminResumo';
@@ -8,6 +10,15 @@ import AdminProdutos from './admin/AdminProdutos';
 import AdminUtilizadores from './admin/AdminUtilizadores';
 import AdminPedidosVendedores from './admin/AdminPedidosVendedores';
 import AdminEntregadores from './admin/AdminEntregadores';
+import AdminEntregadorDetalhe from './admin/AdminEntregadorDetalhe';
+import AdminEncomendas from './admin/AdminEncomendas';
+import AdminEncomendaDetalhe from './admin/AdminEncomendaDetalhe';
+import AdminFinanceiro from './admin/AdminFinanceiro';
+import AdminDisputas from './admin/AdminDisputas';
+import AdminDisputaDetalhe from './admin/AdminDisputaDetalhe';
+import AdminCompradores from './admin/AdminCompradores';
+import AdminCompradorDetalhe from './admin/AdminCompradorDetalhe';
+import AdminVendedorDetalhe from './admin/AdminVendedorDetalhe';
 
 import ClienteResumo from './cliente/ClienteResumo';
 import Favoritos from './cliente/Favoritos';
@@ -28,6 +39,9 @@ import VendedorPerfil from './vendedor/VendedorPerfil';
 import VendedorServicos from './vendedor/VendedorServicos';
 import AdminRankings from './admin/AdminRankings';
 import ParceiroResumo from './parceiro/ParceiroResumo';
+import ParceiroTarefas from './parceiro/ParceiroTarefas';
+import ParceiroTarefaDetalhe from './parceiro/ParceiroTarefaDetalhe';
+import ParceiroContaSuspensa from './parceiro/ParceiroContaSuspensa';
 import VendedorDocumentos from './vendedor/VendedorDocumentos';
 import VendedorEncomendas from './vendedor/VendedorEncomendas';
 import VendedorEncomendaDetalhe from './vendedor/VendedorEncomendaDetalhe';
@@ -54,6 +68,13 @@ if(!autenticado || !utilizador){
  return <Navigate to="/login" replace />;
 }
 
+const parceiroSuspenso = utilizador.papel === 'parceiro_entrega'
+  && parceiroEstaSuspenso(utilizador.estado_parceiro_entrega);
+const protegerRotaOperacionalParceiro = (elemento: ReactNode) =>
+  parceiroPodeAcederAreaOperacional(utilizador.estado_parceiro_entrega)
+    ? elemento
+    : <Navigate to="/dashboard" replace />;
+
 return(
 <DashboardLayout>
 
@@ -61,13 +82,15 @@ return(
 
 {utilizador.papel === "parceiro_entrega" && (
   <>
-    <Route index element={<ParceiroResumo />} />
-    <Route path="pedidos" element={<ParceiroResumo secao="pedidos" />} />
-    <Route path="dados" element={<ParceiroResumo secao="dados" />} />
-    <Route path="veiculo" element={<ParceiroResumo secao="veiculo" />} />
-    <Route path="areas" element={<ParceiroResumo secao="areas" />} />
-    <Route path="documentos" element={<ParceiroResumo secao="documentos" />} />
-    <Route path="apoio" element={<ParceiroResumo secao="apoio" />} />
+    <Route index element={parceiroSuspenso ? <ParceiroContaSuspensa /> : <ParceiroResumo />} />
+    <Route path="pedidos" element={<Navigate to={parceiroSuspenso ? '/dashboard' : '/dashboard/tarefas'} replace />} />
+    <Route path="tarefas" element={protegerRotaOperacionalParceiro(<ParceiroTarefas />)} />
+    <Route path="tarefas/:id" element={protegerRotaOperacionalParceiro(<ParceiroTarefaDetalhe />)} />
+    <Route path="dados" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="dados" />)} />
+    <Route path="veiculo" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="veiculo" />)} />
+    <Route path="areas" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="areas" />)} />
+    <Route path="documentos" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="documentos" />)} />
+    <Route path="apoio" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="apoio" />)} />
   </>
 )}
 
@@ -75,12 +98,21 @@ return(
 <>
 <Route index element={<AdminResumo/>}/>
 <Route path="vendedores" element={<AdminVendedores/>}/>
+<Route path="vendedores/:id" element={<AdminVendedorDetalhe/>}/>
+<Route path="compradores" element={<AdminCompradores/>}/>
+<Route path="compradores/:id" element={<AdminCompradorDetalhe/>}/>
 <Route path="pedidos-vendedores" element={<AdminPedidosVendedores/>}/>
 <Route path="pedidos-entregadores" element={<AdminEntregadores apenasPedidos/>}/>
 <Route path="entregadores" element={<AdminEntregadores/>}/>
+<Route path="entregadores/:id" element={<AdminEntregadorDetalhe/>}/>
 <Route path="utilizadores" element={<AdminUtilizadores/>}/>
 <Route path="produtos" element={<AdminProdutos/>}/>
 <Route path="rankings" element={<AdminRankings/>}/>
+<Route path="encomendas" element={<AdminEncomendas/>}/>
+<Route path="encomendas/:id" element={<AdminEncomendaDetalhe/>}/>
+<Route path="financeiro" element={<AdminFinanceiro/>}/>
+<Route path="disputas" element={<AdminDisputas/>}/>
+<Route path="disputas/:id" element={<AdminDisputaDetalhe/>}/>
 </>
 )}
 
@@ -163,6 +195,8 @@ return(
 <Route path="documentos" element={<VendedorDocumentos/>}/>
 <Route path="encomendas" element={<VendedorEncomendas/>}/>
 <Route path="encomendas/:id" element={<VendedorEncomendaDetalhe/>}/>
+<Route path="compras" element={<ClienteEncomendas titulo="Minhas compras" descricao="Acompanha as encomendas feitas a outros vendedores." rotaDetalhe="/dashboard/compras"/>}/>
+<Route path="compras/:id" element={<ClienteEncomendaDetalhe rotaVoltar="/dashboard/compras"/>}/>
 </>
 )}
 

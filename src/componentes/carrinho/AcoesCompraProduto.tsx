@@ -27,7 +27,10 @@ export function AcoesCompraProduto({ produto, vendedorNome, modo = 'detalhe' }: 
   const podeComprar = produtoPodeUsarCtaTransacional(produto, elegivel, vendedorDono);
 
   if (!podeComprar) {
-    if (aCarregar || vendedorDono || !produto.disponivel) return null;
+    if (aCarregar || !produto.disponivel) return null;
+    if (vendedorDono) return modo === 'card'
+      ? <p className="text-center text-[11px] text-muted-foreground">Produto da tua loja</p>
+      : <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">Este produto pertence à tua loja e não pode ser comprado pela mesma conta.</p>;
     return modo === 'card' ? <p className="text-center text-[11px] text-muted-foreground">Compra pela plataforma indisponível</p> : <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">Compra pela plataforma indisponível. Pode contactar o vendedor diretamente.</p>;
   }
 
@@ -63,7 +66,7 @@ export function AcoesCompraProduto({ produto, vendedorNome, modo = 'detalhe' }: 
 
   const comprarAgora = () => {
     adicionar();
-    if (utilizador?.papel === 'cliente') {
+    if (utilizador?.papel === 'cliente' || utilizador?.papel === 'vendedor') {
       navigate(`/checkout?vendedor=${produto.vendedor_id}`);
       return;
     }

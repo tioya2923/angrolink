@@ -6,8 +6,8 @@ import ListaServicos from '@/componentes/ListaServicos';
 
 import { fetchServicos } from '@/services/api';
 import { Servico } from '@/tipos';
-import { MUNICIPIOS, PROVINCIAS } from '@/dados/constantes';
 import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
+import { useFiltroTerritorialAngola } from '@/hooks/useFiltroTerritorialAngola';
 
 const TIPOS_SERVICO = [
   'Transporte de mercadorias',
@@ -28,8 +28,7 @@ export default function PaginaServicos() {
 
   const [pesquisa, setPesquisa] = useState('');
   const [tipoServico, setTipoServico] = useState('');
-  const [provincia, setProvincia] = useState('');
-  const [municipio, setMunicipio] = useState('');
+  const filtroTerritorial = useFiltroTerritorialAngola();
 
   useEffect(() => {
     async function carregarServicos() {
@@ -56,10 +55,6 @@ export default function PaginaServicos() {
     setServicos(Array.isArray(data) ? data : []);
   });
 
-  const municipiosFiltrados = MUNICIPIOS.filter(
-    m => m.provincia_id === PROVINCIAS.find(p => p.nome === provincia)?.id
-  );
-
   const servicosFiltrados = useMemo(() => {
     let resultado = [...servicos];
 
@@ -81,15 +76,15 @@ export default function PaginaServicos() {
       );
     }
 
-    if (provincia) {
+    if (filtroTerritorial.provinciaSelecionada) {
       resultado = resultado.filter(
-        s => s.provincia?.toLowerCase().trim() === provincia.toLowerCase().trim()
+        s => s.provincia?.toLowerCase().trim() === filtroTerritorial.provinciaSelecionada?.nome.toLowerCase().trim()
       );
     }
 
-    if (municipio) {
+    if (filtroTerritorial.municipioSelecionado) {
       resultado = resultado.filter(
-        s => s.municipio?.toLowerCase().trim() === municipio.toLowerCase().trim()
+        s => s.municipio?.toLowerCase().trim() === filtroTerritorial.municipioSelecionado?.nome.toLowerCase().trim()
       );
     }
 
@@ -98,7 +93,7 @@ export default function PaginaServicos() {
         new Date(b.criado_em || 0).getTime() -
         new Date(a.criado_em || 0).getTime()
     );
-  }, [servicos, pesquisa, tipoServico, provincia, municipio]);
+  }, [servicos, pesquisa, tipoServico, filtroTerritorial.provinciaSelecionada, filtroTerritorial.municipioSelecionado]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -140,39 +135,39 @@ export default function PaginaServicos() {
               </select>
 
               <select
-                value={provincia}
-                onChange={e => {
-                  setProvincia(e.target.value);
-                  setMunicipio('');
-                }}
+                value={filtroTerritorial.provinciaId}
+                onChange={e => filtroTerritorial.selecionarProvincia(e.target.value)}
+                disabled={filtroTerritorial.aCarregarProvincias}
                 className="border-2 border-border px-3 py-2"
               >
-                <option value="">Todas as províncias</option>
+                <option value="">{filtroTerritorial.aCarregarProvincias ? 'A carregar províncias...' : 'Todas as províncias'}</option>
 
-                {PROVINCIAS.map(p => (
-                  <option key={p.id} value={p.nome}>
+                {filtroTerritorial.provincias.map(p => (
+                  <option key={p.id} value={p.id}>
                     {p.nome}
                   </option>
                 ))}
               </select>
 
               <select
-                value={municipio}
-                onChange={e => setMunicipio(e.target.value)}
-                disabled={!provincia}
+                value={filtroTerritorial.municipioId}
+                onChange={e => filtroTerritorial.selecionarMunicipio(e.target.value)}
+                disabled={!filtroTerritorial.provinciaId || filtroTerritorial.aCarregarMunicipios || Boolean(filtroTerritorial.erroMunicipios)}
                 className="border-2 border-border px-3 py-2 disabled:opacity-50"
               >
                 <option value="">
-                  {provincia ? 'Todos os municípios' : 'Escolha província'}
+                  {!filtroTerritorial.provinciaId ? 'Selecione primeiro a província' : filtroTerritorial.aCarregarMunicipios ? 'A carregar municípios...' : 'Todos os municípios'}
                 </option>
 
-                {municipiosFiltrados.map(m => (
-                  <option key={m.id} value={m.nome}>
+                {filtroTerritorial.municipios.map(m => (
+                  <option key={m.id} value={m.id}>
                     {m.nome}
                   </option>
                 ))}
               </select>
             </div>
+            {filtroTerritorial.erroProvincias && <p className="text-xs text-destructive">{filtroTerritorial.erroProvincias} <button type="button" onClick={() => void filtroTerritorial.carregarProvincias()} className="font-semibold underline">Tentar novamente</button></p>}
+            {filtroTerritorial.erroMunicipios && <p className="text-xs text-destructive">{filtroTerritorial.erroMunicipios} <button type="button" onClick={filtroTerritorial.recarregarMunicipios} className="font-semibold underline">Tentar novamente</button></p>}
           </div>
         </section>
 

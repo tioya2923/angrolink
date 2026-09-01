@@ -12,6 +12,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   BarChart3,
+  Banknote,
   Clock,
   ClipboardList,
   CircleHelp,
@@ -26,6 +27,8 @@ import {
   Package,
   PlusCircle,
   Settings,
+  ShoppingBag,
+  Scale,
   ShieldCheck,
   Sparkles,
   Truck,
@@ -39,6 +42,8 @@ import { useAuth } from '@/contextos/AuthContexto';
 import { PapelUtilizador } from '@/tipos';
 import { obterUrlDocumentoParceiro } from '@/services/api';
 import { rotuloEstadoVendedor, vendedorPodeOperarComercialmente } from '@/lib/acessoVendedor';
+import { parceiroEstaSuspenso } from '@/lib/acessoParceiroEntrega';
+import NotificacoesMenu from '@/componentes/NotificacoesMenu';
 
 interface ItemMenu {
   rotulo: string;
@@ -56,7 +61,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
   parceiro_entrega: [
     { rotulo: 'Resumo', icone: LayoutDashboard, caminho: '/dashboard' },
     { rotulo: 'Dados e perfil', icone: UserCircle, caminho: '/dashboard/dados' },
-    { rotulo: 'Pedidos de entrega', icone: ClipboardList, caminho: '/dashboard/pedidos' },
+    { rotulo: 'Tarefas de entrega', icone: ClipboardList, caminho: '/dashboard/tarefas' },
     { rotulo: 'Veículo e disponibilidade', icone: Truck, caminho: '/dashboard/veiculo' },
     { rotulo: 'Cobertura', icone: MapPinned, caminho: '/dashboard/areas' },
     { rotulo: 'Documentos', icone: FileCheck2, caminho: '/dashboard/documentos' },
@@ -72,6 +77,11 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       rotulo: 'Vendedores',
       icone: Users,
       caminho: '/dashboard/vendedores',
+    },
+    {
+      rotulo: 'Compradores',
+      icone: ShoppingBag,
+      caminho: '/dashboard/compradores',
     },
     {
       rotulo: 'Pedidos',
@@ -97,6 +107,21 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       rotulo: 'Rankings',
       icone: BarChart3,
       caminho: '/dashboard/rankings',
+    },
+    {
+      rotulo: 'Encomendas',
+      icone: ClipboardList,
+      caminho: '/dashboard/encomendas',
+    },
+    {
+      rotulo: 'Financeiro',
+      icone: Banknote,
+      caminho: '/dashboard/financeiro',
+    },
+    {
+      rotulo: 'Disputas',
+      icone: Scale,
+      caminho: '/dashboard/disputas',
     },
   ],
 
@@ -152,6 +177,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       caminho: '/dashboard/perfil',
     },
     { rotulo: 'Encomendas', icone: ClipboardList, caminho: '/dashboard/encomendas' },
+    { rotulo: 'Minhas compras', icone: ShoppingBag, caminho: '/dashboard/compras' },
     {
       rotulo: 'Documentos',
       icone: FileCheck2,
@@ -222,6 +248,8 @@ export default function DashboardLayout({
   if (!utilizador) return null;
 
   const vendedorAprovado = utilizador.papel === 'vendedor' && vendedorPodeOperarComercialmente(utilizador);
+  const parceiroSuspenso = utilizador.papel === 'parceiro_entrega'
+    && parceiroEstaSuspenso(utilizador.estado_parceiro_entrega);
 
   const menuBase = MENUS[utilizador.papel];
 
@@ -252,14 +280,17 @@ export default function DashboardLayout({
             : 'Em análise'
       : null;
 
-  const menu = utilizador.papel === 'vendedor' && !vendedorAprovado
-    ? menuBase.filter(item => [
+  const menu = utilizador.papel === 'parceiro_entrega' && parceiroSuspenso
+    ? menuBase.filter(item => item.caminho === '/dashboard')
+    : utilizador.papel === 'vendedor' && !vendedorAprovado
+      ? menuBase.filter(item => [
       '/dashboard',
       '/dashboard/encomendas',
+      '/dashboard/compras',
       '/dashboard/perfil',
       '/dashboard/documentos',
-    ].includes(item.caminho))
-    : menuBase;
+      ].includes(item.caminho))
+      : menuBase;
 
   const handleLogout = async () => {
     await logout();
@@ -304,6 +335,8 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
+
+            <NotificacoesMenu />
 
             <span className="font-corpo text-sm text-white hidden sm:block">
               {utilizador.nome}

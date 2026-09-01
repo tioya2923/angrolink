@@ -52,94 +52,23 @@ export async function verificarDuplicados(
   const emailNormalizado =
     normalizarEmail(email);
 
-  const { data: clienteTelefone } =
-    await supabase
-      .from('clientes')
-      .select('id')
-      .eq(
-        'telefone',
-        telefoneFormatado
-      )
-      .maybeSingle();
+  const { data, error } = await supabase.rpc(
+    'verificar_disponibilidade_cadastro',
+    {
+      p_telefone: telefoneFormatado,
+      p_email: emailNormalizado ?? undefined,
+    },
+  );
 
-  const { data: vendedorTelefone } =
-    await supabase
-      .from('vendedores')
-      .select('id')
-      .eq(
-        'telefone_whatsapp',
-        telefoneFormatado
-      )
-      .maybeSingle();
-
-  let clienteEmail = null;
-  let clienteEmailLogin = null;
-
-  let vendedorEmail = null;
-  let vendedorEmailLogin = null;
-  let parceiroTelefone = null;
-  let parceiroEmail = null;
-
-  if (emailNormalizado) {
-
-    ({ data: clienteEmail } =
-      await supabase
-        .from('clientes')
-        .select('id')
-        .eq('email', emailNormalizado)
-        .maybeSingle());
-
-    ({ data: clienteEmailLogin } =
-      await supabase
-        .from('clientes')
-        .select('id')
-        .eq('email_login', emailNormalizado)
-        .maybeSingle());
-
-    ({ data: vendedorEmail } =
-      await supabase
-        .from('vendedores')
-        .select('id')
-        .eq('email', emailNormalizado)
-        .maybeSingle());
-
-    ({ data: vendedorEmailLogin } =
-      await supabase
-        .from('vendedores')
-        .select('id')
-        .eq('email_login', emailNormalizado)
-        .maybeSingle());
-
-    ({ data: parceiroEmail } =
-      await supabase
-        .from('parceiros_entrega')
-        .select('id')
-        .eq('email', emailNormalizado)
-        .maybeSingle());
-
+  if (error) {
+    throw new Error('Não foi possível verificar a disponibilidade dos dados de cadastro.');
   }
 
-  ({ data: parceiroTelefone } =
-    await supabase
-      .from('parceiros_entrega')
-      .select('id')
-      .eq('telefone', telefoneFormatado)
-      .maybeSingle());
+  const resultado = data?.[0];
 
   return {
-
-    telefoneExiste:
-      !!clienteTelefone ||
-      !!vendedorTelefone ||
-      !!parceiroTelefone,
-
-    emailExiste:
-      !!clienteEmail ||
-      !!clienteEmailLogin ||
-      !!vendedorEmail ||
-      !!vendedorEmailLogin ||
-      !!parceiroEmail,
-
+    telefoneExiste: resultado?.telefone_existe === true,
+    emailExiste: resultado?.email_existe === true,
   };
 
 }

@@ -8,12 +8,12 @@
  * ✔ Bloqueia publicação para vendedores ainda não aprovados
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import { CircleDollarSign, ImagePlus, MapPin, Package2, PlusCircle } from 'lucide-react';
+import { CircleDollarSign, ImagePlus, MapPin, Package2, PlusCircle, Truck } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,8 +21,6 @@ import { Button } from '@/components/ui/button';
 
 import {
   CATEGORIAS,
-  PROVINCIAS,
-  MUNICIPIOS,
   UNIDADES,
   TIPOS_VENDA,
 } from '@/dados/constantes';
@@ -40,6 +38,22 @@ import {
 } from "@/services/api";
 
 import { useAuth } from '@/contextos/AuthContexto';
+import { useFiltroTerritorialAngola } from '@/hooks/useFiltroTerritorialAngola';
+import { resolverSelecaoTerritorialExistente } from '@/services/territorioAngola';
+import {
+  normalizarAtributosLogisticosProduto,
+  opcaoTriStateParaValor,
+  type OpcaoTriState,
+} from '@/dominio/logisticaProduto';
+import {
+  definirInventarioProdutoVendedor,
+  erroUnidadeProdutoComReservas,
+  mensagemErroInventario,
+  obterInventarioProdutoVendedor,
+  quantidadeDecimalPositiva,
+  validarQuantidadeInventario,
+  type InventarioProdutoVendedor,
+} from '@/services/inventarioProduto';
 
 export default function VendedorAdicionarProduto() {
   const navigate = useNavigate();
@@ -52,7 +66,7 @@ export default function VendedorAdicionarProduto() {
 
   const [produtoEditando, setProdutoEditando] = useState<any>(null);
   const [carregandoEdicao, setCarregandoEdicao] = useState(!!id);
-    
+
 
   const isEdit = !!id;
 
@@ -80,10 +94,24 @@ export default function VendedorAdicionarProduto() {
   const [quantidadeMinima, setQuantidadeMinima] = useState('1');
   const [descricao, setDescricao] = useState('');
   const [disponivel, setDisponivel] = useState(true);
+  const [pesoPorUnidade, setPesoPorUnidade] = useState('');
+  const [volumePorUnidade, setVolumePorUnidade] = useState('');
+  const [refrigeracao, setRefrigeracao] = useState<OpcaoTriState>('indefinido');
+  const [caixaCarga, setCaixaCarga] = useState<OpcaoTriState>('indefinido');
+  const [paletes, setPaletes] = useState<OpcaoTriState>('indefinido');
 
-  const [provincia, setProvincia] = useState('');
-  const [municipio, setMunicipio] = useState('');
+  const filtroTerritorial = useFiltroTerritorialAngola();
+  const { definirSelecao } = filtroTerritorial;
+  const [provinciaOriginal, setProvinciaOriginal] = useState<string | null>(null);
+  const [municipioOriginal, setMunicipioOriginal] = useState<string | null>(null);
+  const [territorioAlterado, setTerritorioAlterado] = useState(false);
   const [removerImagem, setRemoverImagem] = useState(false);
+  const [inventario, setInventario] = useState<InventarioProdutoVendedor | null>(null);
+  const [aCarregarInventario, setACarregarInventario] = useState(false);
+  const [erroInventario, setErroInventario] = useState<string | null>(null);
+  const [controloStockAtivo, setControloStockAtivo] = useState(false);
+  const [quantidadeFisicaStock, setQuantidadeFisicaStock] = useState('');
+  const [aGuardarInventario, setAGuardarInventario] = useState(false);
 
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
@@ -94,6 +122,19 @@ export default function VendedorAdicionarProduto() {
       .trim()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
+
+  const inicializarTerritorio = useCallback(async (provinciaTexto: string | null, municipioTexto: string | null) => {
+    setProvinciaOriginal(provinciaTexto);
+    setMunicipioOriginal(municipioTexto);
+    setTerritorioAlterado(false);
+
+    try {
+      const resultado = await resolverSelecaoTerritorialExistente(provinciaTexto, municipioTexto);
+      definirSelecao(resultado.provincia?.id ?? '', resultado.municipio?.id ?? '');
+    } catch {
+      definirSelecao('', '');
+    }
+  }, [definirSelecao]);
 
   useEffect(() => {
     if (!id || !utilizador?.vendedor_id) {
@@ -121,6 +162,8 @@ export default function VendedorAdicionarProduto() {
       }
 
       setProdutoEditando(produto);
+      setProvinciaOriginal(produto.provincia ?? null);
+      setMunicipioOriginal(produto.municipio ?? null);
       setCarregandoEdicao(false);
     }
 
@@ -141,11 +184,24 @@ export default function VendedorAdicionarProduto() {
             ? String(produtoEditando.preco_promocional)
             : ''
         );
-        setUnidade(produtoEditando.unidade || 'kg');
+        const unidadeDoProduto = produtoEditando.unidade || 'kg';
+        setUnidade(unidadeDoProduto);
+        setPesoPorUnidade(
+          unidadeDoProduto === 'kg' || produtoEditando.peso_por_unidade_comercial_kg == null
+            ? ''
+            : String(produtoEditando.peso_por_unidade_comercial_kg),
+        );
+        setVolumePorUnidade(
+          produtoEditando.volume_por_unidade_comercial_m3 == null
+            ? ''
+            : String(produtoEditando.volume_por_unidade_comercial_m3),
+        );
+        setRefrigeracao(opcaoTriStateParaValor(produtoEditando.requer_refrigeracao));
+        setCaixaCarga(opcaoTriStateParaValor(produtoEditando.requer_caixa_carga));
+        setPaletes(opcaoTriStateParaValor(produtoEditando.requer_paletes));
         setTipoVenda(produtoEditando.tipo_venda || 'retalho');
         setQuantidadeMinima(String(produtoEditando.quantidade_minima || 1));
-        setProvincia(produtoEditando.provincia || '');
-        setMunicipio(produtoEditando.municipio || '');
+        void inicializarTerritorio(produtoEditando.provincia, produtoEditando.municipio);
         setDisponivel(produtoEditando.disponivel ?? true);
 
         const categoriaDb = data.find(
@@ -171,7 +227,7 @@ export default function VendedorAdicionarProduto() {
     }
 
     carregarCategorias();
-  }, [produtoEditando]);
+  }, [inicializarTerritorio, produtoEditando]);
 
   useEffect(() => {
     if (!produtoEditando) return;
@@ -180,9 +236,26 @@ export default function VendedorAdicionarProduto() {
     setSubcategoria(produtoEditando.subcategoria || '');
   }, [produtoEditando, categoria]);
 
-  const municipiosFiltrados = MUNICIPIOS.filter(
-    m => m.provincia_id === PROVINCIAS.find(p => p.nome === provincia)?.id
-  );
+  const carregarInventario = useCallback(async () => {
+    if (!isEdit || !produtoEditando?.id) return;
+
+    setACarregarInventario(true);
+    setErroInventario(null);
+    try {
+      const dados = await obterInventarioProdutoVendedor(produtoEditando.id);
+      setInventario(dados);
+      setControloStockAtivo(dados.controloAtivo);
+      setQuantidadeFisicaStock(dados.quantidadeFisica === null ? '' : String(dados.quantidadeFisica));
+    } catch (erro) {
+      setErroInventario(mensagemErroInventario(erro));
+    } finally {
+      setACarregarInventario(false);
+    }
+  }, [isEdit, produtoEditando?.id]);
+
+  useEffect(() => {
+    void carregarInventario();
+  }, [carregarInventario]);
 
   const subcategoriasFiltradas = categoria
     ? SUBCATEGORIAS[categoria] || []
@@ -191,6 +264,40 @@ export default function VendedorAdicionarProduto() {
   const handleCategoriaChange = (val: string) => {
     setCategoria(val);
     setSubcategoria('');
+  };
+
+  const handleUnidadeChange = (novaUnidade: string) => {
+    setUnidade(novaUnidade);
+    if (novaUnidade === 'kg') setPesoPorUnidade('');
+  };
+
+  const guardarInventario = async () => {
+    if (!produtoEditando?.id || aGuardarInventario) return;
+
+    const quantidade = validarQuantidadeInventario(quantidadeFisicaStock);
+    if (quantidade === null) {
+      setErroInventario('Indique uma quantidade física válida, não negativa e com no máximo três casas decimais.');
+      return;
+    }
+
+    setAGuardarInventario(true);
+    setErroInventario(null);
+    try {
+      const atualizado = await definirInventarioProdutoVendedor({
+        produtoId: produtoEditando.id,
+        controloAtivo: controloStockAtivo,
+        quantidadeFisica: quantidade,
+      });
+      const comUnidade = { ...atualizado, unidade: atualizado.unidade || inventario?.unidade || unidade || 'unidade' };
+      setInventario(comUnidade);
+      setControloStockAtivo(comUnidade.controloAtivo);
+      setQuantidadeFisicaStock(comUnidade.quantidadeFisica === null ? '' : String(comUnidade.quantidadeFisica));
+      toast({ title: 'Inventário atualizado', description: 'O controlo de stock foi guardado com sucesso.' });
+    } catch (erro) {
+      setErroInventario(mensagemErroInventario(erro));
+    } finally {
+      setAGuardarInventario(false);
+    }
   };
 
   const obterCategoriaDbId = () => {
@@ -340,6 +447,27 @@ export default function VendedorAdicionarProduto() {
       return;
     }
 
+    const atributosLogisticos = normalizarAtributosLogisticosProduto({
+      unidade,
+      pesoPorUnidade,
+      volumePorUnidade,
+      refrigeracao,
+      caixaCarga,
+      paletes,
+    });
+    if (atributosLogisticos.valido === false) {
+      toast({ title: 'Informações para entrega inválidas', description: atributosLogisticos.mensagem, variant: 'destructive' });
+      return;
+    }
+
+    const provinciaSelecionada = filtroTerritorial.provinciaSelecionada;
+    const municipioSelecionado = filtroTerritorial.municipioSelecionado;
+    const usarNomeCanonico = !isEdit || territorioAlterado;
+    if (usarNomeCanonico && (!provinciaSelecionada || !municipioSelecionado)) {
+      toast({ title: 'Selecione uma província e um município válidos.', variant: 'destructive' });
+      return;
+    }
+
     try {
       // 🔥 CORREÇÃO — não perder imagem existente
       let imagem_url = produtoEditando?.imagem_url || '';
@@ -358,13 +486,14 @@ export default function VendedorAdicionarProduto() {
         preco_promocional: precoPromocional ? Number(precoPromocional) : null,
         unidade,
         tipo_venda: tipoVenda,
-        municipio,
-        provincia,
+        municipio: usarNomeCanonico ? municipioSelecionado?.nome ?? null : municipioOriginal,
+        provincia: usarNomeCanonico ? provinciaSelecionada?.nome ?? null : provinciaOriginal,
         imagem_url: removerImagem
           ? null
           : imagem_url || null,
         quantidade_minima: Number(quantidadeMinima),
         disponivel,
+        ...atributosLogisticos.atributos,
       };
 
       if (isEdit) {
@@ -391,10 +520,14 @@ export default function VendedorAdicionarProduto() {
     } catch (err) {
       console.error(err);
 
+      const unidadeBloqueada = isEdit && erroUnidadeProdutoComReservas(err);
+
       toast({
-        title: isEdit ? 'Erro ao atualizar produto' : 'Erro ao criar produto',
+        title: unidadeBloqueada ? 'Unidade bloqueada por reservas' : isEdit ? 'Erro ao atualizar produto' : 'Erro ao criar produto',
         description:
-          utilizador?.status_aprovacao !== 'aprovado'
+          unidadeBloqueada
+            ? 'Não é possível alterar a unidade enquanto existirem quantidades reservadas. Aguarde a libertação das reservas antes de tentar novamente.'
+            : utilizador?.status_aprovacao !== 'aprovado'
             ? 'A tua conta ainda não foi aprovada.'
             : 'Verifica os dados e tenta novamente.',
         variant: 'destructive',
@@ -529,7 +662,7 @@ export default function VendedorAdicionarProduto() {
 
             <select
               value={unidade}
-              onChange={e => setUnidade(e.target.value)}
+              onChange={e => handleUnidadeChange(e.target.value)}
               className="w-full border-2 px-3 py-2"
             >
               {UNIDADES.map(u => (
@@ -538,6 +671,13 @@ export default function VendedorAdicionarProduto() {
                 </option>
               ))}
             </select>
+            {isEdit
+              && produtoEditando?.unidade !== unidade
+              && quantidadeDecimalPositiva(inventario?.quantidadeReservada) && (
+                <p className="text-xs text-amber-700">
+                  Existem quantidades reservadas. A alteração da unidade será bloqueada até essas reservas serem libertadas.
+                </p>
+              )}
           </div>
         </div>
 
@@ -572,6 +712,53 @@ export default function VendedorAdicionarProduto() {
             />
           </div>
         </div>
+
+        <section className="space-y-4 rounded-xl border-2 border-primary/20 bg-primary/5 p-4">
+          <div className="flex gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"><Truck className="size-5" /></span>
+            <div>
+              <h2 className="font-titulo text-base font-bold">Informações para entrega</h2>
+              <p className="font-corpo text-xs text-muted-foreground">Opcional: estes dados ajudam a organizar futuras entregas. Se ainda não souber, pode deixar como “Não definido”.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="peso-por-unidade">{unidade === 'kg' ? 'Peso do produto' : `Peso aproximado por ${unidade}`}</Label>
+              {unidade === 'kg' ? (
+                <p id="peso-por-unidade" className="rounded-md border border-dashed border-primary/30 bg-background/70 px-3 py-2 text-sm text-muted-foreground">O peso será calculado automaticamente pela quantidade em kg.</p>
+              ) : (
+                <Input id="peso-por-unidade" type="number" min="0.001" step="0.001" inputMode="decimal" value={pesoPorUnidade} onChange={e => setPesoPorUnidade(e.target.value)} placeholder="Ex.: 2,5 kg" />
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="volume-por-unidade">Volume aproximado por {unidade} (m³)</Label>
+              <Input id="volume-por-unidade" type="number" min="0.000001" step="0.000001" inputMode="decimal" value={volumePorUnidade} onChange={e => setVolumePorUnidade(e.target.value)} placeholder="Opcional · Ex.: 0,03" />
+              <p className="text-xs text-muted-foreground">Se não souber o volume, deixe vazio.</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-2">
+              <Label htmlFor="refrigeracao">Precisa de transporte refrigerado?</Label>
+              <select id="refrigeracao" value={refrigeracao} onChange={e => setRefrigeracao(e.target.value as OpcaoTriState)} className="w-full border-2 border-border bg-background px-3 py-2">
+                <option value="indefinido">Não sei / ainda não definido</option><option value="sim">Sim</option><option value="nao">Não</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="caixa-carga">Precisa de veículo com caixa de carga?</Label>
+              <select id="caixa-carga" value={caixaCarga} onChange={e => setCaixaCarga(e.target.value as OpcaoTriState)} className="w-full border-2 border-border bg-background px-3 py-2">
+                <option value="indefinido">Não sei / ainda não definido</option><option value="sim">Sim</option><option value="nao">Não</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="paletes">Precisa de transporte compatível com paletes?</Label>
+              <select id="paletes" value={paletes} onChange={e => setPaletes(e.target.value as OpcaoTriState)} className="w-full border-2 border-border bg-background px-3 py-2">
+                <option value="indefinido">Não sei / ainda não definido</option><option value="sim">Sim</option><option value="nao">Não</option>
+              </select>
+            </div>
+          </div>
+        </section>
 
         <div className="space-y-2">
           <Label>Descrição</Label>
@@ -631,6 +818,92 @@ export default function VendedorAdicionarProduto() {
           </div>
         </div>
 
+        {isEdit ? (
+          <section aria-labelledby="inventario-titulo" className="space-y-4 rounded-xl border-2 border-border bg-muted/20 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 id="inventario-titulo" className="font-titulo text-lg font-bold">Inventário</h2>
+                <p className="font-corpo text-sm text-muted-foreground">
+                  Controle a quantidade física sem expor reservas individuais.
+                </p>
+              </div>
+              <span className={`rounded-full px-3 py-1 font-corpo text-xs font-semibold ${controloStockAtivo ? 'bg-primary/15 text-primary' : 'bg-secondary text-secondary-foreground'}`}>
+                {controloStockAtivo ? 'Controlo ativo' : 'Modo legado'}
+              </span>
+            </div>
+
+            {aCarregarInventario ? (
+              <p className="font-corpo text-sm text-muted-foreground">A carregar inventário...</p>
+            ) : erroInventario && !inventario ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 font-corpo text-sm text-destructive">
+                <span>{erroInventario}</span>
+                <Button type="button" variant="outline" size="sm" onClick={() => void carregarInventario()}>
+                  Tentar novamente
+                </Button>
+              </div>
+            ) : (
+              <>
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border bg-background p-3 font-corpo text-sm">
+                  <input
+                    type="checkbox"
+                    checked={controloStockAtivo}
+                    disabled={aGuardarInventario}
+                    onChange={e => {
+                      setControloStockAtivo(e.target.checked);
+                      if (e.target.checked && !quantidadeFisicaStock) setQuantidadeFisicaStock('0');
+                    }}
+                    className="mt-0.5 size-4 accent-green-700"
+                  />
+                  <span>
+                    <strong className="block">Ativar controlo quantitativo de stock</strong>
+                    <span className="text-muted-foreground">
+                      {controloStockAtivo
+                        ? 'A disponibilidade é calculada a partir do stock físico menos a quantidade reservada.'
+                        : 'Este produto mantém o modo legado e não controla disponibilidade quantitativa automaticamente.'}
+                    </span>
+                  </span>
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="quantidade-fisica-stock">Stock físico ({inventario?.unidade || unidade})</Label>
+                    <Input
+                      id="quantidade-fisica-stock"
+                      type="text"
+                      inputMode="decimal"
+                      value={quantidadeFisicaStock}
+                      disabled={!controloStockAtivo || aGuardarInventario}
+                      onChange={e => setQuantidadeFisicaStock(e.target.value)}
+                      placeholder="0"
+                      aria-describedby="ajuda-quantidade-stock"
+                    />
+                  </div>
+                  <div className="rounded-lg border border-border bg-background px-3 py-2 font-corpo text-sm">
+                    <span className="block text-xs text-muted-foreground">Reservado</span>
+                    <strong>{inventario?.quantidadeReservada === null || inventario?.quantidadeReservada === undefined ? '—' : `${inventario.quantidadeReservada} ${inventario.unidade}`}</strong>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background px-3 py-2 font-corpo text-sm">
+                    <span className="block text-xs text-muted-foreground">Disponível</span>
+                    <strong>{inventario?.quantidadeDisponivel === null || inventario?.quantidadeDisponivel === undefined ? '—' : `${inventario.quantidadeDisponivel} ${inventario.unidade}`}</strong>
+                  </div>
+                </div>
+                <p id="ajuda-quantidade-stock" className="font-corpo text-xs text-muted-foreground">
+                  Use valores não negativos, com no máximo três casas decimais. A quantidade reservada e a disponível são apenas para consulta.
+                </p>
+                {erroInventario && <p role="alert" className="font-corpo text-sm text-destructive">{erroInventario}</p>}
+                <Button type="button" onClick={() => void guardarInventario()} disabled={aGuardarInventario} variant="outline">
+                  {aGuardarInventario ? 'A guardar inventário...' : 'Guardar inventário'}
+                </Button>
+              </>
+            )}
+          </section>
+        ) : (
+          <section className="rounded-xl border border-dashed border-border bg-muted/20 p-4 font-corpo text-sm text-muted-foreground">
+            <strong className="block text-foreground">Inventário quantitativo</strong>
+            Depois de criar o produto, poderá configurar o stock físico e a disponibilidade quantitativa na edição.
+          </section>
+        )}
+
         <div className="formulario-publicacao-titulo pt-2">
           <span className="formulario-publicacao-icone"><MapPin className="size-5" /></span>
           <div><h2 className="font-titulo text-base font-bold">Localização e publicação</h2><p className="font-corpo text-xs text-muted-foreground">Indica onde o produto está disponível.</p></div>
@@ -638,39 +911,42 @@ export default function VendedorAdicionarProduto() {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <select
-            value={provincia}
+            value={filtroTerritorial.provinciaId}
+            disabled={filtroTerritorial.aCarregarProvincias}
             onChange={e => {
-              setProvincia(e.target.value);
-              setMunicipio('');
+              setTerritorioAlterado(true);
+              filtroTerritorial.selecionarProvincia(e.target.value);
             }}
             className="w-full border-2 px-3 py-2"
           >
-            <option value="">Selecionar província</option>
+            <option value="">{filtroTerritorial.aCarregarProvincias ? 'A carregar províncias...' : 'Selecione a província'}</option>
 
-            {PROVINCIAS.map(p => (
-              <option key={p.id} value={p.nome}>
+            {filtroTerritorial.provincias.map(p => (
+              <option key={p.id} value={p.id}>
                 {p.nome}
               </option>
             ))}
           </select>
 
           <select
-            value={municipio}
-            onChange={e => setMunicipio(e.target.value)}
-            disabled={!provincia}
+            value={filtroTerritorial.municipioId}
+            onChange={e => { setTerritorioAlterado(true); filtroTerritorial.selecionarMunicipio(e.target.value); }}
+            disabled={!filtroTerritorial.provinciaId || filtroTerritorial.aCarregarMunicipios || Boolean(filtroTerritorial.erroMunicipios)}
             className="w-full border-2 px-3 py-2"
           >
             <option value="">
-              {provincia ? 'Selecionar município' : 'Escolha província primeiro'}
+              {!filtroTerritorial.provinciaId ? 'Selecione primeiro a província' : filtroTerritorial.aCarregarMunicipios ? 'A carregar municípios...' : 'Selecione o município'}
             </option>
 
-            {municipiosFiltrados.map(m => (
-              <option key={m.id} value={m.nome}>
+            {filtroTerritorial.municipios.map(m => (
+              <option key={m.id} value={m.id}>
                 {m.nome}
               </option>
             ))}
           </select>
         </div>
+        {filtroTerritorial.erroProvincias && <p className="text-xs text-destructive">{filtroTerritorial.erroProvincias} <button type="button" onClick={() => void filtroTerritorial.carregarProvincias()} className="font-semibold underline">Tentar novamente</button></p>}
+        {filtroTerritorial.erroMunicipios && <p className="text-xs text-destructive">{filtroTerritorial.erroMunicipios} <button type="button" onClick={filtroTerritorial.recarregarMunicipios} className="font-semibold underline">Tentar novamente</button></p>}
 
         <label className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-3 font-corpo text-sm font-medium">
           <input

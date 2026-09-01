@@ -28,7 +28,7 @@ describe('domínio de encomendas', () => {
     expect(transicaoEncomendaPermitida('cliente', 'aguardando_confirmacao', 'cancelada')).toBe(true);
     expect(transicaoEncomendaPermitida('cliente', 'aguardando_confirmacao', 'confirmada')).toBe(false);
     expect(transicaoEncomendaPermitida('cliente', 'pronta_para_levantamento', 'levantada')).toBe(false);
-    expect(transicaoEncomendaPermitida('cliente', 'levantada', 'concluida')).toBe(false);
+    expect(transicaoEncomendaPermitida('cliente', 'levantada', 'concluida')).toBe(true);
     expect(transicaoEncomendaPermitida('vendedor', 'confirmada', 'concluida')).toBe(false);
   });
 
@@ -41,6 +41,7 @@ describe('domínio de encomendas', () => {
 
   it('não aceita itens repetidos no contrato do browser', () => {
     expect(() => prepararCriacaoEncomenda({
+      idempotencyKey: '00000000-0000-4000-8000-000000000001',
       itens: [
         { produto_id: 'produto-1', quantidade: 1 },
         { produto_id: 'produto-1', quantidade: 2 },
@@ -51,6 +52,7 @@ describe('domínio de encomendas', () => {
   it('não inclui totais ou preços enviados pelo browser', () => {
     const pedidoComValoresForjados = {
       itens: [{ produto_id: 'produto-1', quantidade: 2, preco_unitario: 1 }],
+      idempotencyKey: '00000000-0000-4000-8000-000000000001',
       vendedor_id: 'vendedor-forjado',
       subtotal_centimos: 1,
       desconto_centimos: 999999,
@@ -64,6 +66,7 @@ describe('domínio de encomendas', () => {
       p_nome_destinatario: null,
       p_telefone_destinatario: null,
       p_observacoes_cliente: 'Separar em duas embalagens.',
+      p_idempotency_key: '00000000-0000-4000-8000-000000000001',
     });
   });
 

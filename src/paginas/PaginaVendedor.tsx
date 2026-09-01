@@ -14,7 +14,6 @@ import Cabecalho from '@/componentes/Cabecalho';
 import Rodape from '@/componentes/Rodape';
 import ListaProdutos from '@/componentes/ListaProdutos';
 import ListaServicos from '@/componentes/ListaServicos';
-import SeloVendedor from '@/componentes/SeloVendedor';
 import PerfilVendedorHero from "@/componentes/PerfilVendedorHero";
 import CardProduto from "@/componentes/CardProduto";
 import CardServico from "@/componentes/CardServico";
@@ -112,15 +111,6 @@ export default function PaginaVendedor() {
 
     carregar();
   }, [id, versaoTempoReal]);
-
-  // =============================
-  // PLANOS
-  // =============================
-  const rotuloPlan: Record<string, string> = {
-    gratuito: 'Plano Gratuito',
-    destaque: 'Plano Destaque',
-    premium: 'Plano Premium',
-  };
 
   const estatisticas = useMemo(() => {
 

@@ -1,4 +1,4 @@
-import { ShieldCheck, Star, Flame, Clock, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
 
 type Props = {
   vendedor?: any;
@@ -8,10 +8,10 @@ type Props = {
 export default function SeloVendedor({ vendedor, compacto = false }: Props) {
   if (!vendedor) return null;
 
-  const status = vendedor.status_aprovacao || 'pendente';
+  // Perfis públicos são filtrados no servidor para vendedores aprovados e
+  // ativos. O estado administrativo não integra o contrato público.
+  const status = vendedor.status_aprovacao || 'aprovado';
   const verificado = vendedor.verificado === true;
-  const plano = vendedor.plano || 'gratuito';
-  const podeDestacar = vendedor.pode_destacar === true;
 
   if (status === 'suspenso' || status === 'rejeitado') {
     return (
@@ -27,24 +27,6 @@ export default function SeloVendedor({ vendedor, compacto = false }: Props) {
       <span className="inline-flex items-center gap-1 border border-yellow-500/30 bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-medium">
         <Clock size={12} />
         {compacto ? 'Em análise' : 'Vendedor em análise'}
-      </span>
-    );
-  }
-
-  if (status === 'aprovado' && verificado && plano === 'premium') {
-    return (
-      <span className="inline-flex items-center gap-1 border border-green-700 bg-green-700 text-white px-2 py-0.5 text-[10px] font-semibold">
-        <Flame size={12} />
-        {compacto ? 'Top' : 'Top vendedor'}
-      </span>
-    );
-  }
-
-  if (status === 'aprovado' && verificado && (plano === 'destaque' || podeDestacar)) {
-    return (
-      <span className="inline-flex items-center gap-1 border border-green-700/30 bg-green-50 text-green-800 px-2 py-0.5 text-[10px] font-semibold">
-        <Star size={12} />
-        {compacto ? 'Recomendado' : 'Vendedor recomendado'}
       </span>
     );
   }

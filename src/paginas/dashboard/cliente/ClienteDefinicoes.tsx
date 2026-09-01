@@ -2,7 +2,7 @@
  * Cliente — Definições da conta com Supabase real
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Save, Trash2, Lock, Camera, Loader2, X } from 'lucide-react';
 
 import { useAuth } from '@/contextos/AuthContexto';
@@ -10,14 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
-import { PROVINCIAS, MUNICIPIOS } from '@/dados/constantes';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/services/supabase';
 import { separarIndicativo } from '@/dados/paises';
 import { telefoneCompleto } from '@/lib/verificacoesConta';
+import { listarMunicipiosAngola, listarProvinciasAngola, resolverSelecaoTerritorialExistente, type EstadoSelecaoTerritorial, type MunicipioAngola, type ProvinciaAngola } from '@/services/territorioAngola';
 
 export default function ClienteDefinicoes() {
-  const { utilizador, logout } = useAuth();
+  const { utilizador, logout, recarregarPerfil } = useAuth();
   const { toast } = useToast();
 
   const [senhaAtual, setSenhaAtual] = useState('');
@@ -33,15 +33,68 @@ export default function ClienteDefinicoes() {
   const [email, setEmail] = useState('');
   const [provincia, setProvincia] = useState('');
   const [municipio, setMunicipio] = useState('');
+  const [provincias, setProvincias] = useState<ProvinciaAngola[]>([]);
+  const [municipios, setMunicipios] = useState<MunicipioAngola[]>([]);
+  const [provinciaOriginal, setProvinciaOriginal] = useState<string | null>(null);
+  const [municipioOriginal, setMunicipioOriginal] = useState<string | null>(null);
+  const [estadoTerritorialOriginal, setEstadoTerritorialOriginal] = useState<EstadoSelecaoTerritorial>('INCOMPLETO');
+  const [territorioAlterado, setTerritorioAlterado] = useState(false);
+  const [aCarregarProvincias, setACarregarProvincias] = useState(true);
+  const [aCarregarMunicipios, setACarregarMunicipios] = useState(false);
+  const [erroProvincias, setErroProvincias] = useState('');
+  const [erroMunicipios, setErroMunicipios] = useState('');
+  const [tentativaMunicipios, setTentativaMunicipios] = useState(0);
   const [fotoPerfil, setFotoPerfil] = useState<string | null>(null);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const submissaoEmCurso = useRef(false);
 
-  const municipiosFiltrados = MUNICIPIOS.filter(
-    m => m.provincia_id === PROVINCIAS.find(p => p.nome === provincia)?.id
-  );
+  const carregarProvincias = async () => {
+    setACarregarProvincias(true);
+    setErroProvincias('');
+
+    try {
+      setProvincias(await listarProvinciasAngola());
+    } catch {
+      setErroProvincias('Não foi possível carregar as províncias.');
+    } finally {
+      setACarregarProvincias(false);
+    }
+  };
+
+  const recarregarMunicipios = () => {
+    if (provincia) setTentativaMunicipios(tentativa => tentativa + 1);
+  };
+
+  useEffect(() => { void carregarProvincias(); }, []);
+  useEffect(() => {
+    if (!provincia) {
+      setMunicipios([]);
+      setErroMunicipios('');
+      return;
+    }
+
+    let ativo = true;
+    setACarregarMunicipios(true);
+    setErroMunicipios('');
+
+    void listarMunicipiosAngola(provincia)
+      .then(dados => {
+        if (ativo) setMunicipios(dados);
+      })
+      .catch(() => {
+        if (ativo) setErroMunicipios('Não foi possível carregar os municípios.');
+      })
+      .finally(() => {
+        if (ativo) setACarregarMunicipios(false);
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [provincia, tentativaMunicipios]);
 
   useEffect(() => {
     carregarCliente();
@@ -66,8 +119,7 @@ export default function ClienteDefinicoes() {
       setIndicativo(ind);
       setTelefone(numero);
       setEmail(utilizador?.email || '');
-      setProvincia(utilizador?.provincia || '');
-      setMunicipio(utilizador?.municipio || '');
+      await inicializarTerritorio(utilizador?.provincia ?? null, utilizador?.municipio ?? null);
 
       setLoading(false);
       return;
@@ -78,11 +130,26 @@ export default function ClienteDefinicoes() {
     setIndicativo(indCarregado);
     setTelefone(numero);
     setEmail(data.email || utilizador.email || '');
-    setProvincia(data.provincia || '');
-    setMunicipio(data.municipio || '');
+    await inicializarTerritorio(data.provincia, data.municipio);
     setFotoPerfil(data.foto_perfil || null);
 
     setLoading(false);
+  }
+
+  async function inicializarTerritorio(provinciaTexto: string | null, municipioTexto: string | null) {
+    setProvinciaOriginal(provinciaTexto);
+    setMunicipioOriginal(municipioTexto);
+    setTerritorioAlterado(false);
+
+    try {
+      const resultado = await resolverSelecaoTerritorialExistente(provinciaTexto, municipioTexto);
+      setEstadoTerritorialOriginal(resultado.estado);
+      setProvincia(resultado.provincia?.id || '');
+      setMunicipio(resultado.municipio?.id || '');
+    } catch {
+      setEstadoTerritorialOriginal('INCOMPLETO');
+      setErroProvincias('Não foi possível validar a localização atual. Os valores existentes serão preservados.');
+    }
   }
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,6 +208,8 @@ export default function ClienteDefinicoes() {
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (submissaoEmCurso.current || saving) return;
+
     if (!utilizador?.id) {
       toast({
         title: 'Erro',
@@ -150,8 +219,17 @@ export default function ClienteDefinicoes() {
       return;
     }
 
+    submissaoEmCurso.current = true;
+    setSaving(true);
+
     try {
-      setSaving(true);
+
+      const provinciaSelecionada = provincias.find(item => item.id === provincia);
+      const municipioSelecionado = municipios.find(item => item.id === municipio && item.provinciaId === provincia);
+      if (territorioAlterado && (!provinciaSelecionada || !municipioSelecionado)) {
+        toast({ title: 'Selecione uma província e um município válidos.', variant: 'destructive' });
+        return;
+      }
 
       const fotoFinal = await uploadFotoPerfil();
 
@@ -162,13 +240,15 @@ export default function ClienteDefinicoes() {
           nome,
           telefone: telefone ? telefoneCompleto(telefone, indicativo) : '',
           email,
-          provincia,
-          municipio,
+          provincia: territorioAlterado ? provinciaSelecionada?.nome ?? null : provinciaOriginal,
+          municipio: territorioAlterado ? municipioSelecionado?.nome ?? null : municipioOriginal,
           foto_perfil: fotoFinal,
           atualizado_em: new Date().toISOString(),
         });
 
       if (error) throw error;
+
+      await recarregarPerfil();
 
       toast({
         title: 'Definições guardadas!',
@@ -185,6 +265,7 @@ export default function ClienteDefinicoes() {
         variant: 'destructive',
       });
     } finally {
+      submissaoEmCurso.current = false;
       setSaving(false);
     }
   };
@@ -353,7 +434,7 @@ export default function ClienteDefinicoes() {
         <div className="space-y-1">
           <p className="font-corpo text-sm font-medium">Foto de perfil</p>
           <p className="font-corpo text-xs text-muted-foreground">
-            Máximo 500KB · JPG, PNG ou WEBP
+            Máximo 3MB · JPG, PNG ou WEBP
           </p>
 
           {fotoPerfil && (
@@ -416,15 +497,17 @@ export default function ClienteDefinicoes() {
             <Label className="font-corpo text-sm">Província</Label>
             <select
               value={provincia}
+              disabled={aCarregarProvincias}
               onChange={e => {
+                setTerritorioAlterado(true);
                 setProvincia(e.target.value);
                 setMunicipio('');
               }}
               className="w-full border-2 border-border bg-background font-corpo text-sm px-3 py-2 focus:outline-none focus:border-primary"
             >
-              <option value="">Selecionar</option>
-              {PROVINCIAS.map(p => (
-                <option key={p.id} value={p.nome}>
+              <option value="">{aCarregarProvincias ? 'A carregar províncias...' : 'Selecione a província'}</option>
+              {provincias.map(p => (
+                <option key={p.id} value={p.id}>
                   {p.nome}
                 </option>
               ))}
@@ -435,19 +518,24 @@ export default function ClienteDefinicoes() {
             <Label className="font-corpo text-sm">Município</Label>
             <select
               value={municipio}
-              onChange={e => setMunicipio(e.target.value)}
-              disabled={!provincia}
+              onChange={e => { setTerritorioAlterado(true); setMunicipio(e.target.value); }}
+              disabled={!provincia || aCarregarMunicipios || Boolean(erroMunicipios)}
               className="w-full border-2 border-border bg-background font-corpo text-sm px-3 py-2 focus:outline-none focus:border-primary disabled:opacity-50"
             >
-              <option value="">Selecionar</option>
-              {municipiosFiltrados.map(m => (
-                <option key={m.id} value={m.nome}>
+              <option value="">{!provincia ? 'Selecione primeiro a província' : aCarregarMunicipios ? 'A carregar municípios...' : 'Selecione o município'}</option>
+              {municipios.map(m => (
+                <option key={m.id} value={m.id}>
                   {m.nome}
                 </option>
               ))}
             </select>
           </div>
         </div>
+
+        {estadoTerritorialOriginal === 'LEGADO' && !territorioAlterado && <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-800">Localização antiga: será preservada até escolher uma nova localização.</p>}
+        {estadoTerritorialOriginal === 'INCOMPLETO' && !territorioAlterado && <p className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-800">Localização incompleta: o valor existente será preservado.</p>}
+        {erroProvincias && <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><span>{erroProvincias}</span><button type="button" onClick={() => void carregarProvincias()} className="font-semibold underline">Tentar novamente</button></div>}
+        {erroMunicipios && <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><span>{erroMunicipios}</span><button type="button" onClick={recarregarMunicipios} className="font-semibold underline">Tentar novamente</button></div>}
 
         <Button type="submit" disabled={saving} className="font-corpo font-semibold bg-green-700 hover:bg-green-800 text-white">
           {saving ? (
