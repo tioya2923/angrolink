@@ -123,8 +123,6 @@ const normalizarVendedor = (v: any): Vendedor => {
     compra_produtores: toBool(v.compra_produtores, false),
     entrega_outras_provincias: toBool(v.entrega_outras_provincias, false),
     venda_presencial: toBool(v.venda_presencial, false),
-
-    status_aprovacao: v.status_aprovacao || "pendente",
   } as Vendedor;
 };
 
