@@ -521,9 +521,13 @@ interface CriarProdutoParams extends Partial<AtributosLogisticosProduto> {
   quantidade_minima?: number;
 }
 
-export async function fetchMeuVendedor(): Promise<Vendedor | null> {
+export async function fetchMeuVendedor(opcoes?: { lancarErro?: boolean }): Promise<Vendedor | null> {
   const { data, error } = await supabase.rpc('obter_meu_vendedor');
-  if (error) { console.error('Erro ao buscar o próprio vendedor:', error); return null; }
+  if (error) {
+    console.error('Erro ao buscar o próprio vendedor:', error);
+    if (opcoes?.lancarErro) throw error;
+    return null;
+  }
   return data?.[0] ? normalizarVendedor(data[0]) : null;
 }
 
@@ -1216,15 +1220,15 @@ export async function atualizarEstadoParceiroEntrega(
   }
 
   if (estado === 'aprovado') {
-    const { data: documentos, error: erroDocumentos } = await db
-      .from('documentos_parceiro_entrega')
-      .select('id, estado')
-      .eq('parceiro_id', parceiroId);
+    // A aprovação do parceiro e dos veículos tem de ocorrer na mesma
+    // transação autorizada pelo servidor. Não há fallback para updates diretos.
+    const { data, error } = await db.rpc(
+      'aprovar_parceiro_entrega_admin',
+      { p_parceiro_id: parceiroId },
+    );
 
-    if (erroDocumentos) throw erroDocumentos;
-    if (!documentos?.length || documentos.some((documento: any) => documento.estado !== 'aprovado')) {
-      throw new Error('Analise e aprove todos os documentos antes de aprovar o parceiro.');
-    }
+    if (error) throw error;
+    return data;
   }
 
   const dados: Record<string, unknown> = {
@@ -1232,11 +1236,7 @@ export async function atualizarEstadoParceiroEntrega(
     disponibilidade: false,
   };
 
-  if (estado === 'aprovado') {
-    dados.aprovado_em = new Date().toISOString();
-    dados.motivo_rejeicao = null;
-    dados.motivo_suspensao = null;
-  } else if (estado === 'rejeitado') {
+  if (estado === 'rejeitado') {
     dados.motivo_rejeicao = motivoLimpo;
     dados.motivo_suspensao = null;
   } else if (estado === 'suspenso') {
@@ -1254,11 +1254,6 @@ export async function atualizarEstadoParceiroEntrega(
     .single();
 
   if (error) throw error;
-
-  if (estado === 'aprovado') await db
-    .from('veiculos_entrega')
-    .update({ estado_verificacao: 'aprovado', motivo_rejeicao: null })
-    .eq('parceiro_id', parceiroId);
 
   return data;
 }

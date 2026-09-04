@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contextos/AuthContexto";
 import { supabase } from "@/services/supabase";
-import { uploadImagemVendedor } from "@/services/api";
+import { fetchMeuVendedor, uploadImagemVendedor } from "@/services/api";
 import {
   ArrowLeft,
   ShoppingBag,
@@ -670,19 +670,7 @@ export default function PaginaAnunciar() {
         return;
       }
 
-      const { data: perfilExistente, error: erroPerfilExistente } =
-        await supabase
-          .from("vendedores")
-          .select("id")
-          .eq("user_id", authUser.id)
-          .maybeSingle();
-
-      if (erroPerfilExistente) {
-        console.error(
-          "Erro ao verificar perfil de vendedor:",
-          erroPerfilExistente,
-        );
-      }
+      const perfilExistente = await fetchMeuVendedor({ lancarErro: true });
 
       if (perfilExistente) {
         toast.error(
@@ -722,10 +710,6 @@ export default function PaginaAnunciar() {
         endereco_detalhado: formPerfil.endereco || null,
 
         tipo_vendedor: tipoVendedorSelecionado,
-        plano: "gratuito",
-        verificado: false,
-        status_aprovacao: "pendente",
-        pode_destacar: false,
 
         horario_atendimento:
           formPerfil.dia_abertura &&
@@ -762,11 +746,9 @@ export default function PaginaAnunciar() {
         atualizado_em: new Date().toISOString(),
       };
 
-      const { data: vendedorCriado, error: vendedorError } = await supabase
+      const { error: vendedorError } = await supabase
         .from("vendedores")
-        .insert(novoVendedor)
-        .select("id")
-        .single();
+        .insert(novoVendedor);
 
       if (vendedorError) {
         console.error("ERRO:", vendedorError);
@@ -785,6 +767,14 @@ export default function PaginaAnunciar() {
           "Não foi possível criar o perfil de vendedor. Verifica os dados e tenta novamente.",
         );
 
+        return;
+      }
+
+      const vendedorCriado = await fetchMeuVendedor({ lancarErro: true });
+      if (!vendedorCriado) {
+        toast.error(
+          "Não foi possível recuperar o perfil de vendedor criado. Tenta novamente.",
+        );
         return;
       }
 
@@ -832,21 +822,6 @@ export default function PaginaAnunciar() {
         toast.error(
           "A conta foi criada, mas os documentos não puderam ser enviados. Entre na conta para concluir o envio antes da análise.",
         );
-        return;
-      }
-
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: emailLogin,
-        password: formVendedor.senha,
-      });
-
-      if (loginError) {
-        console.error(loginError);
-
-        toast.error(
-          "Conta criada, mas não foi possível iniciar sessão automaticamente.",
-        );
-
         return;
       }
 
