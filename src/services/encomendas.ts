@@ -109,7 +109,8 @@ type RpcCheckoutTemporaria = <Args, Retorno>(
 
 // TEMPORÁRIO: remover após aplicar a migration de fecho da Fase 1 e regenerar
 // database.types.ts, quando ambas as RPCs passarem a expor p_idempotency_key.
-const rpcCheckoutTemporaria = supabase.rpc as unknown as RpcCheckoutTemporaria;
+const rpcCheckoutTemporaria =
+  supabase.rpc.bind(supabase) as unknown as RpcCheckoutTemporaria;
 
 export async function criarEncomendaLevantamento(input: CriarEncomendaLevantamentoInput) {
   const parametros = prepararCriacaoEncomenda(input);

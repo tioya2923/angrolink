@@ -55,6 +55,10 @@ import {
   type InventarioProdutoVendedor,
 } from '@/services/inventarioProduto';
 
+// TEMPORÁRIO — Stock quantitativo V1 ainda não foi promovido para staging.
+// Mantemos a implementação preservada, mas não expomos nem chamamos RPCs inexistentes.
+const INVENTARIO_QUANTITATIVO_ATIVO = false;
+
 export default function VendedorAdicionarProduto() {
   const navigate = useNavigate();
 
@@ -237,15 +241,26 @@ export default function VendedorAdicionarProduto() {
   }, [produtoEditando, categoria]);
 
   const carregarInventario = useCallback(async () => {
-    if (!isEdit || !produtoEditando?.id) return;
+    if (
+      !INVENTARIO_QUANTITATIVO_ATIVO ||
+      !isEdit ||
+      !produtoEditando?.id
+    ) {
+      return;
+    }
 
     setACarregarInventario(true);
     setErroInventario(null);
+
     try {
       const dados = await obterInventarioProdutoVendedor(produtoEditando.id);
       setInventario(dados);
       setControloStockAtivo(dados.controloAtivo);
-      setQuantidadeFisicaStock(dados.quantidadeFisica === null ? '' : String(dados.quantidadeFisica));
+      setQuantidadeFisicaStock(
+        dados.quantidadeFisica === null
+          ? ''
+          : String(dados.quantidadeFisica)
+      );
     } catch (erro) {
       setErroInventario(mensagemErroInventario(erro));
     } finally {
@@ -818,7 +833,7 @@ export default function VendedorAdicionarProduto() {
           </div>
         </div>
 
-        {isEdit ? (
+        {INVENTARIO_QUANTITATIVO_ATIVO && (isEdit ? (
           <section aria-labelledby="inventario-titulo" className="space-y-4 rounded-xl border-2 border-border bg-muted/20 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -902,7 +917,7 @@ export default function VendedorAdicionarProduto() {
             <strong className="block text-foreground">Inventário quantitativo</strong>
             Depois de criar o produto, poderá configurar o stock físico e a disponibilidade quantitativa na edição.
           </section>
-        )}
+        ))}
 
         <div className="formulario-publicacao-titulo pt-2">
           <span className="formulario-publicacao-icone"><MapPin className="size-5" /></span>
