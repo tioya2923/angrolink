@@ -445,7 +445,13 @@ export async function uploadImagemVendedor(file: File) {
     throw new Error('Não foi possível identificar a sessão para enviar a imagem.');
   }
 
-  const fileName = `${user.id}/perfil-${crypto.randomUUID()}.${extensao}`;
+  const identificadorImagem =
+    typeof crypto !== 'undefined' &&
+    typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+  const fileName = `${user.id}/perfil-${identificadorImagem}.${extensao}`;
 
   const { error } = await supabase.storage
     .from(BUCKET_VENDEDORES)

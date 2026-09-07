@@ -4,8 +4,38 @@
  * ========================================
  */
 
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Leaf, LogIn, LogOut, User, ChevronDown, ShoppingCart } from 'lucide-react';
+import { Link, useLocation,  useNavigate } from 'react-router-dom';
+import {
+  BarChart3,
+  Banknote,
+  ChevronDown,
+  CircleHelp,
+  ClipboardList,
+  Clock,
+  FileCheck2,
+  Heart,
+  LayoutDashboard,
+  Leaf,
+  LogIn,
+  LogOut,
+  MapPinned,
+  Menu,
+  MessageSquare,
+  Package,
+  PlusCircle,
+  Scale,
+  Settings,
+  ShieldCheck,
+  ShoppingBag,
+  ShoppingCart,
+  Sparkles,
+  Truck,
+  User,
+  UserCircle,
+  Users,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contextos/AuthContexto';
 import CategoriaSidebar from '@/componentes/CategoriaSidebar';
@@ -18,6 +48,7 @@ export default function Cabecalho() {
   const { utilizador, autenticado, logout } = useAuth();
   const { quantidadeItens } = useCarrinho();
   const navigate = useNavigate();
+  const location = useLocation();
   const perfilRef = useRef<HTMLDivElement>(null);
 
   // Fechar dropdown ao clicar fora
@@ -50,45 +81,75 @@ export default function Cabecalho() {
     switch (utilizador.papel) {
       case 'admin':
         return [
-          { to: '/dashboard', label: 'Menu' },
-          { to: '/dashboard/vendedores', label: 'Vendedores' },
-          { to: '/dashboard/pedidos-vendedores', label: 'Pedidos' },
-          { to: '/dashboard/utilizadores', label: 'Utilizadores' },
-          { to: '/dashboard/produtos', label: 'Produtos' },
-          { to: '/dashboard/rankings', label: 'Rankings' },
+          { to: '/dashboard', label: 'Menu', icone: LayoutDashboard },
+          { to: '/dashboard/vendedores', label: 'Vendedores', icone: Users },
+          { to: '/dashboard/compradores', label: 'Compradores', icone: ShoppingBag },
+          { to: '/dashboard/pedidos-vendedores', label: 'Pedidos', icone: UserCircle },
+          { to: '/dashboard/entregadores', label: 'Entregadores', icone: Truck },
+          { to: '/dashboard/utilizadores', label: 'Utilizadores', icone: ShieldCheck },
+          { to: '/dashboard/produtos', label: 'Produtos', icone: Package },
+          { to: '/dashboard/rankings', label: 'Rankings', icone: BarChart3 },
+          { to: '/dashboard/encomendas', label: 'Encomendas', icone: ClipboardList },
+          { to: '/dashboard/financeiro', label: 'Financeiro', icone: Banknote },
+          { to: '/dashboard/disputas', label: 'Disputas', icone: Scale },
         ];
       case 'vendedor':
         return [
-          { to: '/dashboard', label: 'Menu' },
-          { to: '/dashboard/produtos', label: 'Meus Produtos' },
-          { to: '/dashboard/servicos', label: 'Meus Serviços' },
-          { to: '/dashboard/favoritos', label: 'Favoritos' },
-          { to: '/dashboard/adicionar', label: 'Adicionar Produto' },
-          { to: '/dashboard/adicionar-servico', label: 'Adicionar Serviço' },
-          { to: "/dashboard/desempenho", label: "Desempenho" },
-          { to: "/dashboard/contactos", label: "Contactos" },
-          { to: '/dashboard/estatisticas', label: 'Estatísticas' },
-          { to: '/dashboard/perfil', label: 'Perfil' },
+          { to: '/dashboard', label: 'Menu', icone: LayoutDashboard },
+          { to: '/dashboard/produtos', label: 'Meus Produtos', icone: Package },
+          { to: '/dashboard/servicos', label: 'Meus Serviços', icone: Wrench },
+          { to: '/dashboard/favoritos', label: 'Favoritos', icone: Heart },
+          { to: '/dashboard/adicionar', label: 'Adicionar Produto', icone: PlusCircle },
+          { to: '/dashboard/adicionar-servico', label: 'Adicionar Serviço', icone: PlusCircle },
+          { to: '/dashboard/desempenho', label: 'Desempenho', icone: BarChart3 },
+          { to: '/dashboard/contactos', label: 'Contactos', icone: MessageSquare },
+          { to: '/dashboard/estatisticas', label: 'Estatísticas', icone: BarChart3 },
+          { to: '/dashboard/perfil', label: 'Perfil', icone: UserCircle },
+          { to: '/dashboard/encomendas', label: 'Encomendas', icone: ClipboardList },
+          { to: '/dashboard/compras', label: 'Minhas compras', icone: ShoppingBag },
+          { to: '/dashboard/documentos', label: 'Documentos', icone: FileCheck2 },
         ];
       case 'parceiro_entrega':
         return [
-          { to: '/dashboard', label: 'Central de entregas' },
-          { to: '/dashboard/pedidos', label: 'Pedidos de entrega' },
-          { to: '/dashboard/veiculo', label: 'Veículo e disponibilidade' },
-          { to: '/dashboard/areas', label: 'Áreas de cobertura' },
-          { to: '/dashboard/documentos', label: 'Documentos' },
-          { to: '/dashboard/apoio', label: 'Apoio ANGROLINK' },
+          { to: '/dashboard', label: 'Resumo', icone: LayoutDashboard },
+          { to: '/dashboard/dados', label: 'Dados e perfil', icone: UserCircle },
+          { to: '/dashboard/tarefas', label: 'Tarefas de entrega', icone: ClipboardList },
+          { to: '/dashboard/veiculo', label: 'Veículo e disponibilidade', icone: Truck },
+          { to: '/dashboard/areas', label: 'Cobertura', icone: MapPinned },
+          { to: '/dashboard/documentos', label: 'Documentos', icone: FileCheck2 },
+          { to: '/dashboard/apoio', label: 'Apoio ANGROLINK', icone: CircleHelp },
         ];
       case 'cliente':
       default:
         return [
-          { to: '/dashboard', label: 'Menu' },
-          { to: '/dashboard/historico', label: 'Histórico' },
-          { to: '/dashboard/favoritos', label: 'Favoritos' },
-          { to: '/dashboard/recomendacoes', label: 'Recomendações' },
-          { to: '/dashboard/definicoes', label: 'Definições' },
+          { to: '/dashboard', label: 'Menu', icone: LayoutDashboard },
+          { to: '/dashboard/encomendas', label: 'Encomendas', icone: ClipboardList },
+          { to: '/dashboard/historico', label: 'Histórico', icone: Clock },
+          { to: '/dashboard/favoritos', label: 'Favoritos', icone: Heart },
+          { to: '/dashboard/recomendacoes', label: 'Recomendações', icone: Sparkles },
+          { to: '/dashboard/definicoes', label: 'Definições', icone: Settings },
         ];
     }
+  };
+
+  const nomePapel =
+    utilizador?.papel === 'admin'
+      ? 'Administrador'
+      : utilizador?.papel === 'vendedor'
+        ? 'Vendedor'
+        : utilizador?.papel === 'parceiro_entrega'
+          ? 'Parceiro de entregas'
+          : 'Cliente';
+
+  const linkPerfilAtivo = (to: string) => {
+    if (to === '/dashboard') {
+      return location.pathname === '/dashboard';
+    }
+
+    return (
+      location.pathname === to ||
+      location.pathname.startsWith(`${to}/`)
+    );
   };
 
   return (
@@ -144,28 +205,101 @@ export default function Cabecalho() {
               </button>
 
               {perfilAberto && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-card border-2 border-border rounded-md shadow-lg py-1 z-50">
-                  <div className="px-4 py-2 border-b border-border">
-                    <p className="font-corpo text-sm font-semibold text-foreground">{utilizador.nome}</p>
-                    <p className="font-corpo text-xs text-muted-foreground">{utilizador.email}</p>
+                <div
+                  className="
+                    absolute right-0 top-full z-50 mt-3
+                    w-72 overflow-hidden
+                    rounded-2xl
+                    border-2 border-border
+                    bg-background
+                    shadow-2xl
+                  "
+                >
+                  {/* Perfil */}
+                  <div className="border-b-2 border-border bg-green-50 p-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="
+                          flex size-11 shrink-0 items-center justify-center
+                          rounded-full
+                          bg-green-700
+                          font-titulo text-lg font-bold text-white
+                          shadow-sm
+                        "
+                      >
+                        {utilizador.nome?.charAt(0).toUpperCase() || '?'}
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="truncate font-titulo text-sm font-bold text-foreground">
+                          {utilizador.nome}
+                        </p>
+
+                        <p className="truncate font-corpo text-xs text-muted-foreground">
+                          {utilizador.email}
+                        </p>
+
+                        <span
+                          className="
+                            mt-1 inline-flex rounded-full
+                            bg-green-100 px-2 py-0.5
+                            font-corpo text-[11px] font-semibold text-green-700
+                          "
+                        >
+                          Conta {nomePapel}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  {linksPerfil().map(l => (
-                    <Link
-                      key={l.to}
-                      to={l.to}
-                      onClick={() => setPerfilAberto(false)}
-                      className="block px-4 py-2 font-corpo text-sm text-foreground hover:bg-muted transition-colors"
+
+                  {/* Navegação */}
+                  <div className="max-h-[60vh] overflow-y-auto py-2">
+                    {linksPerfil().map(l => {
+                      const Icone = l.icone;
+                      const ativo = linkPerfilAtivo(l.to);
+
+                      return (
+                        <Link
+                          key={l.to}
+                          to={l.to}
+                          onClick={() => setPerfilAberto(false)}
+                          className={`
+                            mx-2 flex items-center gap-3
+                            rounded-lg px-3 py-2.5
+                            font-corpo text-sm
+                            transition-colors
+                            ${
+                              ativo
+                                ? 'bg-green-700 font-medium text-white'
+                                : 'text-muted-foreground hover:bg-green-50 hover:text-green-700'
+                            }
+                          `}
+                        >
+                          <Icone size={18} className="shrink-0" />
+
+                          <span>{l.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {/* Sair */}
+                  <div className="border-t-2 border-border p-2">
+                    <button
+                      onClick={handleLogout}
+                      className="
+                        flex w-full items-center gap-3
+                        rounded-lg px-3 py-2.5
+                        font-corpo text-sm font-medium
+                        text-destructive
+                        transition-colors
+                        hover:bg-destructive/10
+                      "
                     >
-                      {l.label}
-                    </Link>
-                  ))}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 font-corpo text-sm text-destructive hover:bg-muted transition-colors flex items-center gap-2"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Sair
-                  </button>
+                      <LogOut size={18} />
+                      Sair
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -187,54 +321,262 @@ export default function Cabecalho() {
 
       {/* Mobile menu */}
       {menuAberto && (
-        <nav className="md:hidden border-t-2 border-border bg-background">
-          <div className="container py-4 flex flex-col gap-3">
-            <CategoriaSidebar />
-
-            {linksPublicos.map(l => (
-              <Link key={l.to} to={l.to} className="font-corpo text-base font-medium text-foreground py-2" onClick={fecharMenu}>
-                {l.label}
-              </Link>
-            ))}
-            <Link to="/carrinho" className="flex items-center gap-2 py-2 font-corpo text-base font-medium text-foreground" onClick={fecharMenu}>
-              <ShoppingCart className="size-4" /> Carrinho {quantidadeItens > 0 ? `(${quantidadeItens})` : ''}
-            </Link>
-
-            {!autenticado && (
+        <div className="fixed inset-x-0 bottom-0 top-14 z-40 flex md:hidden">
+          <nav
+            className="
+              flex w-[min(20rem,88vw)] flex-col
+              border-r-2 border-border
+              bg-background
+              shadow-2xl
+            "
+          >
+            {autenticado && utilizador ? (
               <>
-                <Link to="/anunciar" className="btn-whatsapp font-titulo text-center py-3" onClick={fecharMenu}>
-                  Quero Anunciar
-                </Link>
-                <Link to="/login" className="font-corpo text-base font-medium text-foreground py-2 flex items-center gap-2" onClick={fecharMenu}>
-                  <LogIn className="w-4 h-4" />
-                  Entrar
-                </Link>
-              </>
-            )}
+                {/* Perfil */}
+                <div className="border-b-2 border-border bg-green-50 p-4">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="
+                        flex size-12 shrink-0 items-center justify-center
+                        rounded-full
+                        bg-green-700
+                        font-titulo text-lg font-bold text-white
+                        shadow-md
+                      "
+                    >
+                      {utilizador.nome?.charAt(0).toUpperCase() || '?'}
+                    </div>
 
-            {autenticado && utilizador && (
-              <>
-                <div className="border-t border-border pt-3 mt-1">
-                  <p className="font-corpo text-xs text-muted-foreground mb-2">
-                    {utilizador.nome} · {utilizador.email}
-                  </p>
+                    <div className="min-w-0">
+                      <p className="truncate font-titulo text-sm font-bold text-foreground">
+                        {utilizador.nome}
+                      </p>
+
+                      <p className="truncate font-corpo text-xs text-muted-foreground">
+                        {utilizador.email}
+                      </p>
+
+                      <span
+                        className="
+                          mt-1 inline-flex rounded-full
+                          bg-green-100 px-2 py-0.5
+                          font-corpo text-[11px] font-semibold text-green-700
+                        "
+                      >
+                        Conta {nomePapel}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                {linksPerfil().map(l => (
-                  <Link key={l.to} to={l.to} className="font-corpo text-base font-medium text-foreground py-2" onClick={fecharMenu}>
-                    {l.label}
+
+                {/* Conteúdo com scroll */}
+                <div className="flex-1 overflow-y-auto">
+                  {/* Explorar o marketplace */}
+                  {utilizador.papel !== 'parceiro_entrega' && (
+                    <div className="border-b border-border px-3 py-3">
+                      <p className="mb-2 px-2 font-corpo text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        Explorar
+                      </p>
+
+                      <div className="px-2 py-1">
+                        <CategoriaSidebar />
+                      </div>
+
+                      {linksPublicos.map(l => {
+                        const Icone =
+                          l.to === '/pesquisa'
+                            ? Package
+                            : Wrench;
+
+                        return (
+                          <Link
+                            key={l.to}
+                            to={l.to}
+                            onClick={fecharMenu}
+                            className="
+                              flex items-center gap-3
+                              rounded-lg px-3 py-2.5
+                              font-corpo text-sm
+                              text-muted-foreground
+                              transition-colors
+                              hover:bg-green-50 hover:text-green-700
+                            "
+                          >
+                            <Icone size={18} className="shrink-0" />
+                            {l.label}
+                          </Link>
+                        );
+                      })}
+
+                      <Link
+                        to="/carrinho"
+                        onClick={fecharMenu}
+                        className="
+                          flex items-center justify-between
+                          rounded-lg px-3 py-2.5
+                          font-corpo text-sm
+                          text-muted-foreground
+                          transition-colors
+                          hover:bg-green-50 hover:text-green-700
+                        "
+                      >
+                        <span className="flex items-center gap-3">
+                          <ShoppingCart size={18} className="shrink-0" />
+                          Carrinho
+                        </span>
+
+                        {quantidadeItens > 0 && (
+                          <span
+                            className="
+                              min-w-5 rounded-full
+                              bg-amber-400 px-1.5 py-0.5
+                              text-center text-[10px] font-bold text-green-950
+                            "
+                          >
+                            {quantidadeItens > 99 ? '99+' : quantidadeItens}
+                          </span>
+                        )}
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Menu do painel */}
+                  <div className="py-3">
+                    <p className="mb-2 px-5 font-corpo text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Painel
+                    </p>
+
+                    {linksPerfil().map(l => {
+                      const Icone = l.icone;
+                      const ativo = linkPerfilAtivo(l.to);
+
+                      return (
+                        <Link
+                          key={l.to}
+                          to={l.to}
+                          onClick={fecharMenu}
+                          className={`
+                            mx-2 flex items-center gap-3
+                            rounded-lg px-3 py-3
+                            font-corpo text-sm
+                            transition-colors
+                            ${
+                              ativo
+                                ? 'bg-green-700 font-medium text-white shadow-sm'
+                                : 'text-muted-foreground hover:bg-green-50 hover:text-green-700'
+                            }
+                          `}
+                        >
+                          <Icone size={18} className="shrink-0" />
+                          <span>{l.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Sair fixo no fundo */}
+                <div className="border-t-2 border-border bg-background p-3">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="
+                      flex w-full items-center gap-3
+                      rounded-lg px-3 py-2.5
+                      font-corpo text-sm font-medium
+                      text-destructive
+                      transition-colors
+                      hover:bg-destructive/10
+                    "
+                  >
+                    <LogOut size={18} />
+                    Sair
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Mobile para utilizador não autenticado */}
+                <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                  <CategoriaSidebar />
+
+                  {linksPublicos.map(l => (
+                    <Link
+                      key={l.to}
+                      to={l.to}
+                      onClick={fecharMenu}
+                      className="
+                        flex items-center gap-3
+                        rounded-lg px-3 py-2.5
+                        font-corpo text-sm font-medium
+                        text-foreground
+                        transition-colors
+                        hover:bg-green-50 hover:text-green-700
+                      "
+                    >
+                      {l.to === '/pesquisa' ? (
+                        <Package size={18} />
+                      ) : (
+                        <Wrench size={18} />
+                      )}
+
+                      {l.label}
+                    </Link>
+                  ))}
+
+                  <Link
+                    to="/carrinho"
+                    onClick={fecharMenu}
+                    className="
+                      flex items-center gap-3
+                      rounded-lg px-3 py-2.5
+                      font-corpo text-sm font-medium
+                      text-foreground
+                      transition-colors
+                      hover:bg-green-50 hover:text-green-700
+                    "
+                  >
+                    <ShoppingCart size={18} />
+                    Carrinho
+                    {quantidadeItens > 0 && ` (${quantidadeItens})`}
                   </Link>
-                ))}
-                <button
-                  onClick={handleLogout}
-                  className="font-corpo text-base font-medium text-destructive py-2 flex items-center gap-2 text-left"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sair
-                </button>
+
+                  <Link
+                    to="/login"
+                    onClick={fecharMenu}
+                    className="
+                      flex items-center gap-3
+                      rounded-lg px-3 py-2.5
+                      font-corpo text-sm font-medium
+                      text-foreground
+                      transition-colors
+                      hover:bg-green-50 hover:text-green-700
+                    "
+                  >
+                    <LogIn size={18} />
+                    Entrar
+                  </Link>
+
+                  <Link
+                    to="/anunciar"
+                    onClick={fecharMenu}
+                    className="btn-whatsapp block py-3 text-center font-titulo"
+                  >
+                    Quero Anunciar
+                  </Link>
+                </div>
               </>
             )}
-          </div>
-        </nav>
+          </nav>
+
+          {/* Overlay */}
+          <button
+            type="button"
+            aria-label="Fechar menu"
+            onClick={fecharMenu}
+            className="flex-1 bg-foreground/30 backdrop-blur-[1px]"
+          />
+        </div>
       )}
     </header>
   );

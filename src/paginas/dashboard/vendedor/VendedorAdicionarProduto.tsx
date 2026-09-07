@@ -595,7 +595,7 @@ export default function VendedorAdicionarProduto() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label className="font-corpo text-sm">Categoria *</Label>
 
@@ -643,7 +643,7 @@ export default function VendedorAdicionarProduto() {
           <div><h2 className="font-titulo text-base font-bold">Venda e apresentação</h2><p className="font-corpo text-xs text-muted-foreground">Define o preço, a quantidade e adiciona uma imagem atrativa.</p></div>
           <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 2 de 3</span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Preço (Kz) *</Label>
 
@@ -671,7 +671,7 @@ export default function VendedorAdicionarProduto() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Unidade *</Label>
 
@@ -696,7 +696,7 @@ export default function VendedorAdicionarProduto() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label>Tipo de venda *</Label>
 
@@ -924,7 +924,7 @@ export default function VendedorAdicionarProduto() {
           <div><h2 className="font-titulo text-base font-bold">Localização e publicação</h2><p className="font-corpo text-xs text-muted-foreground">Indica onde o produto está disponível.</p></div>
           <span className="ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold">Passo 3 de 3</span>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <select
             value={filtroTerritorial.provinciaId}
             disabled={filtroTerritorial.aCarregarProvincias}

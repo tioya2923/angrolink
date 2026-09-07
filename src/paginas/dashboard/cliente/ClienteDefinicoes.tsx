@@ -400,57 +400,95 @@ export default function ClienteDefinicoes() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <header className="painel-dashboard-cabecalho">
-        <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">Definições da conta</h1>
-        <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">Atualiza os teus dados, fotografia e segurança da conta.</p>
-      </header>
+      <header className="painel-dashboard-cabecalho flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="relative z-10 font-titulo text-2xl font-bold text-primary-foreground">
+            Definições da conta
+          </h1>
 
-      <div className="painel-dashboard-form flex items-center gap-4">
-        <div className="relative">
-          <div className="w-20 h-20 rounded-full border-2 border-green-900/20 overflow-hidden bg-green-700 flex items-center justify-center">
-            {fotoPerfil ? (
-              <img
-                src={fotoPerfil}
-                alt="Foto de perfil"
-                className="w-full h-full object-cover "
-              />
-            ) : (
-              <Camera size={24} className="text-green-700" />
-            )}
-          </div>
-
-          <label className="absolute bottom-0 right-0 flex items-center gap-1 rounded-full bg-green-700 px-3 py-1 text-white cursor-pointer hover:bg-green-900 transition-colors shadow-md">
-            <Camera size={12} />
-            <span className="text-xs font-medium">Alterar foto</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleFotoChange}
-              className="hidden"
-            />
-          </label>
+          <p className="relative z-10 mt-1 font-corpo text-sm text-primary-foreground/80">
+            Atualiza os teus dados, fotografia e segurança da conta.
+          </p>
         </div>
 
-        <div className="space-y-1">
-          <p className="font-corpo text-sm font-medium">Foto de perfil</p>
-          <p className="font-corpo text-xs text-muted-foreground">
-            Máximo 3MB · JPG, PNG ou WEBP
-          </p>
-
-          {fotoPerfil && (
-            <button
-              type="button"
-              onClick={removerFoto}
-              className="flex items-center gap-1 font-corpo text-xs text-destructive hover:underline"
-            >
-              <X size={12} />
-              Remover foto
-            </button>
+        <Button
+          type="submit"
+          form="form-definicoes-cliente"
+          disabled={saving}
+          className="relative z-10 bg-secondary text-secondary-foreground hover:bg-secondary/90"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              A guardar...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              Guardar Perfil
+            </>
           )}
+        </Button>
+      </header>
+
+      <div className="painel-dashboard-form">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          <div className="shrink-0">
+            <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-green-700 shadow-md">
+              {fotoPerfil ? (
+                <img
+                  src={fotoPerfil}
+                  alt="Foto de perfil"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Camera size={28} className="text-white" />
+              )}
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="font-corpo text-sm font-semibold text-foreground">
+              Foto de perfil
+            </p>
+
+            <p className="mt-1 font-corpo text-xs text-muted-foreground">
+              Máximo 3MB · JPG, PNG ou WEBP
+            </p>
+
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-md bg-green-700 px-4 py-2 font-corpo text-sm font-semibold text-white transition-colors hover:bg-green-800">
+                <Camera size={16} />
+                Alterar foto
+
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFotoChange}
+                  className="hidden"
+                />
+              </label>
+
+              {fotoPerfil && (
+                <button
+                  type="button"
+                  onClick={removerFoto}
+                  className="inline-flex items-center gap-1.5 font-corpo text-sm font-medium text-destructive transition-colors hover:underline"
+                >
+                  <X size={15} />
+                  Remover foto
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      <form onSubmit={handleGuardar} className="painel-dashboard-form space-y-4">
+      <form
+        id="form-definicoes-cliente"
+        onSubmit={handleGuardar}
+        className="painel-dashboard-form space-y-4"
+      >
         <div className="space-y-2">
           <Label className="font-corpo text-sm">Nome</Label>
           <Input
@@ -492,7 +530,7 @@ export default function ClienteDefinicoes() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-2">
             <Label className="font-corpo text-sm">Província</Label>
             <select
@@ -537,19 +575,6 @@ export default function ClienteDefinicoes() {
         {erroProvincias && <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><span>{erroProvincias}</span><button type="button" onClick={() => void carregarProvincias()} className="font-semibold underline">Tentar novamente</button></div>}
         {erroMunicipios && <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><span>{erroMunicipios}</span><button type="button" onClick={recarregarMunicipios} className="font-semibold underline">Tentar novamente</button></div>}
 
-        <Button type="submit" disabled={saving} className="font-corpo font-semibold bg-green-700 hover:bg-green-800 text-white">
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              A guardar...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Guardar Alterações
-            </>
-          )}
-        </Button>
       </form>
 
       <div className="space-y-6">
@@ -634,6 +659,25 @@ export default function ClienteDefinicoes() {
             )}
           </Button>
         </div>
+
+        <Button
+          type="submit"
+          form="form-definicoes-cliente"
+          disabled={saving}
+          className="font-corpo font-semibold bg-green-700 hover:bg-green-800 text-white"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              A guardar...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Guardar Alterações
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
