@@ -13,6 +13,7 @@ type EnderecoEntregaEncomenda = Database['public']['Tables']['enderecos_entrega_
 
 export type CodigoLevantamento = CodigoLevantamentoRpc;
 export interface CodigoEntrega { codigo: string; expira_em: string; geracoes: number; }
+export interface EstadoLevantamentoParticipante { estado: string; codigo_validado: boolean; pagamento_confirmado: boolean; }
 export type ResultadoValidacaoCodigoLevantamento = Omit<ValidacaoCodigoLevantamentoRpc, 'motivo'> & {
   motivo: string | null;
 };
@@ -21,6 +22,7 @@ export type DetalheEncomenda = EncomendaResumo & {
   eventos_encomenda: EventoEncomenda[];
   enderecos_entrega_encomenda: EnderecoEntregaEncomenda | null;
   entrega_participante: EntregaParticipante | null;
+  estado_levantamento?: EstadoLevantamentoParticipante | null;
 };
 export type DisputaEncomenda = DisputaEncomendaRow;
 
@@ -35,6 +37,7 @@ export interface EntregaParticipante {
   concluido_em?: string | null;
   recusado_em?: string | null;
   motivo_recusa?: string | null;
+  codigo_entrega_validado?: boolean;
   parceiro_entrega_id?: string;
   nome_entregador?: string;
   veiculo?: {
@@ -199,7 +202,7 @@ export async function fetchDetalheEncomenda(encomendaId: string): Promise<Detalh
 
   const detalhe = data as Omit<DetalheEncomenda, 'entrega_participante'>;
   if (detalhe.modalidade_recebimento !== 'entrega') {
-    return { ...detalhe, entrega_participante: null };
+    return { ...detalhe, entrega_participante: null, estado_levantamento: await obterEstadoLevantamentoParticipante(encomendaId) };
   }
 
   const { data: entrega, error: erroEntrega } = await supabase.rpc(
@@ -292,6 +295,23 @@ export async function obterCodigoEntrega(encomendaId: string): Promise<CodigoEnt
   if (error) throw error;
   if (!data?.[0]) throw new Error('Não foi possível obter o código de entrega.');
   return data[0];
+}
+
+type RpcLevantamentoNovo = (nome: 'obter_estado_levantamento_participante' | 'registar_pagamento_no_levantamento_vendedor', argumentos: { p_encomenda_id: string }) => Promise<{ data: unknown; error: { message: string } | null }>;
+const rpcLevantamentoNovo = supabase.rpc.bind(supabase) as unknown as RpcLevantamentoNovo;
+
+export async function obterEstadoLevantamentoParticipante(encomendaId: string): Promise<EstadoLevantamentoParticipante> {
+  const { data, error } = await rpcLevantamentoNovo('obter_estado_levantamento_participante', { p_encomenda_id: encomendaId });
+  if (error) throw error;
+  if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Não foi possível obter o estado do levantamento.');
+  const estado = data as Record<string, unknown>;
+  if (typeof estado.estado !== 'string' || typeof estado.codigo_validado !== 'boolean' || typeof estado.pagamento_confirmado !== 'boolean') throw new Error('O estado do levantamento é inválido.');
+  return { estado: estado.estado, codigo_validado: estado.codigo_validado, pagamento_confirmado: estado.pagamento_confirmado };
+}
+
+export async function registarPagamentoNoLevantamentoVendedor(encomendaId: string): Promise<void> {
+  const { error } = await rpcLevantamentoNovo('registar_pagamento_no_levantamento_vendedor', { p_encomenda_id: encomendaId });
+  if (error) throw error;
 }
 
 /**

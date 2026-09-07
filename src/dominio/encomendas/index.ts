@@ -144,7 +144,6 @@ export interface CriarEncomendaEntregaInput {
 const transicoesPorAtor: Record<AtorEncomenda, Partial<Record<EstadoEncomenda, EstadoEncomenda[]>>> = {
   cliente: {
     aguardando_confirmacao: ['cancelada'],
-    levantada: ['concluida'],
   },
   vendedor: {
     aguardando_confirmacao: ['confirmada', 'recusada'],

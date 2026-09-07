@@ -19,6 +19,7 @@ import {
   fetchDetalheEncomenda,
   fetchDisputaEncomenda,
   transicionarEncomendaLevantamento,
+  registarPagamentoNoLevantamentoVendedor,
   validarCodigoLevantamento,
   type DetalheEncomenda,
   type DisputaEncomenda,
@@ -181,7 +182,7 @@ export default function VendedorEncomendaDetalhe() {
 
       if (resultado.validado) {
         setCodigo('');
-        toast({ title: 'Levantamento confirmado.' });
+        toast({ title: 'Código validado. Confirme agora o pagamento recebido.' });
         await carregar();
         return;
       }
@@ -198,6 +199,20 @@ export default function VendedorEncomendaDetalhe() {
         title: 'Não foi possível validar o código.',
         variant: 'destructive',
       });
+    } finally {
+      setAcao(false);
+    }
+  };
+
+  const confirmarPagamentoLevantamento = async () => {
+    if (!encomenda) return;
+    try {
+      setAcao(true);
+      await registarPagamentoNoLevantamentoVendedor(encomenda.id);
+      toast({ title: 'Pagamento confirmado. Levantamento concluído.' });
+      await carregar();
+    } catch {
+      toast({ title: 'Não foi possível confirmar o pagamento.', variant: 'destructive' });
     } finally {
       setAcao(false);
     }
@@ -220,6 +235,7 @@ export default function VendedorEncomendaDetalhe() {
   }
 
   const eEntrega = encomenda.modalidade_recebimento === 'entrega';
+  const levantamentoValidado = encomenda.estado_levantamento?.codigo_validado === true;
   const entrega = encomenda.entrega_participante;
   const descricaoVeiculo = descreverVeiculo(entrega);
   const podeConfirmarRecolha = Boolean(
@@ -423,7 +439,7 @@ export default function VendedorEncomendaDetalhe() {
         </button>
       )}
 
-      {!eEntrega && encomenda.estado === 'pronta_para_levantamento' && (
+      {!eEntrega && encomenda.estado === 'pronta_para_levantamento' && !levantamentoValidado && (
         <section className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
           <h2 className="flex items-center gap-2 font-titulo text-lg font-bold text-green-900">
             <KeyRound className="size-5" />
@@ -454,6 +470,16 @@ export default function VendedorEncomendaDetalhe() {
               {acao ? 'A validar…' : 'Validar código'}
             </button>
           </div>
+        </section>
+      )}
+
+      {!eEntrega && encomenda.estado === 'pronta_para_levantamento' && levantamentoValidado && (
+        <section className="rounded-2xl border-2 border-green-200 bg-green-50 p-5">
+          <h2 className="font-titulo text-lg font-bold text-green-900">Código validado</h2>
+          <p className="mt-1 text-sm text-green-800">A confirmação física foi registada. Confirme agora o pagamento recebido.</p>
+          <button type="button" disabled={acao} onClick={() => void confirmarPagamentoLevantamento()} className="mt-4 rounded-lg bg-green-800 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+            {acao ? 'A confirmar…' : 'Confirmar pagamento recebido'}
+          </button>
         </section>
       )}
 

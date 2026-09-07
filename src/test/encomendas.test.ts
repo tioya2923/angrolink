@@ -28,7 +28,7 @@ describe('domínio de encomendas', () => {
     expect(transicaoEncomendaPermitida('cliente', 'aguardando_confirmacao', 'cancelada')).toBe(true);
     expect(transicaoEncomendaPermitida('cliente', 'aguardando_confirmacao', 'confirmada')).toBe(false);
     expect(transicaoEncomendaPermitida('cliente', 'pronta_para_levantamento', 'levantada')).toBe(false);
-    expect(transicaoEncomendaPermitida('cliente', 'levantada', 'concluida')).toBe(true);
+    expect(transicaoEncomendaPermitida('cliente', 'levantada', 'concluida')).toBe(false);
     expect(transicaoEncomendaPermitida('vendedor', 'confirmada', 'concluida')).toBe(false);
   });
 

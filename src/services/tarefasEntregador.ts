@@ -13,7 +13,7 @@ export interface TarefaEntregaDetalhe {
   tarefa: Pick<TarefaEntregaResumo, 'id' | 'estado' | 'atribuido_em' | 'aceite_em' | 'chegou_origem_em' | 'recolhida_em' | 'chegou_destino_em' | 'recusado_em' | 'motivo_recusa'>;
   encomenda: { id: string; codigo_publico: string; estado: string; modalidade: string };
   veiculo: { tipo: string; matricula: string };
-  pagamento?: { metodo?: string; estado?: string };
+  pagamento?: { metodo?: string; estado?: string; codigo_entrega_validado?: boolean };
   origem: Record<string, string | null>; destino: Record<string, string | null>;
   itens: Array<{ nome: string; quantidade: number; unidade: string }>;
   requisitos_logisticos: Record<string, Json>;
@@ -81,13 +81,13 @@ const mensagensDominioPorOperacao: Record<OperacaoTarefaEntrega, readonly string
     'Pagamento não encontrado.',
     'Não existe pagamento na entrega pendente para esta encomenda.',
     'O pagamento não pode ser confirmado no estado atual.',
+    'Valide primeiro o código de entrega antes de registar o pagamento.',
   ],
   codigoEntrega: [
     'Sessão inválida.',
     'Tarefa não encontrada ou sem permissão.',
     'Introduza o código de entrega de seis dígitos.',
     'A entrega não pode ser confirmada no estado atual.',
-    'Registe primeiro o pagamento aplicável antes de confirmar a entrega.',
   ],
 };
 
