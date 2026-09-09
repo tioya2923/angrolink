@@ -181,6 +181,7 @@ export default function VendedorDocumentos() {
 
   const rejeitado = utilizador.status_aprovacao === 'rejeitado';
   const suspenso = utilizador.status_aprovacao === 'suspenso';
+  const aprovado = utilizador.status_aprovacao === 'aprovado';
 
   return (
     <div className="space-y-6">
@@ -212,7 +213,11 @@ export default function VendedorDocumentos() {
         <section className="rounded-2xl border-2 border-orange-300 bg-orange-50 p-5"><div className="flex gap-3"><ShieldAlert className="mt-0.5 size-6 text-orange-700" /><div><h2 className="font-titulo text-lg font-bold">Conta suspensa</h2><p className="mt-1 font-corpo text-sm text-muted-foreground">As funções comerciais estão indisponíveis. Consulte o apoio ANGROLINK para resolver a situação.</p>{utilizador.motivo_rejeicao && <p className="mt-3 font-corpo text-sm"><strong>Motivo:</strong> {utilizador.motivo_rejeicao}</p>}</div></div></section>
       )}
 
-      {!rejeitado && !suspenso && (
+      {aprovado && (
+        <section className="rounded-2xl border border-green-300 bg-green-50 p-5"><div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-6 text-green-700" /><p className="font-corpo text-sm text-muted-foreground">A sua conta está aprovada. Pode consultar os documentos enviados.</p></div></section>
+      )}
+
+      {!aprovado && !rejeitado && !suspenso && (
         <section className="rounded-2xl border border-amber-300 bg-amber-50 p-5"><div className="flex gap-3"><Clock3 className="mt-0.5 size-6 text-amber-700" /><p className="font-corpo text-sm text-muted-foreground">A sua candidatura está em análise. Pode consultar os documentos enviados, mas as funções comerciais só ficam disponíveis após aprovação.</p></div></section>
       )}
 

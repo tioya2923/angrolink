@@ -137,11 +137,6 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       caminho: '/dashboard/produtos',
     },
     {
-      rotulo: 'Meus Serviços',
-      icone: Wrench,
-      caminho: '/dashboard/servicos',
-    },
-    {
       rotulo: 'Favoritos',
       icone: Heart,
       caminho: '/dashboard/favoritos',
@@ -150,11 +145,6 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       rotulo: 'Adicionar Produto',
       icone: PlusCircle,
       caminho: '/dashboard/adicionar',
-    },
-    {
-      rotulo: 'Adicionar Serviço',
-      icone: PlusCircle,
-      caminho: '/dashboard/adicionar-servico',
     },
     {
       rotulo: "Desempenho",

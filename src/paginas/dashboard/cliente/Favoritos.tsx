@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Heart, Package, Wrench } from 'lucide-react';
+import { Heart, Package } from 'lucide-react';
 
 import ListaProdutos from '@/componentes/ListaProdutos';
-import ListaServicos from '@/componentes/ListaServicos';
 
-import { Produto, Servico } from '@/tipos';
+import { Produto } from '@/tipos';
 
 import { useAuth } from '@/contextos/AuthContexto';
 import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 
 import {
   listarFavoritosProdutos,
-  listarFavoritosServicos,
 } from '@/services/api';
 
 export default function ClienteFavoritos() {
@@ -20,16 +18,10 @@ export default function ClienteFavoritos() {
   const [produtos, setProdutos] =
     useState<Produto[]>([]);
 
-  const [servicos, setServicos] =
-    useState<Servico[]>([]);
-
   const [loading, setLoading] = useState(true);
   const [versaoTempoReal, setVersaoTempoReal] = useState(0);
 
-  useAtualizacaoTempoReal(['favoritos', 'produtos', 'servicos'], () => setVersaoTempoReal(v => v + 1));
-
-  const [abaAtiva, setAbaAtiva] =
-    useState<'produtos' | 'servicos'>('produtos');
+  useAtualizacaoTempoReal(['favoritos', 'produtos'], () => setVersaoTempoReal(v => v + 1));
 
   const removerProduto = (
     produtoId: string
@@ -37,16 +29,6 @@ export default function ClienteFavoritos() {
     setProdutos(prev =>
       prev.filter(
         produto => produto.id !== produtoId
-      )
-    );
-  };
-
-  const removerServico = (
-    servicoId: string
-  ) => {
-    setServicos(prev =>
-      prev.filter(
-        servico => servico.id !== servicoId
       )
     );
   };
@@ -64,22 +46,12 @@ export default function ClienteFavoritos() {
             utilizador.id
           );
 
-        const favServicos =
-          await listarFavoritosServicos(
-            utilizador.id
-          );
-
         setProdutos(
           favProdutos
             .map((f: any) => f.produtos)
             .filter(Boolean)
         );
 
-        setServicos(
-          favServicos
-            .map((f: any) => f.servicos)
-            .filter(Boolean)
-        );
       } finally {
         setLoading(false);
       }
@@ -88,7 +60,7 @@ export default function ClienteFavoritos() {
     carregar();
   }, [utilizador?.id, versaoTempoReal]);
 
-  const semFavoritos = produtos.length === 0 && servicos.length === 0;
+  const semFavoritos = produtos.length === 0;
 
   return (
     <div className="space-y-6">
@@ -105,7 +77,7 @@ export default function ClienteFavoritos() {
             Guarda os anúncios que queres voltar a consultar.
           </p>
         </div>
-        {!loading && <span className="relative z-10 ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold text-secondary-foreground">{produtos.length + servicos.length} guardados</span>}
+        {!loading && <span className="relative z-10 ml-auto rounded-full bg-secondary px-3 py-1 font-corpo text-xs font-semibold text-secondary-foreground">{produtos.length} guardados</span>}
       </header>
 
       {loading ? (
@@ -117,44 +89,13 @@ export default function ClienteFavoritos() {
         <div className="painel-dashboard-form border-dashed text-center">
           <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary"><Heart className="size-6" /></span>
           <h2 className="mt-3 font-titulo text-lg font-bold">Ainda não tens favoritos</h2>
-          <p className="mt-1 font-corpo text-sm text-muted-foreground">Quando encontrares um produto ou serviço interessante, usa o coração para o guardar aqui.</p>
+          <p className="mt-1 font-corpo text-sm text-muted-foreground">Quando encontrares um produto interessante, usa o coração para o guardar aqui.</p>
         </div>
       ) : (
         <>
 
-      {/* ABAS */}
-      <div className="rounded-xl border-2 border-border bg-card p-2">
-        <div className="flex gap-2">
-
-          <button
-            onClick={() => setAbaAtiva('produtos')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 font-corpo text-sm font-semibold transition ${
-              abaAtiva === 'produtos'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Package className="size-4" />
-            Produtos ({produtos.length})
-          </button>
-
-          <button
-            onClick={() => setAbaAtiva('servicos')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 font-corpo text-sm font-semibold transition ${
-              abaAtiva === 'servicos'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            }`}
-          >
-            <Wrench className="size-4" />
-            Serviços ({servicos.length})
-          </button>
-
-        </div>
-      </div>
-
-      {/* PRODUTOS */}
-      {abaAtiva === 'produtos' && (
+      <div className="rounded-xl border-2 border-border bg-card p-2"><div className="flex gap-2"><span className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-corpo text-sm font-semibold text-primary-foreground"><Package className="size-4" />Produtos ({produtos.length})</span></div></div>
+      {(
         produtos.length === 0 ? (
           <div className="painel-dashboard-form border-dashed text-center py-10">
             <p className="text-muted-foreground">
@@ -165,22 +106,6 @@ export default function ClienteFavoritos() {
           <ListaProdutos
             produtos={produtos}
             onRemoverFavorito={removerProduto}
-          />
-        )
-      )}
-
-      {/* SERVIÇOS */}
-      {abaAtiva === 'servicos' && (
-        servicos.length === 0 ? (
-          <div className="painel-dashboard-form border-dashed text-center py-10">
-            <p className="text-muted-foreground">
-              Ainda não tens serviços favoritos.
-            </p>
-          </div>
-        ) : (
-          <ListaServicos
-            servicos={servicos}
-            onRemoverFavorito={removerServico}
           />
         )
       )}

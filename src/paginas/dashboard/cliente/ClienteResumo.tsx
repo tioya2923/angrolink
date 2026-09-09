@@ -26,7 +26,6 @@ export default function ClienteResumo() {
       </header>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <CardStat icone={Eye} rotulo="Produtos visualizados" valor={stats?.produtosVisualizados ?? 0} />
-        <CardStat icone={Wrench} rotulo="Serviços visualizados" valor={stats?.servicosVisualizados ?? 0} />
         <CardStat icone={Phone} rotulo="Contactos feitos" valor={stats?.contactosFeitos ?? 0} />
       </div>
     </div>

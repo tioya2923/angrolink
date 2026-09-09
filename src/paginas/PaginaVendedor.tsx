@@ -12,23 +12,17 @@ import { MessageCircle, ArrowLeft, MapPin, Search, X, } from 'lucide-react';
 
 import Cabecalho from '@/componentes/Cabecalho';
 import Rodape from '@/componentes/Rodape';
-import ListaProdutos from '@/componentes/ListaProdutos';
-import ListaServicos from '@/componentes/ListaServicos';
 import PerfilVendedorHero from "@/componentes/PerfilVendedorHero";
-import CardProduto from "@/componentes/CardProduto";
-import CardServico from "@/componentes/CardServico";
 import CardProdutoLoja from "@/componentes/CardProdutoLoja";
 
 import {
   fetchVendedorPorId,
-  fetchProdutosPorVendedor,
-  fetchServicosPorVendedor
+  fetchProdutosPorVendedor
 } from '@/services/api';
 
 import { gerarLinkWhatsApp } from '@/lib/whatsapp';
 
-import { Vendedor, Produto, Servico } from '@/tipos';
-import CardServicoLoja from '@/componentes/CardServicoLoja';
+import { Vendedor, Produto } from '@/tipos';
 import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
 
 // =============================
@@ -58,14 +52,12 @@ export default function PaginaVendedor() {
 
   const [vendedor, setVendedor] = useState<Vendedor | null>(null);
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [abaAtiva, setAbaAtiva] = useState<'produtos' | 'servicos'>('produtos');
   const [pesquisa, setPesquisa] = useState("");
   const [versaoTempoReal, setVersaoTempoReal] = useState(0);
 
-  useAtualizacaoTempoReal(['vendedores', 'produtos', 'servicos'], () => setVersaoTempoReal(v => v + 1));
+  useAtualizacaoTempoReal(['vendedores', 'produtos'], () => setVersaoTempoReal(v => v + 1));
 
   useEffect(() => {
     async function carregar() {
@@ -87,19 +79,14 @@ export default function PaginaVendedor() {
           setErro("Vendedor não encontrado");
           setVendedor(null);
           setProdutos([]);
-          setServicos([]);
           return;
         }
 
         setVendedor(vendedorData);
 
-        const [produtosData, servicosData] = await Promise.all([
-          fetchProdutosPorVendedor(vendedorData.id),
-          fetchServicosPorVendedor(vendedorData.id),
-        ]);
+        const produtosData = await fetchProdutosPorVendedor(vendedorData.id);
 
         setProdutos(Array.isArray(produtosData) ? produtosData : []);
-        setServicos(Array.isArray(servicosData) ? servicosData : []);
 
       } catch (err) {
         console.error("Erro ao carregar vendedor:", err);
@@ -115,14 +102,14 @@ export default function PaginaVendedor() {
   const estatisticas = useMemo(() => {
 
     const visualizacoes =
-      [...produtos, ...servicos].reduce(
+      produtos.reduce(
         (total: number, item: any) =>
           total + Number(item.visualizacoes || 0),
         0
       );
 
     const contactos =
-      [...produtos, ...servicos].reduce(
+      produtos.reduce(
         (total: number, item: any) =>
           total + Number(item.cliques_whatsapp || 0),
         0
@@ -130,12 +117,11 @@ export default function PaginaVendedor() {
 
     return {
       produtos: produtos.length,
-      servicos: servicos.length,
       visualizacoes,
       contactos,
     };
 
-  }, [produtos, servicos]);
+  }, [produtos]);
 
   const produtosFiltrados = useMemo(() => {
   const termo = pesquisa.toLowerCase().trim();
@@ -157,28 +143,6 @@ export default function PaginaVendedor() {
       )
   );
 }, [pesquisa, produtos]);
-
-const servicosFiltrados = useMemo(() => {
-  const termo = pesquisa.toLowerCase().trim();
-
-  if (!termo) return servicos;
-
-  return servicos.filter((servico) =>
-    [
-      servico.nome_servico,
-      servico.descricao,
-      servico.tipo_servico,
-      servico.municipio,
-      servico.provincia,
-      servico.zona_atuacao,
-    ]
-      .filter(Boolean)
-      .some((campo) =>
-        String(campo).toLowerCase().includes(termo)
-      )
-  );
-}, [pesquisa, servicos]);
-
 
   // =============================
   // LOADING
@@ -238,7 +202,7 @@ const servicosFiltrados = useMemo(() => {
         <PerfilVendedorHero
           vendedor={vendedor}
           produtos={produtos}
-          servicos={servicos}
+          servicos={[]}
         />
 
         
@@ -300,65 +264,12 @@ const servicosFiltrados = useMemo(() => {
           </div>
 
           <p className="text-sm text-gray-500 mb-5">
-
-            {abaAtiva === "produtos"
-
-              ? `${produtosFiltrados.length} produto${produtosFiltrados.length !== 1 ? "s" : ""}`
-
-              : `${servicosFiltrados.length} serviço${servicosFiltrados.length !== 1 ? "s" : ""}`
-
-            }
-
+            {produtosFiltrados.length} produto{produtosFiltrados.length !== 1 ? "s" : ""}
           </p>
 
-          {/* Conteúdo das abas */}
-          <div className="flex items-center border-b mb-6">
+          <div className="p-6 animate-fade-in">
 
-            <button
-              onClick={() => setAbaAtiva("produtos")}
-              className={`
-                px-8
-                py-5
-                text-lg
-                font-semibold
-                transition-all
-                border-b-4
-                flex-1
-                ${
-                  abaAtiva === "produtos"
-                    ? "border-green-600 text-green-700 bg-green-50"
-                    : "border-transparent text-gray-500 hover:text-green-700"
-                }
-              `}
-            >
-              Produtos ({produtos.length})
-            </button>
-
-            <button
-              onClick={() => setAbaAtiva("servicos")}
-              className={`
-                px-8
-                py-5
-                text-lg
-                font-semibold
-                transition-all
-                border-b-4
-                flex-1
-                ${
-                  abaAtiva === "servicos"
-                    ? "border-green-600 text-green-700 bg-green-50"
-                    : "border-transparent text-gray-500 hover:text-green-700"
-                }
-              `}
-            >
-              Serviços ({servicos.length})
-            </button>
-
-          </div>
-
-          <div key={abaAtiva} className="p-6 animate-fade-in">
-
-            {abaAtiva === "produtos" ? (
+            {(
 
               produtos.length === 0 ? (
 
@@ -405,61 +316,6 @@ const servicosFiltrados = useMemo(() => {
                       key={produto.id}
                       produto={produto}
                       vendedor={vendedor}
-                    />
-
-                  ))}
-
-                </div>
-
-              )
-
-            ) : (
-
-              servicos.length === 0 ? (
-
-                <div className="text-center py-12 text-gray-500">
-
-                  Este vendedor ainda não possui serviços.
-
-                </div>
-
-              ) : servicosFiltrados.length === 0 ? (
-
-                <div className="text-center py-12">
-
-                  <p className="text-lg font-semibold text-gray-700">
-
-                    Nenhum serviço encontrado.
-
-                  </p>
-
-                  <p className="text-sm text-gray-500 mt-2">
-
-                    Tente pesquisar por outro nome ou tipo de serviço.
-
-                  </p>
-
-                </div>
-
-              ) : (
-
-                <div
-                  className="
-                    grid
-                    grid-cols-1
-                    sm:grid-cols-2
-                    lg:grid-cols-3
-                    xl:grid-cols-4
-                    gap-6
-                  "
-                >
-
-                  {servicosFiltrados.map((servico) => (
-
-                    <CardServicoLoja
-                        key={servico.id}
-                        servico={servico}
-                        vendedor={vendedor}
                     />
 
                   ))}

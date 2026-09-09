@@ -200,10 +200,6 @@ export default function PaginaInicial() {
                 <a href="#destaques" className="flex items-center gap-1 hover:text-secondary transition-colors">
                   <Star size={13} /> Produtos em destaque
                 </a>
-                <span className="text-white/30">|</span>
-                <Link to="/servicos" className="flex items-center gap-1 hover:text-secondary transition-colors">
-                  <Wrench size={13} /> Serviços disponíveis
-                </Link>
               </div>
             </div>
 

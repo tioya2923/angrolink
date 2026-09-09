@@ -23,7 +23,7 @@ export default function AdminRankings() {
   const [versaoTempoReal, setVersaoTempoReal] = useState(0);
 
   useAtualizacaoTempoReal(
-    ['produtos', 'servicos', 'vendedores', 'historico_contactos', 'historico_contactos_servicos'],
+    ['produtos', 'vendedores', 'historico_contactos'],
     () => setVersaoTempoReal(v => v + 1),
   );
 

@@ -31,12 +31,10 @@ import ClienteEncomendaDetalhe from './cliente/ClienteEncomendaDetalhe';
 import VendedorResumo from './vendedor/VendedorResumo';
 import VendedorProdutos from './vendedor/VendedorProdutos';
 import VendedorAdicionarProduto from './vendedor/VendedorAdicionarProduto';
-import VendedorAdicionarServico from './vendedor/VendedorAdicionarServico';
 import VendedorDesempenho from './vendedor/VendedorDesempenho';
 import VendedorContactos from './vendedor/VendedorContactos';
 import VendedorEstatisticas from './vendedor/VendedorEstatisticas';
 import VendedorPerfil from './vendedor/VendedorPerfil';
-import VendedorServicos from './vendedor/VendedorServicos';
 import AdminRankings from './admin/AdminRankings';
 import ParceiroResumo from './parceiro/ParceiroResumo';
 import ParceiroTarefas from './parceiro/ParceiroTarefas';
@@ -123,10 +121,7 @@ return(
   path="produtos"
   element={utilizador.status_aprovacao === 'aprovado' ? <VendedorProdutos /> : <Navigate to="/dashboard/documentos" replace />}
 />
-<Route
-  path="servicos"
-  element={utilizador.status_aprovacao === 'aprovado' ? <VendedorServicos /> : <Navigate to="/dashboard/documentos" replace />}
-/>
+<Route path="servicos" element={<Navigate to="/dashboard" replace />} />
 <Route
   path="favoritos"
   element={utilizador.status_aprovacao === 'aprovado' ? <Favoritos /> : <Navigate to="/dashboard/documentos" replace />}
@@ -158,32 +153,9 @@ return(
   }
 />
 
-<Route
-  path="adicionar-servico"
-  element={
-    utilizador.status_aprovacao === 'aprovado'
-      ? <VendedorAdicionarServico />
-      : <Navigate to="/dashboard/perfil" replace />
-  }
-/>
-
-<Route
-  path="servicos/novo"
-  element={
-    utilizador.status_aprovacao === "aprovado"
-      ? <VendedorAdicionarServico />
-      : <Navigate to="/dashboard/perfil" replace />
-  }
-/>
-
-<Route
-  path="servicos/editar/:id"
-  element={
-    utilizador.status_aprovacao === "aprovado"
-      ? <VendedorAdicionarServico />
-      : <Navigate to="/dashboard/perfil" replace />
-  }
-/>
+<Route path="adicionar-servico" element={<Navigate to="/dashboard" replace />} />
+<Route path="servicos/novo" element={<Navigate to="/dashboard" replace />} />
+<Route path="servicos/editar/:id" element={<Navigate to="/dashboard" replace />} />
 
 <Route path="desempenho" element={utilizador.status_aprovacao === 'aprovado' ? <VendedorDesempenho/> : <Navigate to="/dashboard/documentos" replace />}/>
 <Route

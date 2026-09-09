@@ -24,7 +24,6 @@ import CardStat from "@/componentes/CardStat";
 
 import {
   fetchProdutosPorVendedor,
-  fetchServicosPorVendedor,
 } from '@/services/api';
 
 import {
@@ -55,12 +54,13 @@ export default function VendedorResumo() {
         : 'bg-yellow-100 text-yellow-800';
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
-  const [servicos, setServicos] = useState<Servico[]>([]);
+  // Serviços profissionais permanecem dormentes na Fase 1; nenhum dado é carregado.
+  const servicos: Servico[] = [];
   const [loading, setLoading] = useState(true);
   const [versaoTempoReal, setVersaoTempoReal] = useState(0);
 
   useAtualizacaoTempoReal(
-    ['vendedores', 'produtos', 'servicos', 'historico_contactos', 'historico_contactos_servicos'],
+    ['vendedores', 'produtos', 'historico_contactos'],
     () => setVersaoTempoReal(v => v + 1),
   );
 
@@ -74,17 +74,12 @@ export default function VendedorResumo() {
       try {
         setLoading(true);
 
-        const [produtosData, servicosData] = await Promise.all([
-          fetchProdutosPorVendedor(utilizador.vendedor_id),
-          fetchServicosPorVendedor(utilizador.vendedor_id),
-        ]);
+        const produtosData = await fetchProdutosPorVendedor(utilizador.vendedor_id);
 
         setProdutos(Array.isArray(produtosData) ? produtosData : []);
-        setServicos(Array.isArray(servicosData) ? servicosData : []);
       } catch (err) {
         console.error('Erro ao carregar resumo do vendedor:', err);
         setProdutos([]);
-        setServicos([]);
       } finally {
         setLoading(false);
       }
@@ -258,12 +253,6 @@ export default function VendedorResumo() {
                 <span className="cursor-not-allowed rounded-lg bg-muted px-4 py-3 text-center text-muted-foreground">+ Produto indisponível</span>
               )}
 
-              {vendedorAprovado ? (
-                <Link to="/dashboard/servicos/novo" className="rounded-lg bg-green-700 px-4 py-3 text-center text-white transition hover:bg-green-800">+ Serviço</Link>
-              ) : (
-                <span className="cursor-not-allowed rounded-lg bg-muted px-4 py-3 text-center text-muted-foreground">+ Serviço indisponível</span>
-              )}
-
               <button
                 className="rounded-lg border px-4 py-3 hover:bg-gray-50 transition"
               >
@@ -315,12 +304,6 @@ export default function VendedorResumo() {
           icone={Package}
           rotulo="Produtos Ativos"
           valor={stats.produtosAtivos}
-        />
-
-        <CardStat
-          icone={Wrench}
-          rotulo="Serviços Ativos"
-          valor={stats.servicosAtivos}
         />
 
         <CardStat

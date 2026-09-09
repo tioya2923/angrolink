@@ -68,11 +68,6 @@ export default function Rodape() {
                   Produtos
                 </Link>
               </li>
-              <li>
-                <Link to="/servicos" className="text-sm text-white/70 hover:text-green-400 transition">
-                  Serviços
-                </Link>
-              </li>
               {!autenticado && (
                 <li>
                   <Link to="/anunciar" className="text-sm text-white/70 hover:text-green-400 transition">

@@ -45,7 +45,7 @@ export default function BarraPesquisa({ grande = false }: BarraPesquisaProps) {
           type="text"
           value={termo}
           onChange={event => setTermo(event.target.value)}
-          placeholder="Pesquisar produtos ou serviços..."
+          placeholder="Pesquisar produtos..."
           className={`w-full bg-background text-foreground font-corpo focus:outline-none transition-colors ${
             grande
               ? 'rounded-full border-2 border-transparent text-sm px-5 py-2.5 focus:border-secondary'

@@ -78,14 +78,11 @@ export default function CategoriaSidebar({ variante = 'bloco' }: CategoriaSideba
               : 'absolute z-40 top-full left-0 mt-1 w-full lg:w-64 bg-sidebar text-sidebar-foreground border-2 border-sidebar-border/60 shadow-lg'
           }
         >
-          {categorias.map(cat => {
+          {categorias.filter(cat => cat.nome?.toLowerCase().trim() !== 'serviços').map(cat => {
             const nome = cat.nome.toLowerCase().trim();
             const Icone = obterIconeCategoria(nome);
 
-            const destino =
-              nome === 'serviços'
-                ? '/servicos'
-                : `/pesquisa?categoria=${cat.id}`;
+            const destino = `/pesquisa?categoria=${cat.id}`;
 
             return (
               <Link
@@ -94,7 +91,6 @@ export default function CategoriaSidebar({ variante = 'bloco' }: CategoriaSideba
                 onClick={() => {
                   setAberto(false);
 
-                  if (nome === 'serviços') return;
                   if (utilizador?.papel === 'admin') return;
 
                   guardarHistoricoPesquisa({

@@ -33,7 +33,6 @@ import {
   User,
   UserCircle,
   Users,
-  Wrench,
   X,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
@@ -73,7 +72,6 @@ export default function Cabecalho() {
 
   const linksPublicos = utilizador?.papel === 'parceiro_entrega' ? [] : [
     { to: '/pesquisa', label: 'Produtos' },
-    { to: '/servicos', label: 'Serviços' },
   ];
 
   const linksPerfil = () => {
@@ -97,10 +95,8 @@ export default function Cabecalho() {
         return [
           { to: '/dashboard', label: 'Menu', icone: LayoutDashboard },
           { to: '/dashboard/produtos', label: 'Meus Produtos', icone: Package },
-          { to: '/dashboard/servicos', label: 'Meus Serviços', icone: Wrench },
           { to: '/dashboard/favoritos', label: 'Favoritos', icone: Heart },
           { to: '/dashboard/adicionar', label: 'Adicionar Produto', icone: PlusCircle },
-          { to: '/dashboard/adicionar-servico', label: 'Adicionar Serviço', icone: PlusCircle },
           { to: '/dashboard/desempenho', label: 'Desempenho', icone: BarChart3 },
           { to: '/dashboard/contactos', label: 'Contactos', icone: MessageSquare },
           { to: '/dashboard/estatisticas', label: 'Estatísticas', icone: BarChart3 },
@@ -383,10 +379,7 @@ export default function Cabecalho() {
                       </div>
 
                       {linksPublicos.map(l => {
-                        const Icone =
-                          l.to === '/pesquisa'
-                            ? Package
-                            : Wrench;
+                        const Icone = Package;
 
                         return (
                           <Link
@@ -514,11 +507,7 @@ export default function Cabecalho() {
                         hover:bg-green-50 hover:text-green-700
                       "
                     >
-                      {l.to === '/pesquisa' ? (
-                        <Package size={18} />
-                      ) : (
-                        <Wrench size={18} />
-                      )}
+                      <Package size={18} />
 
                       {l.label}
                     </Link>

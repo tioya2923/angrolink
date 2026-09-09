@@ -28,9 +28,6 @@ import DashboardRouter from "@/paginas/dashboard/DashboardRouter";
 import ScrollToTop from "@/componentes/ScrollToTop";
 import MensagensValidacaoNativas from "@/componentes/MensagensValidacaoNativas";
 import NotFound from "./pages/NotFound.tsx";
-import PaginaServico from "@/paginas/PaginaServico";
-import PaginaAnunciarServicoCompat from "@/paginas/PaginaAnunciarServicoCompat";
-import PaginaServicos from "@/paginas/PaginaServicos";
 import SobreNos from "@/paginas/SobreNos";
 import PaginaTermos from "@/paginas/PaginaTermos";
 import PaginaPrivacidade from "@/paginas/PaginaPrivacidade";
@@ -81,12 +78,12 @@ const App = () => (
               <Route path="/como-funciona" element={<PaginaComoFunciona />} />
               <Route path="/pesquisa" element={<PaginaPesquisa />} />
               <Route path="/produto/:id" element={<PaginaProduto />} />
-              <Route path="/servico/:id" element={<PaginaServico />} />
+              <Route path="/servico/:id" element={<Navigate to="/" replace />} />
               <Route path="/vendedor/:id" element={<PaginaVendedor />} />
               <Route path="/anunciar" element={<PaginaAnunciar />} />
               <Route path="/parceiro-entregas/cadastro" element={<PaginaCadastroParceiroEntrega />} />
-              <Route path="/anunciar-servico" element={<PaginaAnunciarServicoCompat />} />
-              <Route path="/servicos" element={<PaginaServicos />} />
+              <Route path="/anunciar-servico" element={<Navigate to="/anunciar" replace />} />
+              <Route path="/servicos" element={<Navigate to="/" replace />} />
               <Route path="/carrinho" element={<PaginaCarrinho />} />
               <Route path="/checkout" element={<PaginaCheckoutPendente />} />
               {/* Autenticação */}
