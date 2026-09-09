@@ -36,8 +36,8 @@ describe('contratos de acesso de vendedor', () => {
     expect(migration).toMatch(/grant select \([^;]*criado_em[^;]*\) on public\.vendedores to anon, authenticated;/);
   });
 
-  it('composes every public catalog flow through the public boundary', () => {
-    const fluxosPublicos = ['fetchProdutos', 'fetchProdutoPorId', 'fetchProdutosRelacionados', 'fetchProdutosPorVendedor', 'fetchServicos', 'fetchServicosPorVendedor', 'fetchServicoPorId'];
+  it('composes vendedores and serviços públicos through their public boundary', () => {
+    const fluxosPublicos = ['fetchServicos', 'fetchServicosPorVendedor', 'fetchServicoPorId'];
     for (const nome of fluxosPublicos) {
       const funcao = corpo(nome);
       expect(funcao).toContain('associarVendedoresPublicos');
@@ -46,6 +46,15 @@ describe('contratos de acesso de vendedor', () => {
     }
     expect(corpo('fetchVendedorPorId')).toContain('listarVendedoresPublicos');
     expect(corpo('fetchVendedorPorId')).not.toContain(".from(\"vendedores\")");
+  });
+
+  it('separates public product reads from the private vendedor dashboard query', () => {
+    for (const nome of ['fetchProdutos', 'fetchProdutoPorId', 'fetchProdutosRelacionados', 'fetchProdutosPublicosPorVendedor']) {
+      const funcao = corpo(nome);
+      expect(funcao).toContain('listarProdutosPublicosFase1');
+      expect(funcao).not.toMatch(/\.from\(['"]produtos['"]\)/);
+    }
+    expect(corpo('fetchProdutosPorVendedor')).toContain(".from(\"produtos\")");
   });
 
   it('defines a narrow public RPC for approved active vendors', () => {

@@ -3,7 +3,6 @@ import {
   MessageCircle,
   MapPin,
   Package,
-  Wrench,
   Eye,
   Phone,
   Calendar,
@@ -16,14 +15,12 @@ import { obterBadgeVendedor } from "@/dados/constantes";
 
 import {
   Produto,
-  Servico,
   Vendedor
 } from "@/tipos";
 
 interface PerfilVendedorHeroProps {
   vendedor: Vendedor;
   produtos: Produto[];
-  servicos: Servico[];
 }
 
 const getImagemPerfil = (img?: string | null) =>
@@ -35,21 +32,19 @@ export default function PerfilVendedorHero({
 
   produtos,
 
-  servicos,
-
 }: PerfilVendedorHeroProps) {
 
   const estatisticas = useMemo(() => {
 
     const visualizacoes =
-      [...produtos, ...servicos].reduce(
+      produtos.reduce(
         (total, item) =>
           total + Number(item.visualizacoes || 0),
         0
       );
 
     const contactos =
-      [...produtos, ...servicos].reduce(
+      produtos.reduce(
         (total, item) =>
           total + Number(item.cliques_whatsapp || 0),
         0
@@ -59,15 +54,13 @@ export default function PerfilVendedorHero({
 
       produtos: produtos.length,
 
-      servicos: servicos.length,
-
       visualizacoes,
 
       contactos,
 
     };
 
-  }, [produtos, servicos]);
+  }, [produtos]);
 
   const membroDesde =
     vendedor.criado_em
@@ -307,7 +300,7 @@ export default function PerfilVendedorHero({
 
       {/* ESTATÍSTICAS */}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-10">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
 
         <div className="rounded-xl border bg-white shadow-sm hover:shadow-md transition p-7 text-center">
 
@@ -325,27 +318,6 @@ export default function PerfilVendedorHero({
           <p className="text-sm text-gray-500 mt-2">
 
             Produtos
-
-          </p>
-
-        </div>
-
-        <div className="rounded-xl border bg-white shadow-sm hover:shadow-md transition p-7 text-center">
-
-          <Wrench
-            className="mx-auto mb-3 text-green-700"
-            size={30}
-          />
-
-          <p className="text-4xl font-bold">
-
-            {estatisticas.servicos}
-
-          </p>
-
-          <p className="text-sm text-gray-500 mt-2">
-
-            Serviços
 
           </p>
 

@@ -1,5 +1,6 @@
 import type { ItemCarrinho } from '@/dominio/carrinho';
 import { consultarElegibilidadeVendedor } from '@/services/elegibilidadeVendedor';
+import { listarProdutosPublicosFase1 } from '@/services/catalogoPublicoProdutos';
 import { supabase } from '@/services/supabase';
 
 type EstadoProdutoCarrinho = Pick<ItemCarrinho, 'produto_id' | 'vendedor_id' | 'disponivel' | 'preco_retalho_centimos' | 'preco_grosso_centimos'>;
@@ -22,28 +23,27 @@ export async function atualizarEstadoItensCarrinho(
 ): Promise<ItemCarrinho[]> {
   if (itens.length === 0) return [];
   const ids = itens.map((item) => item.produto_id);
-  const { data, error } = await supabase
-    .from('produtos')
-    .select('id, vendedor_id, disponivel, publicado, preco_aproximado, preco_promocional, preco_grosso')
-    .in('id', ids);
-
-  if (error) throw error;
-  const produtos = new Map((data ?? []).map((produto) => [produto.id, produto]));
-  const vendedores = [...new Set((data ?? []).map((produto) => produto.vendedor_id).filter((id): id is string => Boolean(id)))];
+  const produtosPublicos = await listarProdutosPublicosFase1({ produtoIds: ids, limite: ids.length });
+  const produtos = new Map(produtosPublicos.map((produto) => [String(produto.id), produto]));
+  const vendedores = [...new Set(produtosPublicos.map((produto) => produto.vendedor_id).filter((id): id is string => typeof id === 'string' && Boolean(id)))];
   const elegiveis = new Map(await Promise.all(vendedores.map(async (vendedorId) => [vendedorId, await consultarElegibilidadeVendedor(vendedorId)] as const)));
 
   return itens.map((item) => {
     const produto = produtos.get(item.produto_id);
-    if (!produto || produto.vendedor_id !== item.vendedor_id || produto.vendedor_id === vendedorAutenticadoId) return { ...item, disponivel: false };
-    const precoRetalho = produto.preco_promocional !== null && produto.preco_promocional > 0 && produto.preco_promocional < (produto.preco_aproximado ?? 0)
-      ? produto.preco_promocional
-      : produto.preco_aproximado;
+    const vendedorId = typeof produto?.vendedor_id === 'string' ? produto.vendedor_id : null;
+    const precoPromocional = typeof produto?.preco_promocional === 'number' ? produto.preco_promocional : null;
+    const precoAproximado = typeof produto?.preco_aproximado === 'number' ? produto.preco_aproximado : null;
+    const precoGrosso = typeof produto?.preco_grosso === 'number' ? produto.preco_grosso : null;
+    if (!produto || vendedorId !== item.vendedor_id || vendedorId === vendedorAutenticadoId) return { ...item, disponivel: false };
+    const precoRetalho = precoPromocional !== null && precoPromocional > 0 && precoPromocional < (precoAproximado ?? 0)
+      ? precoPromocional
+      : precoAproximado;
     const estado: EstadoProdutoCarrinho = {
       produto_id: item.produto_id,
       vendedor_id: item.vendedor_id,
-      disponivel: produto.disponivel === true && produto.publicado === true && elegiveis.get(item.vendedor_id) === true,
+      disponivel: produto.disponivel === true && elegiveis.get(item.vendedor_id) === true,
       preco_retalho_centimos: paraCentimos(precoRetalho),
-      preco_grosso_centimos: produto.preco_grosso === null ? null : paraCentimos(produto.preco_grosso),
+      preco_grosso_centimos: precoGrosso === null ? null : paraCentimos(precoGrosso),
     };
     return { ...item, ...estado, atualizado_em: new Date().toISOString() };
   });

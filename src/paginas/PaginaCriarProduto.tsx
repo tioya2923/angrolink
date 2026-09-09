@@ -5,11 +5,8 @@ import { useAuth } from '@/contextos/AuthContexto';
 import Cabecalho from '@/componentes/Cabecalho';
 import Rodape from '@/componentes/Rodape';
 
-import {
-  fetchCategorias,
-  uploadImagemProduto,
-  criarProduto
-} from '@/services/api';
+import { uploadImagemProduto, criarProduto } from '@/services/api';
+import { fetchCategoriasProdutoOperacionais } from '@/services/catalogoOperacionalProduto';
 
 export default function PaginaCriarProduto() {
   const navigate = useNavigate();
@@ -46,8 +43,8 @@ export default function PaginaCriarProduto() {
   // =============================
   useEffect(() => {
     async function load() {
-      const data = await fetchCategorias();
-      setCategorias(data || []);
+      const data = await fetchCategoriasProdutoOperacionais();
+      setCategorias(data);
     }
     load();
   }, []);

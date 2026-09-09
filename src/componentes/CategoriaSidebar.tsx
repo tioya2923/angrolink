@@ -9,7 +9,8 @@
 
 import { Link } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { fetchCategorias, guardarHistoricoPesquisa } from '@/services/api';
+import { guardarHistoricoPesquisa } from '@/services/api';
+import { fetchCategoriasProdutoOperacionais } from '@/services/catalogoOperacionalProduto';
 import { useAuth } from '@/contextos/AuthContexto';
 import { obterIconeCategoria } from '@/lib/iconesCategoria';
 
@@ -28,7 +29,7 @@ export default function CategoriaSidebar({ variante = 'bloco' }: CategoriaSideba
 
   useEffect(() => {
     async function carregar() {
-      const data = await fetchCategorias();
+      const data = await fetchCategoriasProdutoOperacionais();
       setCategorias(data || []);
     }
 
@@ -78,7 +79,7 @@ export default function CategoriaSidebar({ variante = 'bloco' }: CategoriaSideba
               : 'absolute z-40 top-full left-0 mt-1 w-full lg:w-64 bg-sidebar text-sidebar-foreground border-2 border-sidebar-border/60 shadow-lg'
           }
         >
-          {categorias.filter(cat => cat.nome?.toLowerCase().trim() !== 'serviços').map(cat => {
+          {categorias.map(cat => {
             const nome = cat.nome.toLowerCase().trim();
             const Icone = obterIconeCategoria(nome);
 

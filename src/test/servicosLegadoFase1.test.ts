@@ -8,6 +8,7 @@ const cabecalho = ler('src/componentes/Cabecalho.tsx');
 const rodape = ler('src/componentes/Rodape.tsx');
 const dashboard = ler('src/paginas/dashboard/DashboardRouter.tsx');
 const loja = ler('src/paginas/PaginaVendedor.tsx');
+const heroPublico = ler('src/componentes/PerfilVendedorHero.tsx');
 const favoritos = ler('src/paginas/dashboard/cliente/Favoritos.tsx');
 const clienteHistorico = ler('src/paginas/dashboard/cliente/ClienteHistorico.tsx');
 const vendedorResumo = ler('src/paginas/dashboard/vendedor/VendedorResumo.tsx');
@@ -40,6 +41,13 @@ describe('Serviços legados ficam dormentes na Fase 1', () => {
     expect(loja).not.toContain('setAbaAtiva("servicos")');
     expect(favoritos).not.toContain('listarFavoritosServicos');
     expect(favoritos).not.toContain("setAbaAtiva('servicos')");
+    expect(loja).not.toContain('servicos={[]}');
+    expect(heroPublico).not.toContain('Servico');
+    expect(heroPublico).not.toContain('estatisticas.servicos');
+    expect(heroPublico).not.toContain('Serviços');
+    expect(heroPublico).toContain('estatisticas.produtos');
+    expect(heroPublico).toContain('estatisticas.visualizacoes');
+    expect(heroPublico).toContain('estatisticas.contactos');
   });
 
   it('mantém o histórico do cliente exclusivamente em produtos', () => {

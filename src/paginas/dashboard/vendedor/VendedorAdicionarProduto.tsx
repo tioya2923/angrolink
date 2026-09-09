@@ -20,22 +20,25 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 import {
-  CATEGORIAS,
   UNIDADES,
   TIPOS_VENDA,
 } from '@/dados/constantes';
 
-import { SUBCATEGORIAS } from '@/dados/subcategorias';
 import { useToast } from '@/hooks/use-toast';
 
 import {
   criarProduto,
   uploadImagemProduto,
-  fetchCategorias,
   fetchProdutoParaEdicao,
   updateProduto,
   deleteImagemProdutoPorUrl,
 } from "@/services/api";
+import {
+  fetchCategoriasProdutoOperacionais,
+  fetchSubcategoriasProdutoOperacionais,
+  type CategoriaProdutoOperacional,
+  type SubcategoriaProdutoOperacional,
+} from '@/services/catalogoOperacionalProduto';
 
 import { useAuth } from '@/contextos/AuthContexto';
 import { useFiltroTerritorialAngola } from '@/hooks/useFiltroTerritorialAngola';
@@ -86,7 +89,9 @@ export default function VendedorAdicionarProduto() {
   const [nome, setNome] = useState('');
   const [categoria, setCategoria] = useState('');
   const [subcategoria, setSubcategoria] = useState('');
-  const [categoriasDb, setCategoriasDb] = useState<any[]>([]);
+  const [subcategoriaLegada, setSubcategoriaLegada] = useState('');
+  const [categoriasDb, setCategoriasDb] = useState<CategoriaProdutoOperacional[]>([]);
+  const [subcategoriasDb, setSubcategoriasDb] = useState<SubcategoriaProdutoOperacional[]>([]);
 
   const [preco, setPreco] = useState('');
   const [precoPromocional, setPrecoPromocional] = useState('');
@@ -176,7 +181,7 @@ export default function VendedorAdicionarProduto() {
 
   useEffect(() => {
     async function carregarCategorias() {
-      const data = await fetchCategorias();
+      const data = await fetchCategoriasProdutoOperacionais();
       setCategoriasDb(data || []);
 
       if (produtoEditando && data) {
@@ -208,21 +213,8 @@ export default function VendedorAdicionarProduto() {
         void inicializarTerritorio(produtoEditando.provincia, produtoEditando.municipio);
         setDisponivel(produtoEditando.disponivel ?? true);
 
-        const categoriaDb = data.find(
-          (c: any) => c.id === produtoEditando.categoria_id
-        );
-
-        if (categoriaDb) {
-          const categoriaMock = CATEGORIAS.find(
-            c =>
-              normalizarTexto(c.nome_categoria) ===
-              normalizarTexto(categoriaDb.nome)
-          );
-
-          if (categoriaMock) {
-            setCategoria(categoriaMock.id);
-          }
-        }
+        setCategoria(produtoEditando.categoria_id || '');
+        setSubcategoriaLegada(produtoEditando.subcategoria || '');
 
         if (produtoEditando.imagem_url) {
           setImagemPreview(produtoEditando.imagem_url);
@@ -234,11 +226,26 @@ export default function VendedorAdicionarProduto() {
   }, [inicializarTerritorio, produtoEditando]);
 
   useEffect(() => {
-    if (!produtoEditando) return;
     if (!categoria) return;
 
-    setSubcategoria(produtoEditando.subcategoria || '');
-  }, [produtoEditando, categoria]);
+    let ativo = true;
+    async function carregarSubcategorias() {
+      const dados = await fetchSubcategoriasProdutoOperacionais(categoria);
+      if (!ativo) return;
+      setSubcategoriasDb(dados);
+
+      if (produtoEditando?.categoria_id !== categoria) return;
+      const selecionada = dados.find(item => item.id === produtoEditando.subcategoria_id)
+        ?? dados.find(item => normalizarTexto(item.nome) === normalizarTexto(produtoEditando.subcategoria || ''));
+      if (selecionada) {
+        setSubcategoria(selecionada.id);
+        setSubcategoriaLegada(selecionada.nome);
+      }
+    }
+
+    void carregarSubcategorias();
+    return () => { ativo = false; };
+  }, [categoria, produtoEditando]);
 
   const carregarInventario = useCallback(async () => {
     if (
@@ -272,13 +279,21 @@ export default function VendedorAdicionarProduto() {
     void carregarInventario();
   }, [carregarInventario]);
 
-  const subcategoriasFiltradas = categoria
-    ? SUBCATEGORIAS[categoria] || []
-    : [];
+  const subcategoriasFiltradas = subcategoriasDb;
+  const categoriasParaFormulario = categoriasDb.some(item => item.id === categoria) || !produtoEditando?.categoria_id
+    ? categoriasDb
+    : [{
+        id: produtoEditando.categoria_id,
+        nome: produtoEditando.categoria?.nome || 'Categoria legada',
+        estado: 'experimental' as const,
+        requerRevisaoAdmin: false,
+        avisoVisual: null,
+      }, ...categoriasDb];
 
   const handleCategoriaChange = (val: string) => {
     setCategoria(val);
     setSubcategoria('');
+    setSubcategoriaLegada('');
   };
 
   const handleUnidadeChange = (novaUnidade: string) => {
@@ -313,20 +328,6 @@ export default function VendedorAdicionarProduto() {
     } finally {
       setAGuardarInventario(false);
     }
-  };
-
-  const obterCategoriaDbId = () => {
-    const categoriaMock = CATEGORIAS.find(c => c.id === categoria);
-
-    if (!categoriaMock) return null;
-
-    const nomeCategoriaMock = normalizarTexto(categoriaMock.nome_categoria);
-
-    const categoriaDb = categoriasDb.find(c =>
-      normalizarTexto(c.nome || '') === nomeCategoriaMock
-    );
-
-    return categoriaDb?.id || null;
   };
 
   const handleImagemChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -405,20 +406,9 @@ export default function VendedorAdicionarProduto() {
       return;
     }
 
-    if (!subcategoria) {
+    if (!subcategoria && !(isEdit && subcategoriaLegada)) {
       toast({
         title: 'Seleciona subcategoria',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const categoriaDbId = obterCategoriaDbId();
-
-    if (!categoriaDbId) {
-      toast({
-        title: 'Categoria inválida',
-        description: 'Esta categoria ainda não existe no Supabase.',
         variant: 'destructive',
       });
       return;
@@ -491,12 +481,17 @@ export default function VendedorAdicionarProduto() {
         imagem_url = await uploadImagemProduto(imagemFile);
       }
 
+      const subcategoriaSelecionada = subcategoriasFiltradas.find(item => item.id === subcategoria);
+      const manterSubcategoriaLegada = isEdit && produtoEditando?.categoria_id === categoria;
       const dadosProduto = {
         vendedor_id: utilizador?.vendedor_id,
         nome_produto: nome,
         descricao,
-        categoria_id: categoriaDbId,
-        subcategoria,
+        categoria_id: categoria,
+        subcategoria_id: subcategoriaSelecionada?.id
+          ?? (manterSubcategoriaLegada ? produtoEditando?.subcategoria_id ?? null : null),
+        subcategoria: subcategoriaSelecionada?.nome
+          ?? (manterSubcategoriaLegada ? subcategoriaLegada || null : null),
         preco_aproximado: Number(preco),
         preco_promocional: precoPromocional ? Number(precoPromocional) : null,
         unidade,
@@ -607,9 +602,9 @@ export default function VendedorAdicionarProduto() {
             >
               <option value="">Selecionar</option>
 
-              {CATEGORIAS.map(c => (
+              {categoriasParaFormulario.map(c => (
                 <option key={c.id} value={c.id}>
-                  {c.nome_categoria}
+                  {c.nome}
                 </option>
               ))}
             </select>
@@ -629,9 +624,13 @@ export default function VendedorAdicionarProduto() {
                 {categoria ? 'Selecionar' : 'Escolha categoria primeiro'}
               </option>
 
+              {subcategoriaLegada && !subcategoria && (
+                <option value="">{subcategoriaLegada} (legado)</option>
+              )}
+
               {subcategoriasFiltradas.map(s => (
-                <option key={s} value={s}>
-                  {s}
+                <option key={s.id} value={s.id}>
+                  {s.nome}
                 </option>
               ))}
             </select>

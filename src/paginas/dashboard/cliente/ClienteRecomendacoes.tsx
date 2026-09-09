@@ -16,6 +16,7 @@ import {
   guardarHistoricoContacto,
   incrementarCliqueWhatsappProduto,
 } from '@/services/api';
+import { listarProdutosPublicosFase1 } from '@/services/catalogoPublicoProdutos';
 import { Produto } from '@/tipos';
 import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
 
@@ -112,34 +113,13 @@ export default function ClienteRecomendacoes() {
           categoriasContactadas.length > 0 ||
           subcategoriasContactadas.length > 0
         ) {
-          let query = supabase
-            .from('produtos')
-            .select(`
-              *,
-              vendedor:vendedores (
-                id,
-                nome_comercial,
-                telefone_whatsapp,
-                whatsapp,
-                verificado
-              )
-            `)
-            .eq('disponivel', true)
-            .order('destaque', { ascending: false })
-            .order('criado_em', { ascending: false })
-            .limit(12);
+          const data = await listarProdutosPublicosFase1({
+            categoriaIds: [...new Set(categoriasContactadas)],
+            ordenarPorDestaque: true,
+            limite: 12,
+          });
 
-          if (categoriasContactadas.length > 0) {
-            query = query.in('categoria_id', [...new Set(categoriasContactadas)]);
-          }
-
-          const { data, error } = await query;
-
-          if (error) {
-            console.error('Erro ao carregar recomendações por interesse:', error);
-          }
-
-          produtos = (data || []).map(normalizarProdutoRecomendado);
+          produtos = data.map(normalizarProdutoRecomendado);
 
           produtos = produtos.filter(
             p => !produtosContactadosIds.includes(p.id)
@@ -155,38 +135,15 @@ export default function ClienteRecomendacoes() {
         // =============================
         // 3. RECOMENDAÇÃO POR LOCALIZAÇÃO
         // =============================
-        let queryLocal = supabase
-          .from('produtos')
-          .select(`
-            *,
-            vendedor:vendedores (
-              id,
-              nome_comercial,
-              telefone_whatsapp,
-              whatsapp,
-              verificado
-            )
-          `)
-          .eq('disponivel', true)
-          .order('destaque', { ascending: false })
-          .order('criado_em', { ascending: false })
-          .limit(12);
+        const locais = await listarProdutosPublicosFase1({
+          provincia: utilizador?.provincia,
+          municipio: utilizador?.municipio,
+          localizacaoOu: !!utilizador?.provincia && !!utilizador?.municipio,
+          ordenarPorDestaque: true,
+          limite: 12,
+        });
 
-        if (utilizador?.municipio && utilizador?.provincia) {
-          queryLocal = queryLocal.or(
-            `municipio.eq.${utilizador.municipio},provincia.eq.${utilizador.provincia}`
-          );
-        } else if (utilizador?.provincia) {
-          queryLocal = queryLocal.eq('provincia', utilizador.provincia);
-        }
-
-        const { data: locais, error: erroLocal } = await queryLocal;
-
-        if (erroLocal) {
-          console.error('Erro ao carregar recomendações locais:', erroLocal);
-        }
-
-        produtos = (locais || [])
+        produtos = locais
           .map(normalizarProdutoRecomendado)
           .filter(p => !produtosContactadosIds.includes(p.id));
 
@@ -199,28 +156,11 @@ export default function ClienteRecomendacoes() {
         // =============================
         // 4. FALLBACK — PRODUTOS RECENTES
         // =============================
-        const { data: recentes, error: erroRecentes } = await supabase
-          .from('produtos')
-          .select(`
-            *,
-            vendedor:vendedores (
-              id,
-              nome_comercial,
-              telefone_whatsapp,
-              whatsapp,
-              verificado
-            )
-          `)
-          .eq('disponivel', true)
-          .order('criado_em', { ascending: false })
-          .limit(12);
-
-        if (erroRecentes) {
-          console.error('Erro ao carregar produtos recentes:', erroRecentes);
-        }
-
         setMotivo('Produtos recentes no marketplace');
-        setRecomendados((recentes || []).map(normalizarProdutoRecomendado));
+        setRecomendados(
+          (await listarProdutosPublicosFase1({ limite: 12 }))
+            .map(normalizarProdutoRecomendado),
+        );
       } catch (err) {
         console.error('Erro inesperado ao carregar recomendações:', err);
         setRecomendados([]);

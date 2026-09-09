@@ -87,4 +87,9 @@ describe('idempotência do checkout por grupo', () => {
     expect(mensagemErroCheckout({ message: 'relation reservas_stock_encomenda violates constraint xyz' })).toBe('Não foi possível confirmar a encomenda. Verifique a ligação e tente novamente.');
     expect(mensagemErroCheckout({ message: 'Chave de idempotência reutilizada com payload diferente.' })).toBe('Os dados desta tentativa foram alterados. Reveja o grupo e tente novamente.');
   });
+
+  it('traduz os gates operacionais do servidor sem expor detalhes internos', () => {
+    expect(mensagemErroCheckout({ message: 'Este produto não está operacional para a Fase 1 no Huambo.' })).toBe('Um produto deste grupo não está operacional para a Fase 1 no Huambo.');
+    expect(mensagemErroCheckout({ message: 'O destino da entrega deve pertencer ao Huambo durante a Fase 1.' })).toBe('Durante a Fase 1, o destino da entrega deve pertencer ao Huambo.');
+  });
 });

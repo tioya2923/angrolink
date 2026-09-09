@@ -27,6 +27,7 @@ import {
   SUPABASE_STORAGE_PRODUTOS_URL,
 } from "./supabase";
 import { COLUNAS_VENDEDOR_PUBLICAS, listarVendedoresPublicos } from './vendedores';
+import { listarProdutosPublicosFase1 } from './catalogoPublicoProdutos';
 
 // Get the active vendor ID from localStorage or session storage
 const getVendedorAtivoId = (): string | null => {
@@ -167,54 +168,31 @@ interface FetchProdutosParams {
 export async function fetchProdutos(
   params?: FetchProdutosParams
 ): Promise<Produto[]> {
-  let query = supabase
-    .from("produtos")
-    .select(`
-      *,
-      categoria:categorias (*)
-    `)
-    .eq("disponivel", true)
-    .eq("publicado", true)
-    .order("criado_em", { ascending: false });
+  try {
+    let produtos = (await listarProdutosPublicosFase1({
+      categoriaId: params?.categoria,
+      provincia: params?.provincia,
+      municipio: params?.municipio,
+      pesquisa: params?.pesquisa,
+    })).map(normalizarProduto);
 
-  if (params?.categoria) {
-    query = query.eq("categoria_id", params.categoria);
-  }
+    if (params?.tipoComprador === "casa") {
+      produtos = produtos.filter(
+        p => p.tipo_venda === "retalho" || p.tipo_venda === "ambos"
+      );
+    }
 
-  if (params?.provincia) {
-    query = query.ilike("provincia", `%${params.provincia}%`);
-  }
+    if (params?.tipoComprador === "negocio") {
+      produtos = produtos.filter(
+        p => p.tipo_venda === "grosso" || p.tipo_venda === "ambos"
+      );
+    }
 
-  if (params?.municipio) {
-    query = query.ilike("municipio", `%${params.municipio}%`);
-  }
-
-  if (params?.pesquisa) {
-    query = query.ilike("nome_produto", `%${params.pesquisa}%`);
-  }
-
-  const { data, error } = await query;
-
-  if (error) {
+    return produtos;
+  } catch (error) {
     console.error("Erro ao buscar produtos:", error);
     throw new Error("Erro ao carregar produtos");
   }
-
-  let produtos = (await associarVendedoresPublicos(data || [])).map(normalizarProduto);
-
-  if (params?.tipoComprador === "casa") {
-    produtos = produtos.filter(
-      p => p.tipo_venda === "retalho" || p.tipo_venda === "ambos"
-    );
-  }
-
-  if (params?.tipoComprador === "negocio") {
-    produtos = produtos.filter(
-      p => p.tipo_venda === "grosso" || p.tipo_venda === "ambos"
-    );
-  }
-
-  return produtos;
 }
 
 // =============================
@@ -222,24 +200,16 @@ export async function fetchProdutos(
 // =============================
 
 export async function fetchProdutoPorId(id: string): Promise<Produto | null> {
-  const { data, error } = await supabase
-    .from("produtos")
-    .select(`
-      *,
-      categoria:categorias (*)
-    `)
-    .eq("id", id)
-    .eq("disponivel", true)
-    .eq("publicado", true)
-    .single();
-
-  if (error) {
+  try {
+    const [produto] = await listarProdutosPublicosFase1({
+      produtoId: id,
+      limite: 1,
+    });
+    return produto ? normalizarProduto(produto) : null;
+  } catch (error) {
     console.error("Erro ao buscar produto:", error);
     return null;
   }
-
-  const [produto] = await associarVendedoresPublicos([data]);
-  return produto ? normalizarProduto(produto) : null;
 }
 
 // Leitura privada usada no formulÃ¡rio de ediÃ§Ã£o. NÃ£o aplica os filtros do
@@ -271,25 +241,16 @@ export async function fetchProdutosRelacionados(
   categoriaId: string,
   excluirId: string
 ): Promise<Produto[]> {
-  const { data, error } = await supabase
-    .from("produtos")
-    .select(`
-      *,
-      categoria:categorias (*)
-    `)
-    .eq("categoria_id", categoriaId)
-    .neq("id", excluirId)
-    .eq("disponivel", true)
-    .eq("publicado", true)
-    .order("criado_em", { ascending: false })
-    .limit(4);
-
-  if (error) {
+  try {
+    return (await listarProdutosPublicosFase1({
+      categoriaId,
+      excluirProdutoId: excluirId,
+      limite: 4,
+    })).map(normalizarProduto);
+  } catch (error) {
     console.error("Erro ao buscar relacionados:", error);
     return [];
   }
-
-  return (await associarVendedoresPublicos(data || [])).map(normalizarProduto);
 }
 
 // =============================
@@ -328,6 +289,19 @@ export async function fetchProdutosPorVendedor(
   }
 
   return (await associarVendedoresPublicos(data || [])).map(normalizarProduto);
+}
+
+// Loja pÃºblica: a lista continua submetida ao contrato canÃ³nico de catÃ¡logo,
+// mesmo quando o visitante Ã© o dono do produto ou um administrador.
+export async function fetchProdutosPublicosPorVendedor(
+  vendedorId: string,
+): Promise<Produto[]> {
+  try {
+    return (await listarProdutosPublicosFase1({ vendedorId })).map(normalizarProduto);
+  } catch (error) {
+    console.error('Erro ao carregar produtos pÃºblicos do vendedor:', error);
+    return [];
+  }
 }
 
 // =============================
@@ -515,6 +489,7 @@ interface CriarProdutoParams extends Partial<AtributosLogisticosProduto> {
   descricao?: string;
   categoria_id: string;
   subcategoria?: string;
+  subcategoria_id?: string | null;
   preco_aproximado: number;
   preco_promocional?: number | null;
   unidade: string;
@@ -599,6 +574,7 @@ export async function criarProduto(params: CriarProdutoParams) {
         descricao: params.descricao || "",
         categoria_id: params.categoria_id,
         subcategoria: params.subcategoria || null,
+        subcategoria_id: params.subcategoria_id ?? null,
         preco_aproximado: params.preco_aproximado,
         preco_promocional: params.preco_promocional ?? null,
         unidade: params.unidade,
@@ -1897,14 +1873,7 @@ export async function listarFavoritosProdutos(
 ) {
   const { data, error } = await supabase
     .from('favoritos')
-    .select(`
-      produto_id,
-      produtos (
-        *,
-        vendedor:vendedores (${COLUNAS_VENDEDOR_PUBLICAS}),
-        categoria:categorias (*)
-      )
-    `)
+    .select('produto_id')
     .eq('utilizador_id', utilizadorId)
     .not('produto_id', 'is', null);
 
@@ -1916,7 +1885,19 @@ export async function listarFavoritosProdutos(
     return [];
   }
 
-  return data || [];
+  const produtos = await listarProdutosPublicosFase1({
+    produtoIds: (data ?? [])
+      .map((favorito) => favorito.produto_id)
+      .filter((id): id is string => typeof id === 'string'),
+  });
+  const produtosPorId = new Map(produtos.map((produto) => [String(produto.id), produto]));
+
+  return (data ?? []).flatMap((favorito) => {
+    const produto = favorito.produto_id
+      ? produtosPorId.get(favorito.produto_id)
+      : undefined;
+    return produto ? [{ produto_id: favorito.produto_id, produtos: normalizarProduto(produto) }] : [];
+  });
 }
 
 // =============================
@@ -2233,14 +2214,8 @@ export async function fetchSugestoesPesquisa(termo: string): Promise<SugestaoPes
   const pesquisa = termo.trim();
   if (!pesquisa) return [];
 
-  const [produtosRes, servicosRes] = await Promise.all([
-    supabase
-      .from('produtos')
-      .select('id, nome_produto')
-      .ilike('nome_produto', `%${pesquisa}%`)
-      .eq('disponivel', true)
-      .eq('publicado', true)
-      .limit(5),
+  const [produtos, servicosRes] = await Promise.all([
+    listarProdutosPublicosFase1({ pesquisa, limite: 5 }),
     supabase
       .from('servicos')
       .select('id, nome_servico')
@@ -2250,11 +2225,10 @@ export async function fetchSugestoesPesquisa(termo: string): Promise<SugestaoPes
       .limit(5),
   ]);
 
-  if (produtosRes.error) throw produtosRes.error;
   if (servicosRes.error) throw servicosRes.error;
 
   return [
-    ...(produtosRes.data || []).map((produto: any) => ({ id: produto.id, nome: produto.nome_produto, tipo: 'produto' as const })),
+    ...produtos.map((produto) => ({ id: String(produto.id), nome: String(produto.nome_produto ?? ''), tipo: 'produto' as const })),
     ...(servicosRes.data || []).map((servico: any) => ({ id: servico.id, nome: servico.nome_servico, tipo: 'servico' as const })),
   ].slice(0, 8);
 }

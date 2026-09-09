@@ -23,6 +23,8 @@ const MAPA_ICONES: Record<string, LucideIcon> = {
   'grãos e cereais': Wheat,
   'pecuária': Beef,
   'produtos frescos': Leaf,
+  'insumos agrícolas': Leaf,
+  'máquinas e equipamentos agrícolas': Wrench,
   serviços: Wrench,
 };
 

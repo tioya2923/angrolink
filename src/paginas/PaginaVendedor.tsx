@@ -17,7 +17,7 @@ import CardProdutoLoja from "@/componentes/CardProdutoLoja";
 
 import {
   fetchVendedorPorId,
-  fetchProdutosPorVendedor
+  fetchProdutosPublicosPorVendedor
 } from '@/services/api';
 
 import { gerarLinkWhatsApp } from '@/lib/whatsapp';
@@ -84,7 +84,7 @@ export default function PaginaVendedor() {
 
         setVendedor(vendedorData);
 
-        const produtosData = await fetchProdutosPorVendedor(vendedorData.id);
+        const produtosData = await fetchProdutosPublicosPorVendedor(vendedorData.id);
 
         setProdutos(Array.isArray(produtosData) ? produtosData : []);
 
@@ -202,7 +202,6 @@ export default function PaginaVendedor() {
         <PerfilVendedorHero
           vendedor={vendedor}
           produtos={produtos}
-          servicos={[]}
         />
 
         

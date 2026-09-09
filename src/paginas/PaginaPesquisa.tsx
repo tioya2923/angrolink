@@ -12,9 +12,9 @@ import { useMunicipio } from '@/contextos/MunicipioContexto';
 
 import {
   fetchProdutos,
-  fetchCategorias,
   guardarHistoricoPesquisa,
 } from '@/services/api';
+import { fetchCategoriasProdutoOperacionais } from '@/services/catalogoOperacionalProduto';
 import { Produto } from '@/tipos';
 import { TIPOS_VENDEDOR } from '@/dados/constantes';
 
@@ -43,7 +43,7 @@ export default function PaginaPesquisa() {
   // =============================
   useEffect(() => {
     async function carregarCategorias() {
-      const data = await fetchCategorias();
+      const data = await fetchCategoriasProdutoOperacionais();
       setCategorias(data || []);
     }
 

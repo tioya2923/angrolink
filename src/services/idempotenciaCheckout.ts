@@ -139,6 +139,8 @@ export function mensagemErroCheckout(erro: unknown) {
   if (normalizada.includes('stock suficiente')) return 'Já não existe stock suficiente para um dos produtos deste vendedor.';
   if (normalizada.includes('não existe ou não está disponível') || normalizada.includes('produto deixou de estar disponível')) return 'Um produto deste grupo deixou de estar disponível. Reveja o carrinho.';
   if (normalizada.includes('não está elegível') || normalizada.includes('não está disponível para receber')) return 'Este vendedor não está disponível para receber encomendas.';
+  if (normalizada.includes('não está operacional para a fase 1')) return 'Um produto deste grupo não está operacional para a Fase 1 no Huambo.';
+  if (normalizada.includes('destino da entrega deve pertencer ao huambo')) return 'Durante a Fase 1, o destino da entrega deve pertencer ao Huambo.';
   if (normalizada.includes('quantidade') || normalizada.includes('mínimo')) return 'Uma quantidade deste grupo deixou de ser válida. Reveja o carrinho.';
   if (normalizada.includes('território válido')) return 'Selecione uma província e um município válidos para a entrega.';
   if (normalizada.includes('chave de idempotência') || normalizada.includes('payload diferente') || normalizada.includes('intenção')) return 'Os dados desta tentativa foram alterados. Reveja o grupo e tente novamente.';
