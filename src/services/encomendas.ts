@@ -40,6 +40,8 @@ export interface EntregaParticipante {
   codigo_entrega_validado?: boolean;
   parceiro_entrega_id?: string;
   nome_entregador?: string;
+  foto_entregador_disponivel?: boolean;
+  foto_veiculo_disponivel?: boolean;
   veiculo?: {
     tipo_veiculo: string | null;
     marca: string | null;

@@ -32,7 +32,9 @@ describe('CORS da Media Privada Admin', () => {
   });
   it('normaliza paths relativos e URLs legadas sem aceitar outro bucket', () => {
     expect(funcao).toContain('function normalizarCaminhoDocumento');
-    expect(funcao).toContain('url.pathname.match(/\\/object\\/');
+    expect(funcao).toContain("const marcadorBucket = '/documentos-parceiros/'");
+    expect(funcao).toContain('url.pathname.indexOf(marcadorBucket)');
+    expect(funcao).toContain("replace(/^documentos-parceiros\\//, '')");
     expect(funcao).toContain('documentos-parceiros');
     expect(funcao).toContain("codigo: 'CAMINHO_INVALIDO'");
     expect(funcao).toContain("codigo: 'ASSINATURA_INDISPONIVEL'");

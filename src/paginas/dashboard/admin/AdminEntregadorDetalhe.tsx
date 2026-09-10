@@ -256,6 +256,10 @@ export default function AdminEntregadorDetalhe() {
                     · Enviado: {formatarData(x.criadoEm)} · Analisado:{" "}
                     {formatarData(x.analisadoEm)}
                   </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {x.versaoAtualId && x.frenteDisponivel && <AbrirDocumento versaoId={x.versaoAtualId} recurso="documento_entregador_frente" rotulo="Ver frente" />}
+                    {x.versaoAtualId && x.versoDisponivel && <AbrirDocumento versaoId={x.versaoAtualId} recurso="documento_entregador_verso" rotulo="Ver verso" />}
+                  </div>
                   {x.motivo && (
                     <p className="mt-1 text-destructive">Motivo: {x.motivo}</p>
                   )}

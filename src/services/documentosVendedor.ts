@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { gerarUuidV4 } from '@/lib/uuid';
 import type { Database } from '@/types/database.types';
 
 export const BUCKET_DOCUMENTOS_VENDEDORES = 'documentos-vendedores';
@@ -137,7 +138,7 @@ export function criarCaminhoDocumentoVendedor(
   tipoDocumento: TipoDocumentoVendedor,
   lado: 'frente' | 'verso',
   extensao: string,
-  identificador: string = crypto.randomUUID(),
+  identificador: string = gerarUuidV4(),
 ) {
   return `${utilizadorId}/${vendedorId}/${tipoDocumento}-${lado}-${identificador}.${extensao}`;
 }

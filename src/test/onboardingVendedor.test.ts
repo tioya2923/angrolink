@@ -40,6 +40,23 @@ describe('onboarding documental de vendedor', () => {
     expect(pagina).not.toContain('window.location.reload');
   });
 
+  it('recupera sucesso parcial documental sem reabrir a criação da conta', () => {
+    expect(pagina).toContain("navigate(perfilAtualizado ? '/dashboard/documentos' : '/login', { replace: true });");
+    expect(pagina).toContain('A conta foi criada, mas alguns documentos não foram enviados.');
+  });
+
+  it('permite a lista territorial nacional, mas bloqueia candidatura operacional fora do Huambo pelo código canónico', () => {
+    expect(pagina).toContain("codigoProvincia: provincia.codigoOficial");
+    expect(pagina).toContain("territorioAtividade.codigoProvincia !== 'HBO'");
+    expect(pagina).toContain('Nesta fase, o cadastro de vendedores está disponível apenas no Huambo.');
+  });
+
+  it('traduz somente o erro territorial conhecido do servidor sem remover o fallback técnico', () => {
+    expect(pagina).toContain("vendedorError.message?.includes('cadastro de vendedores está disponível apenas no Huambo')");
+    expect(pagina).toContain('Podes continuar a utilizar a ANGROLINK como comprador noutras províncias.');
+    expect(pagina).toContain('Não foi possível criar o perfil de vendedor. Verifica os dados e tenta novamente.');
+  });
+
   it('delega os campos administrativos ao servidor no INSERT da candidatura', () => {
     const inicio = pagina.indexOf('const novoVendedor = {');
     const fim = pagina.indexOf('const { data: vendedorCriado', inicio);

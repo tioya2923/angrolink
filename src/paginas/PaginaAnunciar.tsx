@@ -282,7 +282,13 @@ export default function PaginaAnunciar() {
     const municipio = municipios.find(
       (item) => item.id === municipioId && item.provinciaId === provinciaId,
     );
-    return provincia && municipio ? { provincia: provincia.nome, municipio: municipio.nome } : null;
+    return provincia && municipio
+      ? {
+        provincia: provincia.nome,
+        municipio: municipio.nome,
+        codigoProvincia: provincia.codigoOficial,
+      }
+      : null;
   };
 
   // --- Navegação ---
@@ -515,6 +521,10 @@ export default function PaginaAnunciar() {
       toast.error('Selecione uma província e um município de atividade válidos.');
       return;
     }
+    if (territorioAtividade.codigoProvincia !== 'HBO') {
+      toast.error('Nesta fase, o cadastro de vendedores está disponível apenas no Huambo.');
+      return;
+    }
     const { provincia: provinciaAtividadeNome, municipio: municipioAtividadeNome } = territorioAtividade;
 
     const nomeNormalizado = formPerfil.nome_comercial
@@ -608,6 +618,10 @@ export default function PaginaAnunciar() {
       );
       if (!territorioAtividade) {
         toast.error('Selecione uma província e um município de atividade válidos.');
+        return;
+      }
+      if (territorioAtividade.codigoProvincia !== 'HBO') {
+        toast.error('Nesta fase, o cadastro de vendedores está disponível apenas no Huambo.');
         return;
       }
       const { provincia: provinciaAtividadeNome, municipio: municipioAtividadeNome } = territorioAtividade;
@@ -763,6 +777,11 @@ export default function PaginaAnunciar() {
           return;
         }
 
+        if (vendedorError.message?.includes('cadastro de vendedores está disponível apenas no Huambo')) {
+          toast.error('Nesta fase, o cadastro de vendedores está disponível apenas no Huambo. Podes continuar a utilizar a ANGROLINK como comprador noutras províncias.');
+          return;
+        }
+
         toast.error(
           "Não foi possível criar o perfil de vendedor. Verifica os dados e tenta novamente.",
         );
@@ -819,9 +838,9 @@ export default function PaginaAnunciar() {
           "Erro ao submeter documentos privados do vendedor:",
           erroDocumentos,
         );
-        toast.error(
-          "A conta foi criada, mas os documentos não puderam ser enviados. Entre na conta para concluir o envio antes da análise.",
-        );
+        const perfilAtualizado = await recarregarPerfil();
+        toast.error('A conta foi criada, mas alguns documentos não foram enviados. Conclua o envio em Documentos antes da análise.');
+        navigate(perfilAtualizado ? '/dashboard/documentos' : '/login', { replace: true });
         return;
       }
 

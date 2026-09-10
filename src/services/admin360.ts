@@ -1,4 +1,5 @@
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { gerarUuidV4 } from "@/lib/uuid";
 import { supabase } from "@/services/supabase";
 import type { Database, Json } from "@/types/database.types";
 
@@ -497,5 +498,5 @@ export async function resolverDisputaReembolsoTotalAdmin(
 }
 
 export function criarChaveIdempotenciaAdmin(): string {
-  return crypto.randomUUID();
+  return gerarUuidV4();
 }

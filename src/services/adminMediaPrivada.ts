@@ -31,6 +31,6 @@ export async function obterFotoEntregadorAdmin(parceiroId: string): Promise<stri
 
 export async function obterDocumentoEntregadorAdmin(versaoId: string, recurso: RecursoDocumento): Promise<string> {
   const { data, error } = await supabase.functions.invoke<RespostaFoto>('admin-media-privada', { body: { recurso, entidade_id: versaoId } });
-  if (error || !data?.url) throw new Error('Não foi possível abrir o documento.');
+  if (error || typeof data?.url !== 'string' || !data.url.trim()) throw new Error('Não foi possível abrir o documento.');
   return data.url;
 }

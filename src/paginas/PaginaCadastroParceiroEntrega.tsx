@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { TipoVeiculoEntrega } from "@/tipos";
 import { useAuth } from "@/contextos/AuthContexto";
+import { gerarUuidV4 } from "@/lib/uuid";
 import {
   normalizarDadosOperacionaisVeiculo,
   type RespostaEquipamentoVeiculo,
@@ -238,6 +239,7 @@ export default function PaginaCadastroParceiroEntrega() {
     )
       return toast.error("Use imagens JPG, PNG ou WEBP até 3 MB.");
     setAGuardar(true);
+    let contaAutenticada = false;
     try {
       const telefone = telefoneCompleto(form.telefone, form.indicativo);
       const emailLogin = `${form.indicativo}${form.telefone}@telefone.angrolink`;
@@ -304,6 +306,7 @@ export default function PaginaCadastroParceiroEntrega() {
       }
 
       if (!authUser) throw new Error("Não foi possível validar a conta.");
+      contaAutenticada = true;
 
       const emergenciaCompleta = telefoneCompleto(
         form.emergencia,
@@ -313,7 +316,7 @@ export default function PaginaCadastroParceiroEntrega() {
 
       if (fotoPerfil) {
         const fotoPerfilExt = fotoPerfil.name.split(".").pop() || "jpg";
-        const fotoPerfilPath = `${authUser.id}/perfil-${crypto.randomUUID()}.${fotoPerfilExt}`;
+        const fotoPerfilPath = `${authUser.id}/perfil-${gerarUuidV4()}.${fotoPerfilExt}`;
         const { error: erroUploadFotoPerfil } = await supabase.storage
           .from("documentos-parceiros")
           .upload(fotoPerfilPath, fotoPerfil, { contentType: fotoPerfil.type });
@@ -325,7 +328,7 @@ export default function PaginaCadastroParceiroEntrega() {
       }
 
       const fotoVeiculoExt = fotoVeiculo?.name.split(".").pop() || "jpg";
-      const fotoVeiculoPath = `${authUser.id}/veiculo-${crypto.randomUUID()}.${fotoVeiculoExt}`;
+      const fotoVeiculoPath = `${authUser.id}/veiculo-${gerarUuidV4()}.${fotoVeiculoExt}`;
       const { error: erroUploadFotoVeiculo } = await supabase.storage
         .from("documentos-parceiros")
         .upload(fotoVeiculoPath, fotoVeiculo!, {
@@ -342,7 +345,7 @@ export default function PaginaCadastroParceiroEntrega() {
         const guardar = async (lado: "frente" | "verso") => {
           const ficheiro = fotos[tipo][lado]!;
           const ext = ficheiro.name.split(".").pop() || "jpg";
-          const path = `${authUser.id}/${tipo}-${lado}-${crypto.randomUUID()}.${ext}`;
+          const path = `${authUser.id}/${tipo}-${lado}-${gerarUuidV4()}.${ext}`;
           const { error } = await supabase.storage
             .from("documentos-parceiros")
             .upload(path, ficheiro, { contentType: ficheiro.type });
@@ -402,6 +405,12 @@ export default function PaginaCadastroParceiroEntrega() {
       navigate("/dashboard", { replace: true });
     } catch (erro: any) {
       console.error(erro);
+      if (contaAutenticada) {
+        await recarregarPerfil();
+        toast.error('A conta foi criada, mas alguns documentos não foram enviados. Entre na conta para concluir o pedido antes da análise.');
+        navigate('/dashboard', { replace: true });
+        return;
+      }
       toast.error(erro.message || "Não foi possível enviar o pedido.");
     } finally {
       setAGuardar(false);

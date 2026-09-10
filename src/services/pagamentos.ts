@@ -1,4 +1,5 @@
 import { supabase } from '@/services/supabase';
+import { gerarUuidV4 } from '@/lib/uuid';
 import type { Database } from '@/types/database.types';
 
 type CriarPagamentoRpc = Database['public']['Functions']['criar_pagamento_encomenda']['Returns'];
@@ -16,11 +17,7 @@ export type PagamentoEncomendaCliente = PagamentoEncomendaClienteRpc;
 export type ResumoFinanceiroEncomendaVendedor = ResumoEncomendaVendedorRpc;
 
 function criarChaveIdempotencia(): string {
-  if (!globalThis.crypto?.randomUUID) {
-    throw new Error('O navegador não suporta a chave de segurança necessária para iniciar o pagamento.');
-  }
-
-  return globalThis.crypto.randomUUID();
+  return gerarUuidV4();
 }
 
 export async function criarPagamentoEncomenda(encomendaId: string): Promise<PagamentoEncomenda> {

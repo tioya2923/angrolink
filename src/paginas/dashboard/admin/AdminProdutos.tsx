@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Star, Eye, EyeOff, MapPin, Package, Tag } from 'lucide-react';
+import { Star, Eye, EyeOff, MapPin, MessageCircle, Package, Tag } from 'lucide-react';
 
 import { Produto } from '@/tipos';
 import { useToast } from '@/hooks/use-toast';
@@ -170,6 +170,8 @@ export default function AdminProdutos() {
                     <span className="flex items-center gap-1"><MapPin size={13} className="text-primary" />{p.municipio || 'Localização não indicada'}</span>
                     <span className="flex items-center gap-1"><Tag size={13} className="text-primary" />{p.categoria_nome || 'Sem categoria'} · {p.tipo_venda || 'Tipo não definido'}</span>
                     <span className="font-semibold text-foreground">{Number(p.preco_aproximado || 0).toLocaleString('pt-AO')} Kz/{p.unidade || 'unidade'}</span>
+                    <span className="flex items-center gap-1"><Eye size={13} className="text-primary" />{p.visualizacoes || 0} visualizações</span>
+                    <span className="flex items-center gap-1"><MessageCircle size={13} className="text-primary" />{p.cliques_whatsapp || 0} contactos</span>
                   </div>
                   </div>
                 </div>

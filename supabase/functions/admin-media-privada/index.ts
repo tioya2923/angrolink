@@ -25,12 +25,13 @@ function resposta(status: number, corpo: Record<string, string | number>, origem
 function normalizarCaminhoDocumento(caminho: string): string | null {
   const valor = caminho.trim();
   if (!valor) return null;
-  if (!/^https?:\/\//i.test(valor)) return valor.replace(/^\/+/, '');
+  if (!/^https?:\/\//i.test(valor)) return valor.replace(/^\/+/, '').replace(/^documentos-parceiros\//, '');
 
   try {
     const url = new URL(valor);
-    const correspondencia = url.pathname.match(/\/object\/(?:public|sign|authenticated)\/documentos-parceiros\/(.+)$/);
-    return correspondencia?.[1] ? decodeURIComponent(correspondencia[1]) : null;
+    const marcadorBucket = '/documentos-parceiros/';
+    const inicioCaminho = url.pathname.indexOf(marcadorBucket);
+    return inicioCaminho >= 0 ? decodeURIComponent(url.pathname.slice(inicioCaminho + marcadorBucket.length)) : null;
   } catch {
     return null;
   }

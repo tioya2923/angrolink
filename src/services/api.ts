@@ -1,4 +1,5 @@
 import type { Database } from '@/types/database.types';
+import { gerarUuidV4 } from '@/lib/uuid';
 import type { DadosRenovacaoDocumentoParceiro } from '@/dominio/documentosParceiro';
 import type { AtributosLogisticosProduto } from '@/dominio/logisticaProduto';
 
@@ -419,11 +420,7 @@ export async function uploadImagemVendedor(file: File) {
     throw new Error('Não foi possível identificar a sessão para enviar a imagem.');
   }
 
-  const identificadorImagem =
-    typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const identificadorImagem = gerarUuidV4();
 
   const fileName = `${user.id}/perfil-${identificadorImagem}.${extensao}`;
 
@@ -1287,7 +1284,7 @@ export async function reenviarDocumentoParceiro(
       throw new Error('Use imagens JPG, PNG ou WEBP atÃ© 3 MB.');
     }
     const extensao = ficheiro.name.split('.').pop() || 'jpg';
-    const caminho = `${auth.user!.id}/reenvio-${documentoId}-${lado}-${crypto.randomUUID()}.${extensao}`;
+    const caminho = `${auth.user!.id}/reenvio-${documentoId}-${lado}-${gerarUuidV4()}.${extensao}`;
     const { error } = await supabase.storage.from('documentos-parceiros').upload(caminho, ficheiro, { contentType: ficheiro.type });
     if (error) throw error;
     return caminho;
@@ -1462,7 +1459,7 @@ export async function uploadFotoPerfilParceiro(ficheiro: File) {
   }
 
   const extensao = ficheiro.name.split('.').pop() || 'jpg';
-  const caminho = `${user.id}/perfil-${crypto.randomUUID()}.${extensao}`;
+  const caminho = `${user.id}/perfil-${gerarUuidV4()}.${extensao}`;
   const { error: uploadError } = await supabase.storage
     .from('documentos-parceiros')
     .upload(caminho, ficheiro, { contentType: ficheiro.type });
