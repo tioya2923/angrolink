@@ -20,7 +20,7 @@ describe('Ciclo de entrega — fase 1', () => {
     expect(migration).toContain("case when a.estado = 'aceite' then d.destinatario_nome else null end");
     expect(migration).toContain("case when a.estado = 'aceite' then d.destinatario_telefone else null end");
     expect(migration).toContain("case when a.estado = 'aceite' then d.endereco_detalhado else null end");
-    expect(tarefa).toContain("['aceite', 'chegou_origem', 'recolhida', 'concluida']");
+    expect(tarefa).toContain("['aceite', 'chegou_origem', 'recolhida', 'chegou_destino', 'concluida']");
     expect(tarefa).toContain('Dados protegidos até ao aceite');
   });
 

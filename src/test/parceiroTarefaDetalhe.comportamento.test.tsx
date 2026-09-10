@@ -308,6 +308,23 @@ describe('ParceiroTarefaDetalhe — interface operacional', () => {
     expect(screen.queryByRole('link', { name: 'Abrir no Google Maps: Recolha' })).not.toBeInTheDocument();
   });
 
+  it('exige a validação do código antes de expor a confirmação de pagamento no destino', async () => {
+    const tela = renderizar('chegou_destino', (tarefa) => {
+      tarefa.pagamento = { metodo: 'pagamento_na_entrega', estado: 'pendente', codigo_entrega_validado: false };
+    });
+    await aguardarTarefa();
+    expect(screen.getByRole('button', { name: 'Inserir código de entrega' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Recebi o pagamento' })).not.toBeInTheDocument();
+
+    tela.unmount();
+    renderizar('chegou_destino', (tarefa) => {
+      tarefa.pagamento = { metodo: 'pagamento_na_entrega', estado: 'pendente', codigo_entrega_validado: true };
+    });
+    await aguardarTarefa();
+    expect(screen.getByRole('button', { name: 'Recebi o pagamento' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Inserir código de entrega' })).not.toBeInTheDocument();
+  });
+
   it('abre a confirmação de chegada e chama a RPC da atribuição concreta', async () => {
     mocks.chegada.mockResolvedValue(undefined);
     renderizar('aceite');

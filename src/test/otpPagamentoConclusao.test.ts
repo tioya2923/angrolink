@@ -7,6 +7,7 @@ const migration = ler('supabase/migrations/20260907010000_corrigir_ordem_otp_pag
 const parceiro = ler('src/paginas/dashboard/parceiro/ParceiroTarefaDetalhe.tsx');
 const comprador = ler('src/paginas/dashboard/cliente/ClienteEncomendaDetalhe.tsx');
 const vendedor = ler('src/paginas/dashboard/vendedor/VendedorEncomendaDetalhe.tsx');
+const checkout = ler('src/paginas/PaginaCheckoutPendente.tsx');
 
 describe('OTP → pagamento → conclusão', () => {
   it('mantém OTP de entrega como confirmação física, sem concluir nem confirmar pagamento', () => {
@@ -65,5 +66,14 @@ describe('OTP → pagamento → conclusão', () => {
     const rotas = ler('src/paginas/dashboard/DashboardRouter.tsx');
     expect(rotas).toContain('path="compras/:id" element={<ClienteEncomendaDetalhe rotaVoltar="/dashboard/compras"/>}');
     expect(rotas).toContain('path="encomendas/:id" element={<ClienteEncomendaDetalhe/>}');
+  });
+
+  it('alinha todos os textos e ações do frontend com OTP antes do pagamento', () => {
+    expect(checkout).toContain('O vendedor valida primeiro o seu código de levantamento e só depois confirma o pagamento presencial.');
+    expect(checkout).not.toContain('O pagamento será confirmado quando o vendedor validar o seu código de levantamento.');
+    expect(parceiro).toContain('Valida presencialmente o código do comprador. Só depois confirma o pagamento recebido quando aplicável.');
+    expect(parceiro).toContain('const aguardaPagamento = pagamentoNaEntrega && codigoEntregaValidado && !pagamentoConfirmado;');
+    expect(comprador).not.toContain("transicionarEncomendaLevantamento(encomenda.id, 'concluida')");
+    expect(comprador).not.toContain('Confirmar receção');
   });
 });

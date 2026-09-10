@@ -10,6 +10,10 @@ const checkout = readFileSync(
   resolve(process.cwd(), 'src/paginas/PaginaCheckoutPendente.tsx'),
   'utf8',
 );
+const ordemAtual = readFileSync(
+  resolve(process.cwd(), 'supabase/migrations/20260907010000_corrigir_ordem_otp_pagamento_conclusao.sql'),
+  'utf8',
+);
 
 describe('pagamento no levantamento atómico — Fase 1', () => {
   it('mantém a idempotência de checkout privada e partilhada entre modalidades', () => {
@@ -46,15 +50,18 @@ describe('pagamento no levantamento atómico — Fase 1', () => {
     expect(funcao).toContain('set encomenda_id = v_encomenda.id, concluida_em = now()');
   });
 
-  it('faz o OTP concluir pagamento, levantamento e encomenda sem duplicar no retry', () => {
-    const inicio = migration.lastIndexOf('create or replace function public.validar_codigo_levantamento_vendedor(');
-    const funcao = migration.slice(inicio);
-    expect(funcao).toContain("and v_pagamento.estado = 'confirmado'");
-    expect(funcao).toContain("set estado = 'confirmada', confirmado_em = v_agora");
-    expect(funcao).toContain("set estado = 'confirmado', confirmado_em = v_agora");
-    expect(funcao).toContain("set estado = 'concluida', concluido_em = v_agora");
-    expect(funcao).toContain("'pagamento_confirmado'");
-    expect(funcao).toContain("'levantamento_confirmado'");
+  it('mantém o OTP separado do pagamento no contrato atualmente aplicado', () => {
+    const inicio = ordemAtual.indexOf('create or replace function public.validar_codigo_levantamento_vendedor(');
+    const fim = ordemAtual.indexOf('create or replace function public.registar_pagamento_no_levantamento_vendedor', inicio);
+    const validar = ordemAtual.slice(inicio, fim);
+    const pagar = ordemAtual.slice(fim);
+    expect(validar).toContain("'codigo_levantamento_validado'");
+    expect(validar).not.toContain("set estado='confirmado'");
+    expect(validar).not.toContain("set estado='concluida'");
+    expect(pagar).toContain("set estado='confirmada'");
+    expect(pagar).toContain("set estado='confirmado'");
+    expect(pagar).toContain("set estado='concluida'");
+    expect(pagar).toContain("'levantamento_confirmado'");
   });
 
   it('não deixa o frontend criar o pagamento depois da encomenda', () => {
@@ -62,9 +69,9 @@ describe('pagamento no levantamento atómico — Fase 1', () => {
     expect(checkout).toContain('criarEncomendaLevantamento');
   });
 
-  it('explica que o pagamento presencial só é confirmado pela validação do OTP', () => {
+  it('explica que a validação do OTP precede a confirmação presencial do pagamento', () => {
     expect(checkout).toContain('Pague ao vendedor quando levantar a encomenda.');
-    expect(checkout).toContain('O pagamento será confirmado quando o vendedor validar o seu código de levantamento.');
+    expect(checkout).toContain('O vendedor valida primeiro o seu código de levantamento e só depois confirma o pagamento presencial.');
     expect(checkout).toContain('Confirmar encomenda para levantamento');
     expect(checkout).not.toContain('Confirmar e pagar no levantamento');
   });
