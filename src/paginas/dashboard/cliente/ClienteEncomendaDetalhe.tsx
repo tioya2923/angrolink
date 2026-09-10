@@ -21,6 +21,7 @@ export default function ClienteEncomendaDetalhe({ rotaVoltar = '/dashboard/encom
   const [pagamentoCarregando, setPagamentoCarregando] = useState(false);
   const [pagamentoErro, setPagamentoErro] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState(false);
   const [dialog, setDialog] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [codigo, setCodigo] = useState<(CodigoLevantamento | CodigoEntrega) | null>(null);
@@ -30,8 +31,9 @@ export default function ClienteEncomendaDetalhe({ rotaVoltar = '/dashboard/encom
   const [descricaoProblema, setDescricaoProblema] = useState('');
 
   const carregar = useCallback(async () => {
-    if (!id) return;
+    if (!id) { setErroCarregamento(true); setLoading(false); return; }
     try {
+      setLoading(true); setErroCarregamento(false);
       const detalhe = await fetchDetalheEncomenda(id);
       setEncomenda(detalhe);
       setDisputa(detalhe ? await fetchDisputaEncomenda(detalhe.id) : null);
@@ -42,6 +44,7 @@ export default function ClienteEncomendaDetalhe({ rotaVoltar = '/dashboard/encom
         } catch { setPagamento(null); setPagamentoErro(true); } finally { setPagamentoCarregando(false); }
       }
     } catch {
+      setErroCarregamento(true);
       toast({ title: 'Não foi possível carregar a encomenda.', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -101,6 +104,7 @@ export default function ClienteEncomendaDetalhe({ rotaVoltar = '/dashboard/encom
   };
 
   if (loading) return <p className="painel-dashboard-form text-sm text-muted-foreground">A carregar encomenda…</p>;
+  if (erroCarregamento) return <div className="painel-dashboard-form text-sm text-destructive"><p>Não foi possível carregar a encomenda.</p><button type="button" onClick={() => void carregar()} className="mt-3 font-semibold underline">Tentar novamente</button></div>;
   if (!encomenda) return <p className="painel-dashboard-form text-sm text-muted-foreground">Encomenda não encontrada.</p>;
 
   return <div className="space-y-5">

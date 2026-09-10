@@ -134,8 +134,6 @@ export default function VendedorPerfil() {
     tipoVendedor === 'mini_mercado' ||
     tipoVendedor === 'supermercado' ||
     tipoVendedor === 'hipermercado';
-  const isPrestadorServico =
-    tipoVendedor === 'prestador_servico';
 
   const inicializarTerritorio = useCallback(async (provinciaTexto: string | null, municipioTexto: string | null) => {
     setProvinciaOriginal(provinciaTexto);
@@ -551,9 +549,7 @@ export default function VendedorPerfil() {
 
         <div>
           <h1 className="relative z-10 font-titulo text-3xl font-bold tracking-tight text-primary-foreground">
-            {isPrestadorServico
-              ? "Perfil do Prestador"
-              : "Perfil do Negócio"}
+            Perfil do Negócio
           </h1>
 
           <p className="relative z-10 mt-1 text-sm text-primary-foreground/80">
@@ -641,18 +637,14 @@ export default function VendedorPerfil() {
 
           <div className="space-y-2">
             <Label className="font-corpo text-sm">
-              {isPrestadorServico ? 'Nome profissional / marca' : 'Nome do negócio'}
+              Nome do negócio
             </Label>
             <Input
               value={nomeComercial}
               onChange={e => setNomeComercial(e.target.value)}
               readOnly={identidadeVerificada}
               className="border-2 border-border"
-              placeholder={
-                isPrestadorServico
-                  ? 'Ex: Transporte Rápido Viana'
-                  : 'Ex: Horta da Dona Maria'
-              }
+              placeholder="Ex: Horta da Dona Maria"
             />
             {identidadeVerificada && (
               <p className="text-xs text-muted-foreground">
@@ -700,17 +692,13 @@ export default function VendedorPerfil() {
 
           <div className="space-y-2">
             <Label className="font-corpo text-sm">
-              {isPrestadorServico ? 'Descrição do serviço' : 'Descrição do negócio'}
+              Descrição do negócio
             </Label>
             <Textarea
               value={descricao}
               onChange={e => setDescricao(e.target.value)}
               rows={4}
-              placeholder={
-                isPrestadorServico
-                  ? "Descreva o serviço que presta, a sua experiência e a área de atuação."
-                  : "Descreva o seu negócio, os produtos que comercializa e aquilo que o diferencia."
-              }
+              placeholder="Descreva o seu negócio, os produtos que comercializa e aquilo que o diferencia."
               className="resize-none border-2 border-border"
             />
           </div>
@@ -1052,35 +1040,6 @@ export default function VendedorPerfil() {
                 className="accent-green-700 w-4 h-4"
               />
               Faz entregas
-            </label>
-          </CardDadosTipo>
-        )}
-
-        {isPrestadorServico && (
-          <CardDadosTipo
-            titulo="Prestação de serviços"
-            descricao="Informações sobre os serviços prestados."
-          >
-            <Input
-              value={tiposProdutos}
-              onChange={e => setTiposProdutos(e.target.value)}
-              placeholder="Serviços prestados. Ex: Transporte, entregas, reparação, mão de obra agrícola"
-            />
-
-            <Input
-              value={volumeMinimo}
-              onChange={e => setVolumeMinimo(e.target.value)}
-              placeholder="Condição mínima. Ex: Serviço mínimo 5.000 Kz, apenas por marcação"
-            />
-
-            <label className="flex items-center gap-2 font-corpo text-sm">
-              <input
-                type="checkbox"
-                checked={entregaOutrasProvincias}
-                onChange={e => setEntregaOutrasProvincias(e.target.checked)}
-                className="accent-green-700 w-4 h-4"
-              />
-              Atua em outras províncias
             </label>
           </CardDadosTipo>
         )}

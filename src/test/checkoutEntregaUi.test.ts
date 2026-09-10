@@ -40,9 +40,9 @@ describe('checkout de entrega V1 — interface', () => {
     expect(checkout.indexOf('removerItens(gruposAtualizados')).toBeLessThan(checkout.indexOf('concluirChaveIdempotenciaCheckout(utilizador.id'));
   });
 
-  it('apresenta pagamento e custo de entrega sem prometer preço logístico', () => {
+  it('explica o pagamento e não promete entrega gratuita universal', () => {
     expect(checkout).toContain('Pagar na entrega');
-    expect(checkout).toContain('Custo da entrega ainda será confirmado.');
+    expect(checkout).toContain('Nesta fase, a plataforma não cobra automaticamente o custo da entrega. A disponibilidade e eventual custo dependem da zona operacional.');
     expect(checkout).not.toContain('Frete incluído');
   });
 

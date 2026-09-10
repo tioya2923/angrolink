@@ -8,7 +8,7 @@
  */
 
 import { Link } from "react-router-dom";
-import { MessageCircle, Megaphone, Star, Wrench } from "lucide-react";
+import { MessageCircle, Megaphone, Star } from "lucide-react";
 
 import Cabecalho from "@/componentes/Cabecalho";
 import Rodape from "@/componentes/Rodape";
@@ -17,7 +17,7 @@ import ListaProdutos from "@/componentes/ListaProdutos";
 
 import { useAuth } from "@/contextos/AuthContexto";
 import { useMunicipio } from "@/contextos/MunicipioContexto";
-import { useProdutosQuery, useServicosQuery } from "@/hooks/useCatalogoQuery";
+import { useProdutosQuery } from "@/hooks/useCatalogoQuery";
 import ListaDestaques from "@/componentes/ListaDestaques";
 import CarrosselProdutos from "@/componentes/CarrosselProdutos";
 import FaixaConfianca from "@/componentes/FaixaConfianca";
@@ -27,11 +27,9 @@ export default function PaginaInicial() {
   const { utilizador } = useAuth();
 
   const produtosQuery = useProdutosQuery();
-  const servicosQuery = useServicosQuery();
   const produtos = produtosQuery.data ?? [];
-  const servicos = servicosQuery.data ?? [];
-  const loading = produtosQuery.isLoading || servicosQuery.isLoading;
-  const erro = produtosQuery.isError || servicosQuery.isError
+  const loading = produtosQuery.isLoading;
+  const erro = produtosQuery.isError
     ? 'Erro ao carregar o catálogo.'
     : null;
 
@@ -76,31 +74,11 @@ export default function PaginaInicial() {
     .sort(porDataDesc)
     .slice(0, 30);
 
-  const servicosDestaque = servicos
-    .filter((s) => {
-      const destaqueValido =
-        !(s as any).destaque_ate ||
-        new Date((s as any).destaque_ate).getTime() > Date.now();
-
-      return s.destaque && s.disponivel && destaqueValido;
-    })
-    .sort(porDataDesc)
-    .slice(0, 12);
-
-  // Mistura produtos e serviços num único carrossel, dos mais recentes aos mais antigos.
-  const destaquesAngrolink = [
-    ...produtosDestaque.map((produto) => ({
-      tipo: "produto" as const,
-      item: produto,
-    })),
-
-    ...servicosDestaque.map((servico) => ({
-      tipo: "servico" as const,
-      item: servico,
-    })),
-  ]
-    .sort((a, b) => porDataDesc(a.item, b.item))
-    .slice(0, 20);
+  // Destaques exclusivamente de produtos durante a Fase 1.
+  const destaquesAngrolink = produtosDestaque.map((produto) => ({
+    tipo: "produto" as const,
+    item: produto,
+  }));
 
   /**
    * ===============================
@@ -219,6 +197,13 @@ export default function PaginaInicial() {
         {erro && (
           <div className="container py-6">
             <p>{erro}</p>
+            <button
+              type="button"
+              onClick={() => void produtosQuery.refetch()}
+              className="mt-3 rounded-lg border border-green-800 px-4 py-2 text-sm font-semibold text-green-800 hover:bg-green-50"
+            >
+              Tentar novamente
+            </button>
           </div>
         )}
 

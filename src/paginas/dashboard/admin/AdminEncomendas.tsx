@@ -74,8 +74,15 @@ export default function AdminEncomendas() {
             <option value="confirmada">Confirmada</option>
             <option value="em_preparacao">Em preparação</option>
             <option value="pronta_para_levantamento">Pronta</option>
+            <option value="atribuida">Entregador atribuído</option>
+            <option value="aceite">Entregador aceitou</option>
+            <option value="chegou_origem">Entregador na origem</option>
+            <option value="recolhida">Em entrega</option>
+            <option value="chegou_destino">Entregador no destino</option>
             <option value="levantada">Levantada</option>
             <option value="concluida">Concluída</option>
+            <option value="recusada">Recusada</option>
+            <option value="cancelada">Cancelada</option>
           </select>
           <select
             value={pagamento}
@@ -117,9 +124,12 @@ export default function AdminEncomendas() {
           A carregar encomendas…
         </p>
       ) : erro ? (
-        <p className="painel-dashboard-form text-sm text-destructive">
-          Não foi possível carregar as encomendas.
-        </p>
+        <div className="painel-dashboard-form text-sm text-destructive">
+          <p>Não foi possível carregar as encomendas.</p>
+          <button type="button" onClick={() => void carregar()} className="mt-3 font-semibold underline">
+            Tentar novamente
+          </button>
+        </div>
       ) : encomendas.length === 0 ? (
         <p className="painel-dashboard-form border-dashed py-12 text-center text-sm text-muted-foreground">
           Não existem encomendas com estes filtros.

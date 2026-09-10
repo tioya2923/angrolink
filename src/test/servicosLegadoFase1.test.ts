@@ -8,6 +8,7 @@ const cabecalho = ler('src/componentes/Cabecalho.tsx');
 const rodape = ler('src/componentes/Rodape.tsx');
 const dashboard = ler('src/paginas/dashboard/DashboardRouter.tsx');
 const loja = ler('src/paginas/PaginaVendedor.tsx');
+const paginaInicial = ler('src/paginas/PaginaInicial.tsx');
 const heroPublico = ler('src/componentes/PerfilVendedorHero.tsx');
 const favoritos = ler('src/paginas/dashboard/cliente/Favoritos.tsx');
 const clienteHistorico = ler('src/paginas/dashboard/cliente/ClienteHistorico.tsx');
@@ -15,6 +16,7 @@ const vendedorResumo = ler('src/paginas/dashboard/vendedor/VendedorResumo.tsx');
 const vendedorDesempenho = ler('src/paginas/dashboard/vendedor/VendedorDesempenho.tsx');
 const vendedorEstatisticas = ler('src/paginas/dashboard/vendedor/VendedorEstatisticas.tsx');
 const vendedorContactos = ler('src/paginas/dashboard/vendedor/VendedorContactos.tsx');
+const vendedorPerfil = ler('src/paginas/dashboard/vendedor/VendedorPerfil.tsx');
 const migration = ler(
   'supabase/migrations/20260909010000_congelar_servicos_legados_fase1.sql',
 );
@@ -48,6 +50,14 @@ describe('Serviços legados ficam dormentes na Fase 1', () => {
     expect(heroPublico).toContain('estatisticas.produtos');
     expect(heroPublico).toContain('estatisticas.visualizacoes');
     expect(heroPublico).toContain('estatisticas.contactos');
+  });
+
+  it('não consulta nem apresenta serviços na entrada pública ou no perfil vendedor', () => {
+    expect(paginaInicial).not.toContain('useServicosQuery');
+    expect(paginaInicial).not.toContain('servicosDestaque');
+    expect(paginaInicial).not.toContain('tipo: "servico"');
+    expect(vendedorPerfil).not.toContain('isPrestadorServico');
+    expect(vendedorPerfil).not.toContain('Prestação de serviços');
   });
 
   it('mantém o histórico do cliente exclusivamente em produtos', () => {
