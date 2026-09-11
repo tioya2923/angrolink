@@ -11,8 +11,14 @@ import {
   type DetalheEntregador,
   type Documento,
   type DocumentoHistorico,
+  type EntregaParceiroAdmin,
   type Pagina,
+  type ResumoEntregasParceiroAdmin,
+  type ResumoFinanceiroParceiroAdmin,
   type Veiculo,
+  listarEntregasParceiroAdmin,
+  obterResumoEntregasParceiroAdmin,
+  obterResumoFinanceiroParceiroAdmin,
 } from "@/services/adminEntregador360";
 import {
   BlocoAdmin,
@@ -73,6 +79,9 @@ export default function AdminEntregadorDetalhe() {
     [doc, setDoc] = useState<Pagina<Documento> | null>(null),
     [areas, setAreas] = useState<Pagina<Area> | null>(null),
     [historico, setHistorico] = useState<Pagina<DocumentoHistorico> | null>(null),
+    [entregas, setEntregas] = useState<Pagina<EntregaParceiroAdmin> | null>(null),
+    [resumoEntregas, setResumoEntregas] = useState<ResumoEntregasParceiroAdmin | null>(null),
+    [financeiro, setFinanceiro] = useState<ResumoFinanceiroParceiroAdmin | null>(null),
     [tabLoad, setTabLoad] = useState(false),
     [tabErro, setTabErro] = useState<string | null>(null);
   const carregar = useCallback(async () => {
@@ -92,7 +101,7 @@ export default function AdminEntregadorDetalhe() {
     void carregar();
   }, [carregar]);
   const carregarTab = async (a: Aba, o = 0) => {
-    if (!id || !["veiculos", "documentos", "areas", "historico"].includes(a)) return;
+    if (!id || !["veiculos", "documentos", "areas", "historico", "entregas", "financeiro"].includes(a)) return;
     setTabLoad(true);
     setTabErro(null);
     try {
@@ -104,6 +113,16 @@ export default function AdminEntregadorDetalhe() {
         setAreas(await listarAreasCoberturaEntregadorAdmin(id, 20, o));
       if (a === "historico")
         setHistorico(await listarHistoricoDocumentalEntregadorAdmin(id, 20, o));
+      if (a === "entregas") {
+        const [resumo, pagina] = await Promise.all([
+          obterResumoEntregasParceiroAdmin(id),
+          listarEntregasParceiroAdmin(id, 20, o),
+        ]);
+        setResumoEntregas(resumo);
+        setEntregas(pagina);
+      }
+      if (a === "financeiro")
+        setFinanceiro(await obterResumoFinanceiroParceiroAdmin(id));
     } catch {
       setTabErro("Não foi possível carregar esta secção. Tente novamente.");
     } finally {
@@ -298,12 +317,8 @@ export default function AdminEntregadorDetalhe() {
           )}
         </Colecao>
       )}
-      {aba === "entregas" && (
-        <Indisponivel texto="Gestão de entregas será disponibilizada quando o motor logístico estiver ativo." />
-      )}
-      {aba === "financeiro" && (
-        <Indisponivel texto="Financeiro logístico ainda não disponível." />
-      )}
+      {aba === "entregas" && <Entregas resumo={resumoEntregas} pagina={entregas} loading={tabLoad} erro={tabErro} mudar={(o) => void carregarTab("entregas", o)} />}
+      {aba === "financeiro" && <FinanceiroParceiro resumo={financeiro} loading={tabLoad} erro={tabErro} />}
       {aba === "historico" && (
         <Colecao
           pagina={historico}
@@ -623,6 +638,31 @@ function AbrirDocumento({ versaoId, recurso, rotulo }: { versaoId: string; recur
   };
   return <div className="space-y-1"><button type="button" onClick={() => void abrir()} disabled={aAbrir} className="rounded border border-primary px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/5 disabled:opacity-60">{aAbrir ? "A abrir…" : rotulo}</button>{erro && <p className="text-xs text-destructive">{erro}</p>}</div>;
 }
+function Entregas({ resumo, pagina, loading, erro, mudar }: { resumo: ResumoEntregasParceiroAdmin | null; pagina: Pagina<EntregaParceiroAdmin> | null; loading: boolean; erro: string | null; mudar: (offset: number) => void }) {
+  if (loading) return <p className="painel-dashboard-form">A carregar entregas…</p>;
+  if (erro) return <p className="painel-dashboard-form text-destructive">{erro}</p>;
+  if (!resumo || !pagina) return null;
+  return <div className="space-y-5">
+    <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      {[["Total", resumo.totalEntregas], ["Ativas", resumo.ativas], ["Concluídas", resumo.concluidas], ["Recusadas", resumo.recusadas], ["Canceladas", resumo.canceladas]].map(([rotulo, valor]) => <div key={String(rotulo)} className="rounded-xl border bg-card p-4"><p className="text-xs text-muted-foreground">{rotulo}</p><p className="text-2xl font-bold text-primary">{valor}</p></div>)}
+    </section>
+    <Colecao pagina={pagina} loading={false} erro={null} vazio="Este entregador ainda não possui atribuições de entrega." mudar={mudar}>
+      {(itens) => <div className="space-y-3">{itens.map((entrega) => <article key={entrega.atribuicaoId} className="rounded-xl border bg-card p-4 text-sm"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-semibold">{entrega.codigoPublico}</p><p className="mt-1 text-xs text-muted-foreground">Atribuída em {formatarData(entrega.atribuidoEm)}</p></div><div className="flex flex-wrap gap-2"><EtiquetaEstado estado={entrega.estadoAtribuicao} /><EtiquetaEstado estado={entrega.estadoEncomenda} /></div></div><dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><CampoAdmin rotulo="Vendedor" valor={entrega.vendedorNome} /><CampoAdmin rotulo="Comprador" valor={entrega.clienteNome || "Não disponível"} /><CampoAdmin rotulo="Veículo" valor={`${veiculos[entrega.tipoVeiculo] || entrega.tipoVeiculo} · ${entrega.marca} ${entrega.modelo} · ${entrega.matricula}`} /></dl><LinhaTempoEntrega entrega={entrega} /></article>)}</div>}
+    </Colecao>
+  </div>;
+}
+function LinhaTempoEntrega({ entrega }: { entrega: EntregaParceiroAdmin }) {
+  const marcos: Array<[string, string | null]> = [["Atribuída", entrega.atribuidoEm], ["Aceite", entrega.aceiteEm], ["Chegada à origem", entrega.chegouOrigemEm], ["Recolhida", entrega.recolhidaEm], ["Chegada ao destino", entrega.chegouDestinoEm], ["Recusada", entrega.recusadoEm], ["Cancelada", entrega.canceladoEm], ["Concluída", entrega.concluidoEm]];
+  const disponiveis = marcos.filter(([, data]) => data);
+  return <dl className="mt-4 grid gap-2 border-t pt-3 text-xs text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">{disponiveis.map(([rotulo, data]) => <div key={rotulo}><dt className="font-semibold text-foreground">{rotulo}</dt><dd>{formatarData(data)}</dd></div>)}</dl>;
+}
+function FinanceiroParceiro({ resumo, loading, erro }: { resumo: ResumoFinanceiroParceiroAdmin | null; loading: boolean; erro: string | null }) {
+  if (loading) return <p className="painel-dashboard-form">A carregar resumo financeiro…</p>;
+  if (erro) return <p className="painel-dashboard-form text-destructive">{erro}</p>;
+  if (!resumo) return null;
+  return <BlocoAdmin titulo="Resumo financeiro operacional"><p className="mb-4 text-sm text-muted-foreground">Volume das encomendas não representa rendimento do entregador.</p><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><CampoAdmin rotulo="Entregas concluídas" valor={resumo.entregasConcluidas} /><CampoAdmin rotulo="Pagamentos na entrega confirmados" valor={resumo.pagamentosNaEntregaConfirmados} /><CampoAdmin rotulo="Volume das encomendas entregues" valor={formatarKz(resumo.volumeEncomendasEntreguesCentimos)} /><CampoAdmin rotulo="Valor logístico cobrado" valor={formatarKz(resumo.valorLogisticaCobradoCentimos)} /></div>{!resumo.remuneracaoConfigurada && <p className="mt-5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Remuneração logística ainda não configurada para o piloto.</p>}</BlocoAdmin>;
+}
+function formatarKz(centimos: number) { return `${(centimos / 100).toLocaleString("pt-AO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Kz`; }
 function Colecao<T>({
   pagina,
   loading,

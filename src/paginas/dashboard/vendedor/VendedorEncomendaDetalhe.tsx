@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { EncomendaDetalheConteudo } from '@/componentes/encomendas/EncomendaDetalheConteudo';
+import { MensagensOperacionaisEntrega } from '@/componentes/encomendas/MensagensOperacionaisEntrega';
 import { ResumoFinanceiroVendedorEncomenda } from '@/componentes/encomendas/ResumoFinanceiroVendedorEncomenda';
 import { useAuth } from '@/contextos/AuthContexto';
 import { useEncomendasTempoReal } from '@/hooks/useEncomendasTempoReal';
@@ -273,6 +274,8 @@ export default function VendedorEncomendaDetalhe() {
         contexto="vendedor"
         disputa={disputa}
       />
+
+      <MensagensOperacionaisEntrega encomendaId={encomenda.id} estadoEncomenda={encomenda.estado} abas={[{ id: 'comprador_vendedor', titulo: 'Comprador' }, ...(eEntrega && entrega?.atribuicao_id && (['aceite', 'chegou_origem', 'recolhida', 'chegou_destino', 'concluida'].includes(entrega.estado) || (entrega.estado === 'cancelada' && Boolean(entrega.aceite_em))) ? [{ id: 'vendedor_entregador' as const, titulo: 'Entregador', atribuicaoEntregaId: entrega.atribuicao_id, bloquearEnvio: ['concluida', 'cancelada'].includes(entrega.estado) }] : [])]} />
 
       <ResumoFinanceiroVendedorEncomenda
         resumo={resumo}

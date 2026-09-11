@@ -394,7 +394,7 @@ const toggleDestaque = async (produto: Produto) => {
                 </div>
 
                 {/* AÇÕES */}
-                <div className="flex sm:flex-col gap-2 shrink-0">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-col sm:gap-2 sm:shrink-0">
                   <button
                     onClick={() => editarProduto(produto)}
                     className="font-corpo text-xs border-2 border-border px-3 py-1.5 hover:border-green-700 hover:text-green-700 hover:bg-green-50 transition-colors"
@@ -439,7 +439,7 @@ const toggleDestaque = async (produto: Produto) => {
                   <button
                     disabled={removendoId === produto.id}
                     onClick={() => removerProduto(produto.id)}
-                    className="font-corpo text-xs border-2 border-border px-3 py-1.5 hover:border-destructive hover:text-destructive transition-colors disabled:opacity-50"
+                    className="col-span-2 font-corpo text-xs border-2 border-border px-3 py-1.5 hover:border-destructive hover:text-destructive transition-colors disabled:opacity-50 sm:col-auto"
                   >
                     <Trash2 size={12} className="inline mr-1" />
                     {removendoId === produto.id ? 'A remover...' : 'Remover'}

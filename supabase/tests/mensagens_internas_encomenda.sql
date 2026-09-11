@@ -1,0 +1,11 @@
+-- Roteiro funcional local para Mensagens internas por encomenda (Bloco 4B).
+-- Executar somente contra Supabase local, com fixtures sintéticas e JWTs reais.
+-- Cada cenário deve terminar em ROLLBACK; não usar dados remotos.
+--
+-- Cobertura prevista: comprador, vendedor, vendedor-comprador, terceiro,
+-- vendedor de outra venda, entregador e Admin; envio vazio/branco/>1000;
+-- estados terminais; leitura e não-lidas; imutabilidade; notificação única;
+-- e presença idempotente na publication supabase_realtime.
+--
+-- A baseline local com auth ainda não está disponível nesta fase, por isso este
+-- ficheiro não simula auth.uid() nem declara cenários como aprovados.

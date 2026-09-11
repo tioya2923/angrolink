@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   aceitar: vi.fn(),
   recusar: vi.fn(),
   chegada: vi.fn(),
+  mensagensOperacionais: vi.fn(),
   toast: vi.fn(),
   notificacoes: { ultimaRealtime: null as null | { contexto: string; entidade_tipo: string; entidade_id: string } },
 }));
@@ -26,6 +27,13 @@ vi.mock('@/services/tarefasEntregador', async () => {
     confirmarChegadaOrigemEntregador: mocks.chegada,
   };
 });
+
+vi.mock('@/componentes/encomendas/MensagensOperacionaisEntrega', () => ({
+  MensagensOperacionaisEntrega: (props: { encomendaId: string; estadoEncomenda: string; abas: unknown[] }) => {
+    mocks.mensagensOperacionais(props);
+    return <div data-testid="mensagens-operacionais-entrega" />;
+  },
+}));
 
 describe('ParceiroTarefaDetalhe — robustez de operações', () => {
   it('mantém o diálogo aberto e não faz refetch quando a ação falha', async () => {
@@ -263,6 +271,31 @@ async function aguardarTarefa() {
 }
 
 describe('ParceiroTarefaDetalhe — interface operacional', () => {
+  it.each([
+    ['atribuida', null, null, []],
+    ['aceite', '2026-08-25T09:05:00.000Z', null, ['vendedor_entregador']],
+    ['chegou_origem', '2026-08-25T09:05:00.000Z', null, ['vendedor_entregador']],
+    ['recolhida', '2026-08-25T09:05:00.000Z', '2026-08-25T09:15:00.000Z', ['vendedor_entregador', 'comprador_entregador']],
+    ['chegou_destino', '2026-08-25T09:05:00.000Z', '2026-08-25T09:15:00.000Z', ['vendedor_entregador', 'comprador_entregador']],
+    ['concluida', '2026-08-25T09:05:00.000Z', '2026-08-25T09:15:00.000Z', ['vendedor_entregador', 'comprador_entregador']],
+    ['cancelada', '2026-08-25T09:05:00.000Z', null, ['vendedor_entregador']],
+    ['cancelada', '2026-08-25T09:05:00.000Z', '2026-08-25T09:15:00.000Z', ['vendedor_entregador', 'comprador_entregador']],
+    ['recusada', null, null, []],
+  ] as const)('passa as abas reais de mensagens para o estado %s', async (estado, aceiteEm, recolhidaEm, canais) => {
+    renderizar(estado, (tarefa) => { tarefa.tarefa.aceite_em = aceiteEm; tarefa.tarefa.recolhida_em = recolhidaEm; });
+    await aguardarTarefa();
+    if (canais.length === 0) {
+      expect(screen.queryByTestId('mensagens-operacionais-entrega')).toBeNull();
+      return;
+    }
+    expect(screen.getByTestId('mensagens-operacionais-entrega')).toBeInTheDocument();
+    const props = mocks.mensagensOperacionais.mock.calls.at(-1)?.[0] as { encomendaId: string; abas: Array<{ id: string; atribuicaoEntregaId: string; bloquearEnvio: boolean }> };
+    expect(props.encomendaId).toBe('encomenda-teste');
+    expect(props.abas.map((aba) => aba.id)).toEqual(canais);
+    expect(props.abas.every((aba) => aba.atribuicaoEntregaId === 'atribuicao-teste')).toBe(true);
+    expect(props.abas.every((aba) => aba.bloquearEnvio === ['concluida', 'cancelada'].includes(estado))).toBe(true);
+  });
+
   it('traduz requisitos logísticos em informação humana, sem JSON cru', async () => {
     renderizar('aceite');
     await aguardarTarefa();

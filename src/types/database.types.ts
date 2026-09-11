@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       administradores: {
@@ -206,6 +231,42 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias_servico: {
+        Row: {
+          ativa: boolean
+          atualizado_em: string
+          criado_em: string
+          descricao: string | null
+          icone: string | null
+          id: string
+          nome: string
+          ordem: number
+          slug: string
+        }
+        Insert: {
+          ativa?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          slug: string
+        }
+        Update: {
+          ativa?: boolean
+          atualizado_em?: string
+          criado_em?: string
+          descricao?: string | null
+          icone?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           atualizado_em: string | null
@@ -372,6 +433,64 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "encomendas"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      configuracao_operacional_catalogo_produto: {
+        Row: {
+          atualizado_em: string
+          aviso_visual: string | null
+          categoria_id: string
+          criado_em: string
+          estado: string
+          id: string
+          provincia_id: string
+          requer_revisao_admin: boolean
+          subcategoria_id: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          aviso_visual?: string | null
+          categoria_id: string
+          criado_em?: string
+          estado: string
+          id?: string
+          provincia_id: string
+          requer_revisao_admin?: boolean
+          subcategoria_id?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          aviso_visual?: string | null
+          categoria_id?: string
+          criado_em?: string
+          estado?: string
+          id?: string
+          provincia_id?: string
+          requer_revisao_admin?: boolean
+          subcategoria_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracao_operacional_catalogo_produto_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configuracao_operacional_catalogo_produto_provincia_id_fkey"
+            columns: ["provincia_id"]
+            isOneToOne: false
+            referencedRelation: "provincias_angola"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configuracao_operacional_catalogo_subcategoria_categoria_fkey"
+            columns: ["subcategoria_id", "categoria_id"]
+            isOneToOne: false
+            referencedRelation: "subcategorias_produto"
+            referencedColumns: ["id", "categoria_id"]
           },
         ]
       }
@@ -1468,6 +1587,93 @@ export type Database = {
           },
         ]
       }
+      leituras_mensagens_encomenda: {
+        Row: {
+          atribuicao_entrega_id: string | null
+          canal: string
+          encomenda_id: string
+          id: string
+          ultima_leitura_em: string
+          utilizador_id: string
+        }
+        Insert: {
+          atribuicao_entrega_id?: string | null
+          canal: string
+          encomenda_id: string
+          id?: string
+          ultima_leitura_em: string
+          utilizador_id: string
+        }
+        Update: {
+          atribuicao_entrega_id?: string | null
+          canal?: string
+          encomenda_id?: string
+          id?: string
+          ultima_leitura_em?: string
+          utilizador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leituras_mensagens_encomenda_atribuicao_encomenda_fkey"
+            columns: ["atribuicao_entrega_id", "encomenda_id"]
+            isOneToOne: false
+            referencedRelation: "atribuicoes_entrega_encomenda"
+            referencedColumns: ["id", "encomenda_id"]
+          },
+          {
+            foreignKeyName: "leituras_mensagens_encomenda_encomenda_id_fkey"
+            columns: ["encomenda_id"]
+            isOneToOne: false
+            referencedRelation: "encomendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensagens_encomenda: {
+        Row: {
+          atribuicao_entrega_id: string | null
+          canal: string
+          corpo: string
+          criado_em: string
+          encomenda_id: string
+          id: string
+          remetente_user_id: string
+        }
+        Insert: {
+          atribuicao_entrega_id?: string | null
+          canal: string
+          corpo: string
+          criado_em?: string
+          encomenda_id: string
+          id?: string
+          remetente_user_id: string
+        }
+        Update: {
+          atribuicao_entrega_id?: string | null
+          canal?: string
+          corpo?: string
+          criado_em?: string
+          encomenda_id?: string
+          id?: string
+          remetente_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_encomenda_atribuicao_encomenda_fkey"
+            columns: ["atribuicao_entrega_id", "encomenda_id"]
+            isOneToOne: false
+            referencedRelation: "atribuicoes_entrega_encomenda"
+            referencedColumns: ["id", "encomenda_id"]
+          },
+          {
+            foreignKeyName: "mensagens_encomenda_encomenda_id_fkey"
+            columns: ["encomenda_id"]
+            isOneToOne: false
+            referencedRelation: "encomendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       movimentos_financeiros: {
         Row: {
           chave_idempotencia: string | null
@@ -1818,6 +2024,60 @@ export type Database = {
         }
         Relationships: []
       }
+      prestadores_servico: {
+        Row: {
+          atualizado_em: string
+          conta_ativa: boolean
+          criado_em: string
+          descricao: string | null
+          email: string | null
+          foto_url: string | null
+          id: string
+          municipio: string | null
+          nome_publico: string
+          provincia: string | null
+          status_aprovacao: string
+          telefone_whatsapp: string | null
+          tipo_prestador: string | null
+          user_id: string
+          verificado: boolean
+        }
+        Insert: {
+          atualizado_em?: string
+          conta_ativa?: boolean
+          criado_em?: string
+          descricao?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          municipio?: string | null
+          nome_publico: string
+          provincia?: string | null
+          status_aprovacao?: string
+          telefone_whatsapp?: string | null
+          tipo_prestador?: string | null
+          user_id: string
+          verificado?: boolean
+        }
+        Update: {
+          atualizado_em?: string
+          conta_ativa?: boolean
+          criado_em?: string
+          descricao?: string | null
+          email?: string | null
+          foto_url?: string | null
+          id?: string
+          municipio?: string | null
+          nome_publico?: string
+          provincia?: string | null
+          status_aprovacao?: string
+          telefone_whatsapp?: string | null
+          tipo_prestador?: string | null
+          user_id?: string
+          verificado?: boolean
+        }
+        Relationships: []
+      }
       produtos: {
         Row: {
           atualizado_em: string | null
@@ -1845,6 +2105,7 @@ export type Database = {
           requer_paletes: boolean | null
           requer_refrigeracao: boolean | null
           subcategoria: string | null
+          subcategoria_id: string | null
           tipo_destaque: string | null
           tipo_venda: string | null
           unidade: string | null
@@ -1878,6 +2139,7 @@ export type Database = {
           requer_paletes?: boolean | null
           requer_refrigeracao?: boolean | null
           subcategoria?: string | null
+          subcategoria_id?: string | null
           tipo_destaque?: string | null
           tipo_venda?: string | null
           unidade?: string | null
@@ -1911,6 +2173,7 @@ export type Database = {
           requer_paletes?: boolean | null
           requer_refrigeracao?: boolean | null
           subcategoria?: string | null
+          subcategoria_id?: string | null
           tipo_destaque?: string | null
           tipo_venda?: string | null
           unidade?: string | null
@@ -1924,6 +2187,13 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produtos_subcategoria_id_fkey"
+            columns: ["subcategoria_id"]
+            isOneToOne: false
+            referencedRelation: "subcategorias_produto"
             referencedColumns: ["id"]
           },
           {
@@ -2220,6 +2490,7 @@ export type Database = {
       servicos: {
         Row: {
           atualizado_em: string | null
+          categoria_id: string | null
           cliques_whatsapp: number | null
           criado_em: string | null
           descricao: string | null
@@ -2233,6 +2504,7 @@ export type Database = {
           nome_prestador: string | null
           nome_servico: string
           preco_estimado: number | null
+          prestador_id: string | null
           provincia: string | null
           publicado: boolean | null
           telefone_whatsapp: string | null
@@ -2244,6 +2516,7 @@ export type Database = {
         }
         Insert: {
           atualizado_em?: string | null
+          categoria_id?: string | null
           cliques_whatsapp?: number | null
           criado_em?: string | null
           descricao?: string | null
@@ -2257,6 +2530,7 @@ export type Database = {
           nome_prestador?: string | null
           nome_servico: string
           preco_estimado?: number | null
+          prestador_id?: string | null
           provincia?: string | null
           publicado?: boolean | null
           telefone_whatsapp?: string | null
@@ -2268,6 +2542,7 @@ export type Database = {
         }
         Update: {
           atualizado_em?: string | null
+          categoria_id?: string | null
           cliques_whatsapp?: number | null
           criado_em?: string | null
           descricao?: string | null
@@ -2281,6 +2556,7 @@ export type Database = {
           nome_prestador?: string | null
           nome_servico?: string
           preco_estimado?: number | null
+          prestador_id?: string | null
           provincia?: string | null
           publicado?: boolean | null
           telefone_whatsapp?: string | null
@@ -2292,10 +2568,59 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "servicos_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_servico"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "servicos_prestador_id_fkey"
+            columns: ["prestador_id"]
+            isOneToOne: false
+            referencedRelation: "prestadores_servico"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "servicos_vendedor_id_fkey"
             columns: ["vendedor_id"]
             isOneToOne: false
             referencedRelation: "vendedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subcategorias_produto: {
+        Row: {
+          categoria_id: string
+          criado_em: string
+          id: string
+          nome: string
+          ordem_exibicao: number
+          slug: string
+        }
+        Insert: {
+          categoria_id: string
+          criado_em?: string
+          id?: string
+          nome: string
+          ordem_exibicao: number
+          slug: string
+        }
+        Update: {
+          categoria_id?: string
+          criado_em?: string
+          id?: string
+          nome?: string
+          ordem_exibicao?: number
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategorias_produto_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
             referencedColumns: ["id"]
           },
         ]
@@ -2951,6 +3276,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      atualizar_estado_prestador_servico_admin: {
+        Args: { p_estado: string; p_prestador_id: string }
+        Returns: undefined
+      }
       atualizar_estado_vendedor_admin: {
         Args: {
           p_estado: string
@@ -2961,6 +3290,10 @@ export type Database = {
       }
       atualizar_plano_vendedor_admin: {
         Args: { p_plano: string; p_vendedor_id: string }
+        Returns: undefined
+      }
+      atualizar_verificacao_prestador_servico_admin: {
+        Args: { p_prestador_id: string; p_verificado: boolean }
         Returns: undefined
       }
       atualizar_verificacao_vendedor_admin: {
@@ -3405,6 +3738,14 @@ export type Database = {
         Args: { servico_uuid: string }
         Returns: undefined
       }
+      destino_entrega_eh_operacional_fase1: {
+        Args: { p_municipio: string; p_provincia: string }
+        Returns: boolean
+      }
+      documentos_obrigatorios_vendedor_fase1: {
+        Args: { p_tipo_vendedor: string }
+        Returns: string[]
+      }
       eh_admin: { Args: never; Returns: boolean }
       eliminar_vendedor_admin: {
         Args: { p_vendedor_id: string }
@@ -3417,6 +3758,15 @@ export type Database = {
       entregador_pode_receber_entregas: {
         Args: { p_parceiro_id: string }
         Returns: boolean
+      }
+      enviar_mensagem_encomenda: {
+        Args: {
+          p_atribuicao_entrega_id?: string
+          p_canal?: string
+          p_corpo: string
+          p_encomenda_id: string
+        }
+        Returns: string
       }
       expirar_destaques_antigos: { Args: never; Returns: undefined }
       garantir_perfil_comprador: {
@@ -3472,6 +3822,10 @@ export type Database = {
         Args: { servico_id_param: string }
         Returns: undefined
       }
+      interacao_comercial_produto_permitida: {
+        Args: { p_produto_id: string }
+        Returns: boolean
+      }
       is_admin: { Args: never; Returns: boolean }
       is_admin_atual: { Args: never; Returns: boolean }
       is_dono_vendedor: { Args: { vendedor_uuid: string }; Returns: boolean }
@@ -3519,6 +3873,16 @@ export type Database = {
       listar_areas_cobertura_entregador_admin: {
         Args: { p_limite?: number; p_offset?: number; p_parceiro_id: string }
         Returns: Json
+      }
+      listar_categorias_produto_operacionais: {
+        Args: { p_provincia_id: string }
+        Returns: {
+          aviso_visual: string
+          categoria_id: string
+          estado: string
+          nome: string
+          requer_revisao_admin: boolean
+        }[]
       }
       listar_compatibilidade_logistica_encomenda_admin: {
         Args: { p_encomenda_id: string }
@@ -3639,6 +4003,10 @@ export type Database = {
         Args: { p_limite?: number; p_offset?: number; p_vendedor_id: string }
         Returns: Json
       }
+      listar_entregas_parceiro_admin: {
+        Args: { p_limite?: number; p_offset?: number; p_parceiro_id: string }
+        Returns: Json
+      }
       listar_financeiro_admin: {
         Args: never
         Returns: {
@@ -3670,6 +4038,23 @@ export type Database = {
       listar_historico_documental_vendedor_admin: {
         Args: { p_limite?: number; p_offset?: number; p_vendedor_id: string }
         Returns: Json
+      }
+      listar_mensagens_encomenda: {
+        Args: {
+          p_antes_de?: string
+          p_antes_id?: string
+          p_atribuicao_entrega_id?: string
+          p_canal?: string
+          p_encomenda_id: string
+          p_limite?: number
+        }
+        Returns: {
+          corpo: string
+          criado_em: string
+          encomenda_id: string
+          mensagem_id: string
+          remetente_user_id: string
+        }[]
       }
       listar_municipios_angola: {
         Args: { p_provincia_id: string }
@@ -3718,6 +4103,58 @@ export type Database = {
           total_cliente_centimos: number
         }[]
       }
+      listar_prestadores_servico_admin: {
+        Args: never
+        Returns: {
+          atualizado_em: string
+          conta_ativa: boolean
+          criado_em: string
+          descricao: string
+          email: string
+          foto_url: string
+          id: string
+          municipio: string
+          nome_publico: string
+          provincia: string
+          status_aprovacao: string
+          telefone_whatsapp: string
+          tipo_prestador: string
+          user_id: string
+          verificado: boolean
+        }[]
+      }
+      listar_prestadores_servicos_publicos: {
+        Args: { p_prestador_ids?: string[] }
+        Returns: {
+          criado_em: string
+          descricao: string
+          foto_url: string
+          id: string
+          municipio: string
+          nome_publico: string
+          provincia: string
+          telefone_whatsapp: string
+          tipo_prestador: string
+          verificado: boolean
+        }[]
+      }
+      listar_produtos_publicos_fase1: {
+        Args: {
+          p_categoria_id?: string
+          p_categoria_ids?: string[]
+          p_excluir_produto_id?: string
+          p_limite?: number
+          p_localizacao_ou?: boolean
+          p_municipio?: string
+          p_ordenar_por_destaque?: boolean
+          p_pesquisa?: string
+          p_produto_id?: string
+          p_produto_ids?: string[]
+          p_provincia?: string
+          p_vendedor_id?: string
+        }
+        Returns: Json[]
+      }
       listar_produtos_vendedor_admin: {
         Args: { p_limite?: number; p_offset?: number; p_vendedor_id: string }
         Returns: Json
@@ -3749,6 +4186,19 @@ export type Database = {
       listar_servicos_vendedor_admin: {
         Args: { p_limite?: number; p_offset?: number; p_vendedor_id: string }
         Returns: Json
+      }
+      listar_subcategorias_produto_operacionais: {
+        Args: { p_categoria_id: string; p_provincia_id: string }
+        Returns: {
+          aviso_visual: string
+          categoria_id: string
+          estado: string
+          nome: string
+          ordem_exibicao: number
+          requer_revisao_admin: boolean
+          slug: string
+          subcategoria_id: string
+        }[]
       }
       listar_tarefas_entregador: {
         Args: never
@@ -3861,6 +4311,14 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      marcar_mensagens_encomenda_como_lidas: {
+        Args: {
+          p_atribuicao_entrega_id?: string
+          p_canal?: string
+          p_encomenda_id: string
+        }
+        Returns: undefined
+      }
       marcar_notificacao_como_lida: {
         Args: { p_notificacao_id: string }
         Returns: undefined
@@ -3922,9 +4380,45 @@ export type Database = {
         Returns: Json
       }
       obter_entregador_admin: { Args: { p_parceiro_id: string }; Returns: Json }
+      obter_estado_levantamento_participante: {
+        Args: { p_encomenda_id: string }
+        Returns: Json
+      }
+      obter_estado_operacional_catalogo_produto: {
+        Args: {
+          p_categoria_id: string
+          p_provincia_id: string
+          p_subcategoria_id?: string
+        }
+        Returns: {
+          aviso_visual: string
+          estado: string
+          requer_revisao_admin: boolean
+        }[]
+      }
       obter_incidente_operacional_entrega_admin: {
         Args: { p_encomenda_id: string }
         Returns: Json
+      }
+      obter_meu_prestador_servico: {
+        Args: never
+        Returns: {
+          atualizado_em: string
+          conta_ativa: boolean
+          criado_em: string
+          descricao: string
+          email: string
+          foto_url: string
+          id: string
+          municipio: string
+          nome_publico: string
+          provincia: string
+          status_aprovacao: string
+          telefone_whatsapp: string
+          tipo_prestador: string
+          user_id: string
+          verificado: boolean
+        }[]
       }
       obter_meu_vendedor: {
         Args: never
@@ -3988,6 +4482,10 @@ export type Database = {
           total_cliente_centimos: number
         }[]
       }
+      obter_resumo_entregas_parceiro_admin: {
+        Args: { p_parceiro_id: string }
+        Returns: Json
+      }
       obter_resumo_financeiro_encomenda_vendedor: {
         Args: { p_encomenda_id: string }
         Returns: {
@@ -4004,11 +4502,32 @@ export type Database = {
           valor_vendedor_centimos: number
         }[]
       }
+      obter_resumo_financeiro_parceiro_admin: {
+        Args: { p_parceiro_id: string }
+        Returns: Json
+      }
+      obter_resumo_mensagens_encomenda: {
+        Args: {
+          p_atribuicao_entrega_id?: string
+          p_canal?: string
+          p_encomenda_id: string
+        }
+        Returns: Json
+      }
       obter_tarefa_entregador: {
         Args: { p_atribuicao_id: string }
         Returns: Json
       }
       obter_vendedor_admin: { Args: { p_vendedor_id: string }; Returns: Json }
+      produto_eh_operacional_fase1: {
+        Args: {
+          p_categoria_id: string
+          p_provincia_texto: string
+          p_subcategoria_id: string
+          p_vendedor_id: string
+        }
+        Returns: boolean
+      }
       recusar_atribuicao_entrega: {
         Args: { p_atribuicao_id: string; p_motivo: string }
         Returns: {
@@ -4087,6 +4606,41 @@ export type Database = {
       }
       registar_pagamento_na_entrega_entregador: {
         Args: { p_atribuicao_id: string }
+        Returns: {
+          atualizado_em: string
+          cancelado_em: string | null
+          chave_idempotencia_criacao: string
+          cliente_id: string
+          comissao_angrolink_centimos: number
+          comissao_bps_snapshot: number
+          confirmado_em: string | null
+          criado_em: string
+          desconto_centimos: number
+          encomenda_id: string
+          entrega_centimos: number
+          estado: string
+          expirado_em: string | null
+          falhado_em: string | null
+          id: string
+          moeda: string
+          referencia_interna: string
+          subtotal_centimos: number
+          taxa_processador_centimos: number
+          total_cliente_centimos: number
+          valor_logistica_centimos: number
+          valor_total_centimos: number
+          valor_vendedor_centimos: number
+          vendedor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pagamentos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      registar_pagamento_no_levantamento_vendedor: {
+        Args: { p_encomenda_id: string }
         Returns: {
           atualizado_em: string
           cancelado_em: string | null
@@ -4343,6 +4897,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      utilizador_participa_encomenda_mensagens: {
+        Args: {
+          p_atribuicao_entrega_id: string
+          p_canal: string
+          p_encomenda_id: string
+          p_para_envio?: boolean
+          p_utilizador_id: string
+        }
+        Returns: boolean
+      }
       validar_codigo_entrega_entregador: {
         Args: { p_atribuicao_id: string; p_codigo: string }
         Returns: {
@@ -4367,6 +4931,10 @@ export type Database = {
         Args: { p_itens: Json }
         Returns: undefined
       }
+      validar_itens_checkout_operacionais_fase1: {
+        Args: { p_itens: Json }
+        Returns: undefined
+      }
       veiculo_compativel_com_encomenda: {
         Args: { p_encomenda_id: string; p_veiculo_id: string }
         Returns: boolean
@@ -4382,6 +4950,10 @@ export type Database = {
       vendedor_eh_dono: { Args: { vendedor_uuid: string }; Returns: boolean }
       vendedor_eh_dono_aprovado: {
         Args: { vendedor_uuid: string }
+        Returns: boolean
+      }
+      vendedor_pertence_ao_utilizador_autenticado: {
+        Args: { p_vendedor_id: string }
         Returns: boolean
       }
       vendedor_pode_receber_encomendas: {
@@ -4413,12 +4985,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4442,11 +5014,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4467,11 +5039,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4492,11 +5064,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4509,11 +5081,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4523,6 +5095,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },
