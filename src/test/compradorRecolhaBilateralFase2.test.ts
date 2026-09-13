@@ -35,7 +35,7 @@ describe('recolha bilateral — apresentação do comprador na fase 2', () => {
       'Entregador confirmado',
       'Entregador chegou para recolher a encomenda',
       'O entregador encontra-se no vendedor e aguarda a entrega da encomenda.',
-      'Encomenda recolhida pelo entregador',
+      'Encomenda em transporte',
       'A tua encomenda está agora com o entregador.',
     ]) expect(detalhePartilhado).toContain(texto);
   });
@@ -44,7 +44,7 @@ describe('recolha bilateral — apresentação do comprador na fase 2', () => {
     for (const campo of ['nome_entregador', 'tipo_veiculo', 'marca', 'modelo', 'matricula', 'atribuido_em', 'aceite_em', 'chegou_origem_em', 'recolhida_em']) {
       expect(detalhePartilhado).toContain(campo);
     }
-    expect(progressoComprador).toContain("['aceite', 'chegou_origem', 'recolhida', 'concluida']");
+    expect(progressoComprador).toContain("['aceite', 'chegou_origem', 'recolhida', 'chegou_destino', 'concluida']");
     expect(progressoComprador).not.toMatch(/documentos?|telefone|frente_path|verso_path|access_token|signed/i);
     expect(progressoComprador).not.toContain('Em trânsito');
     expect(progressoComprador).not.toContain('A caminho');

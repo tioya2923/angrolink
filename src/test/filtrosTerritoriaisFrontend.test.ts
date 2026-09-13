@@ -64,7 +64,7 @@ describe('filtros territoriais server-side', () => {
     expect(paginaPesquisa).toContain('municipio: municipioNome || undefined');
     expect(paginaPesquisa).not.toContain('provincia: provinciaId');
     expect(paginaPesquisa).not.toContain('municipio: municipioId');
-    expect(api).toContain('if (params?.provincia)');
+    expect(api).toContain('listarProdutosPublicosFase1({');
     expect(api).toContain('params.provincia');
   });
 

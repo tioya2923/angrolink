@@ -28,7 +28,7 @@ describe('baseline pós-hardening', () => {
       'listar_contactos_servicos_vendedor',
       'verificar_disponibilidade_cadastro',
     ]) {
-      expect(publicSchema).toContain(`\"public\".\"${rpc}\"`);
+      expect(publicSchema).toContain(`"public"."${rpc}"`);
     }
 
     expect(publicSchema).toContain('ALTER DEFAULT PRIVILEGES FOR ROLE "postgres"');

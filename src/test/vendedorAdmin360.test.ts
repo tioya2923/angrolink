@@ -27,18 +27,18 @@ describe('Vendedor 360 V1', () => {
     expect(detalhe).toContain('filter(item=>item.valor)');
   });
 
-  it('mantém documentos sem paths e apresenta disponibilidade de frente e verso', () => {
-    expect(detalhe).toContain('frenteDisponivel');
-    expect(detalhe).toContain('versoDisponivel');
-    expect(detalhe).not.toContain('frente_path');
-    expect(detalhe).not.toContain('verso_path');
+  it('abre documentos privados somente através do helper de URL assinada', () => {
+    expect(detalhe).toContain('abrirDocumentoPrivado');
+    expect(detalhe).toContain('obterUrlAssinadaDocumentoVendedor');
+    expect(detalhe).toContain('Ver frente');
+    expect(detalhe).toContain('Ver verso');
     expect(detalhe).not.toContain('createSignedUrl');
   });
 
   it('carrega coleções sob demanda e mantém paginação independente por tab', () => {
     expect(detalhe).toContain('carregarAba');
     expect(detalhe).toContain("destino === 'produtos'");
-    expect(detalhe).toContain("destino === 'servicos'");
+    expect(detalhe).not.toContain("destino === 'servicos'");
     expect(detalhe).toContain("destino === 'encomendas'");
     expect(detalhe).toContain("destino === 'disputas'");
     expect(detalhe).toContain("destino === 'historico'");

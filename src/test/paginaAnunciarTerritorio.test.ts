@@ -51,9 +51,7 @@ describe("taxonomia territorial em PaginaAnunciar", () => {
     expect(pagina).toContain(
       "item.id === municipioId && item.provinciaId === provinciaId",
     );
-    expect(pagina).toContain(
-      "provincia: provincia.nome, municipio: municipio.nome",
-    );
+    expect(pagina).toMatch(/provincia:\s*provincia\.nome,\s*municipio:\s*municipio\.nome/);
     expect(pagina).toContain("provincia: provinciaAtividadeNome");
     expect(pagina).toContain("municipio: municipioAtividadeNome");
   });

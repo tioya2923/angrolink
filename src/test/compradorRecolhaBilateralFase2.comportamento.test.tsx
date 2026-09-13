@@ -62,7 +62,7 @@ describe('recolha bilateral — acompanhamento visível ao comprador', () => {
     ['atribuida', 'Entregador atribuído'],
     ['aceite', 'Entregador confirmado'],
     ['chegou_origem', 'Entregador chegou para recolher a encomenda'],
-    ['recolhida', 'Encomenda recolhida pelo entregador'],
+    ['recolhida', 'Encomenda em transporte'],
     ['recusada', 'A procurar outro entregador'],
     ['cancelada', 'Estamos a reorganizar a entrega'],
   ] as const)('apresenta o estado %s de forma segura', (estado, titulo) => {
@@ -105,7 +105,7 @@ describe('recolha bilateral — acompanhamento visível ao comprador', () => {
 
   it.each([
     ['chegou_origem', 'Entregador chegou para recolher a encomenda.'],
-    ['recolhida', 'Recolha confirmada. A encomenda está agora com o entregador.'],
+    ['recolhida', 'Em transporte. A encomenda está agora com o entregador.'],
     ['cancelada', 'A entrega foi cancelada.'],
     ['concluida', 'Encomenda concluída.'],
   ] as const)('mostra o estado correto ao vendedor em %s', (estado, mensagem) => {

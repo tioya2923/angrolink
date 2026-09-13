@@ -14,7 +14,7 @@ describe("Admin Encomenda 360 — ciclo bilateral", () => {
     }
     expect(pagina).toContain('atribuicaoAtual.estado === "cancelada"');
     expect(pagina).toContain('atribuicaoAtual.estado === "concluida"');
-    expect(pagina).toContain('["nao_atribuido", "recusada"].includes(atribuicaoAtual.estado)');
+    expect(pagina).toContain('["nao_atribuido", "recusada", "cancelada"].includes(atribuicaoAtual.estado)');
   });
 
   it("mantém Realtime administrativo no serviço e filtra pelo id da encomenda", () => {

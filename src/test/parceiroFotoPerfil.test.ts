@@ -19,7 +19,7 @@ describe("fotografia e nome verificado do parceiro", () => {
   it("guarda a nova fotografia na pasta do utilizador autenticado, não no id do parceiro", () => {
     expect(api).toContain("export async function uploadFotoPerfilParceiro(ficheiro: File)");
     expect(api).toContain("await supabase.auth.getUser()");
-    expect(api).toContain("`${user.id}/perfil-${crypto.randomUUID()}.${extensao}`");
+    expect(api).toContain("`${user.id}/perfil-${gerarUuidV4()}.${extensao}`");
     expect(api).not.toContain("uploadFotoPerfilParceiro(parceiroId: string");
     expect(resumo).toContain("await uploadFotoPerfilParceiro(fotoPerfilFile)");
   });

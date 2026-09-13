@@ -24,7 +24,7 @@ describe("fluxo até aceite do entregador", () => {
   });
 
   it("expõe reatribuição somente depois de uma recusa e sem substituir atribuições ativas", () => {
-    expect(admin).toContain('["nao_atribuido", "recusada"].includes(atribuicaoAtual.estado)');
+    expect(admin).toContain('["nao_atribuido", "recusada", "cancelada"].includes(atribuicaoAtual.estado)');
     expect(admin).toContain("Entregador recusou esta tarefa.");
     expect(admin).toContain("Escolher outro entregador");
   });

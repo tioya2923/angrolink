@@ -36,9 +36,9 @@ type RpcCatalogoPublico = {
   ): Promise<ResultadoRpc>;
 };
 
-// A migration local pendente ainda nÃ£o estÃ¡ em database.types.ts. Este Ã© o
-// Ãºnico adapter temporÃ¡rio para o contrato pÃºblico de catÃ¡logo; ele deixa a
-// assinatura explÃ­cita sem alargar o acesso directo Ã  tabela produtos.
+// A migration local pendente ainda não está em database.types.ts. Este é o
+// único adapter temporário para o contrato público de catálogo; ele deixa a
+// assinatura explicita sem alargar o acesso directo a tabela produtos.
 const rpcCatalogoPublico = supabase.rpc.bind(supabase) as unknown as RpcCatalogoPublico;
 
 function linhas(data: unknown): Record<string, unknown>[] {
@@ -65,6 +65,6 @@ export async function listarProdutosPublicosFase1(
     p_limite: filtros.limite ?? 100,
   });
 
-  if (error) throw new Error('NÃ£o foi possÃ­vel carregar os produtos pÃºblicos.');
+  if (error) throw new Error('Não foi possível carregar os produtos públicos.');
   return linhas(data);
 }

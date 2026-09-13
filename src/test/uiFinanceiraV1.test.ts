@@ -6,6 +6,7 @@ const servico = readFileSync(resolve(process.cwd(), 'src/services/pagamentos.ts'
 const cliente = readFileSync(resolve(process.cwd(), 'src/componentes/encomendas/PagamentoClienteEncomenda.tsx'), 'utf8');
 const vendedor = readFileSync(resolve(process.cwd(), 'src/componentes/encomendas/ResumoFinanceiroVendedorEncomenda.tsx'), 'utf8');
 const checkout = readFileSync(resolve(process.cwd(), 'src/paginas/PaginaCheckoutPendente.tsx'), 'utf8');
+const detalheEncomenda = readFileSync(resolve(process.cwd(), 'src/componentes/encomendas/EncomendaDetalheConteudo.tsx'), 'utf8');
 
 describe('UI financeira V1', () => {
   it('usa exclusivamente as projeções RPC por encomenda, sem select direto financeiro', () => {
@@ -37,7 +38,9 @@ describe('UI financeira V1', () => {
     expect(checkout).not.toContain('criarObrigacaoPagamentoNoLevantamento');
     expect(checkout).toContain('Pagar no levantamento');
     expect(checkout).toContain('Pagar na entrega');
-    expect(checkout).toContain('Custo da entrega ainda será confirmado.');
+    expect(checkout).toContain('Nesta fase, a plataforma não cobra automaticamente o custo da entrega. A disponibilidade e eventual custo dependem da zona operacional.');
+    expect(detalheEncomenda).toContain('A disponibilidade e eventual custo dependem da zona operacional.');
+    expect(detalheEncomenda).not.toContain('Gratuito durante o piloto');
     expect(checkout).not.toContain('Pagamento online — em breve');
   });
 });

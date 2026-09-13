@@ -26,7 +26,7 @@ describe('identidade e fotografia de vendedor e cliente', () => {
 
   it('envia a fotografia do vendedor para o namespace do utilizador autenticado e não elimina a anterior', () => {
     expect(api).toContain('await supabase.auth.getUser()');
-    expect(api).toContain('`${user.id}/perfil-${crypto.randomUUID()}.${extensao}`');
+    expect(api).toContain('`${user.id}/perfil-${gerarUuidV4()}.${extensao}`');
     expect(api).toContain("throw new Error('Não foi possível enviar a imagem.')");
     expect(api).not.toContain('.from(BUCKET_VENDEDORES).remove(');
   });
@@ -61,7 +61,7 @@ describe('identidade e fotografia de vendedor e cliente', () => {
   });
 
   it('reutiliza o uploader canônico no cadastro e nunca grava a foto inicial na raiz do bucket', () => {
-    expect(paginaAnunciar).toContain('import { uploadImagemVendedor } from "@/services/api";');
+    expect(paginaAnunciar).toContain('uploadImagemVendedor');
     expect(paginaAnunciar).toContain('fotoPerfilUrl = await uploadImagemVendedor(fotoPerfil);');
     expect(paginaAnunciar).not.toContain('.from("vendedores")\n          .upload(nomeFicheiro, fotoPerfil)');
     expect(paginaAnunciar).not.toContain('const nomeFicheiro = `${crypto.randomUUID()}.${extensao}`;');

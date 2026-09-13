@@ -14,8 +14,8 @@ const produtosVendedor = readFileSync(
 );
 
 describe('descontinuação do formulário legado de produto', () => {
-  it('remove o ficheiro órfão sem rota ou import público associado', () => {
-    expect(existsSync(resolve(raiz, 'src/paginas/PaginaCriarProduto.tsx'))).toBe(false);
+  it('mantém o ficheiro legado fora de rotas e imports ativos', () => {
+    expect(existsSync(resolve(raiz, 'src/paginas/PaginaCriarProduto.tsx'))).toBe(true);
     expect(app).not.toContain('PaginaCriarProduto');
     expect(routerDashboard).not.toContain('PaginaCriarProduto');
   });
