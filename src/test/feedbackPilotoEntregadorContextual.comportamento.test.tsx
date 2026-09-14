@@ -15,6 +15,9 @@ vi.mock('@/componentes/encomendas/MensagensOperacionaisEntrega', () => ({ Mensag
 vi.mock('@/componentes/FeedbackPilotoDialog', () => ({
   FeedbackPilotoDialog: ({ aberto, contexto, encomendaId, atribuicaoEntregaId }: { aberto: boolean; contexto: string; encomendaId?: string; atribuicaoEntregaId?: string | null }) => aberto ? <div data-testid="feedback-dialog" data-contexto={contexto} data-encomenda={encomendaId ?? ''} data-atribuicao={atribuicaoEntregaId ?? ''} /> : null,
 }));
+vi.mock('@/componentes/FeedbackPilotoConvite', () => ({
+  FeedbackPilotoConvite: ({ contexto, encomendaId, atribuicaoEntregaId, concluida }: { contexto: string; encomendaId?: string; atribuicaoEntregaId?: string | null; concluida: boolean }) => concluida ? <div data-testid="feedback-convite" data-contexto={contexto} data-encomenda={encomendaId ?? ''} data-atribuicao={atribuicaoEntregaId ?? ''} /> : null,
+}));
 afterEach(() => { cleanup(); vi.resetAllMocks(); mocks.notificacoes.ultimaRealtime = null; });
 function tarefa(estado: TarefaEntregaDetalhe['tarefa']['estado']): TarefaEntregaDetalhe {
   return { tarefa: { id: 'atribuicao-entregador', estado, atribuido_em: '2026-09-14T10:00:00.000Z', aceite_em: '2026-09-14T10:01:00.000Z', chegou_origem_em: '2026-09-14T10:02:00.000Z', recolhida_em: '2026-09-14T10:03:00.000Z', recusado_em: null, motivo_recusa: null }, encomenda: { id: 'encomenda-entregador', codigo_publico: 'ENC-FEEDBACK', estado: 'concluida', modalidade: 'entrega' }, veiculo: { tipo: 'Mota', matricula: 'LD-00-00-AA' }, origem: { nome_vendedor: 'Vendedor', telefone: '900', endereco: 'Rua A', referencia: null, bairro: null, municipio: 'Huambo', provincia: 'Huambo' }, destino: { nome: 'Cliente', telefone: '901', endereco: 'Rua B', referencia: null, bairro: null, municipio: 'Huambo', provincia: 'Huambo' }, itens: [], requisitos_logisticos: {} } as unknown as TarefaEntregaDetalhe;
@@ -24,6 +27,14 @@ function renderizar(estado: TarefaEntregaDetalhe['tarefa']['estado']) {
   return render(<MemoryRouter initialEntries={['/dashboard/tarefas/atribuicao-entregador']}><Routes><Route path="/dashboard/tarefas/:id" element={<ParceiroTarefaDetalhe />} /></Routes></MemoryRouter>);
 }
 describe('feedback contextual do entregador', () => {
+  it('prepara convite automático para a tarefa concluída e atribuição concreta', async () => {
+    renderizar('concluida');
+    const convite = await screen.findByTestId('feedback-convite');
+    expect(convite).toHaveAttribute('data-contexto', 'parceiro_entrega');
+    expect(convite).toHaveAttribute('data-encomenda', 'encomenda-entregador');
+    expect(convite).toHaveAttribute('data-atribuicao', 'atribuicao-entregador');
+  });
+
   it('abre feedback apenas para tarefa concluída com a atribuição concreta', async () => {
     renderizar('concluida');
     fireEvent.click(await screen.findByRole('button', { name: 'Dar feedback sobre esta entrega' }));

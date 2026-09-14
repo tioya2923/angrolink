@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { MensagensOperacionaisEntrega } from '@/componentes/encomendas/MensagensOperacionaisEntrega';
 import { FeedbackPilotoDialog } from '@/componentes/FeedbackPilotoDialog';
+import { FeedbackPilotoConvite } from '@/componentes/FeedbackPilotoConvite';
 import { useNotificacoesSessao } from '@/contextos/NotificacoesContexto';
 import { useToast } from '@/hooks/use-toast';
 import { aceitarTarefaEntrega, confirmarChegadaDestinoEntregador, confirmarChegadaOrigemEntregador, mensagemApresentavelTarefa, obterTarefaEntregador, recusarTarefaEntrega, registarPagamentoNaEntregaEntregador, validarCodigoEntregaEntregador, type EstadoTarefaEntrega, type OperacaoTarefaEntrega, type TarefaEntregaDetalhe } from '@/services/tarefasEntregador';
@@ -126,6 +127,7 @@ export default function ParceiroTarefaDetalhe() {
     <Button type="button" variant="outline" className="w-full" onClick={() => setFeedbackAberto(true)}>Dar feedback sobre esta entrega</Button>
   </div>
 )}</CardContent></Card></aside></div>{abasMensagens.length > 0 && <MensagensOperacionaisEntrega encomendaId={tarefa.encomenda.id} estadoEncomenda={tarefa.encomenda.estado} abas={abasMensagens} />}
+    <FeedbackPilotoConvite contexto="parceiro_entrega" encomendaId={tarefa.encomenda.id} atribuicaoEntregaId={tarefa.tarefa.id} concluida={estado === 'concluida'} bloqueado={dialogo !== null || processando || feedbackAberto} aoDarFeedback={() => setFeedbackAberto(true)} />
     <FeedbackPilotoDialog
   aberto={feedbackAberto}
   aoFechar={() => setFeedbackAberto(false)}

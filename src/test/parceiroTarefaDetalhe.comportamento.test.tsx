@@ -35,6 +35,10 @@ vi.mock('@/componentes/encomendas/MensagensOperacionaisEntrega', () => ({
   },
 }));
 
+vi.mock('@/componentes/FeedbackPilotoConvite', () => ({
+  FeedbackPilotoConvite: () => null,
+}));
+
 describe('ParceiroTarefaDetalhe — robustez de operações', () => {
   it('mantém o diálogo aberto e não faz refetch quando a ação falha', async () => {
     mocks.chegada.mockRejectedValue(new Error('Não foi possível confirmar a chegada. Tenta novamente.'));

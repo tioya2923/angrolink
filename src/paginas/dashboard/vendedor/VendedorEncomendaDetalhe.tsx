@@ -13,6 +13,7 @@ import { EncomendaDetalheConteudo } from '@/componentes/encomendas/EncomendaDeta
 import { MensagensOperacionaisEntrega } from '@/componentes/encomendas/MensagensOperacionaisEntrega';
 import { ResumoFinanceiroVendedorEncomenda } from '@/componentes/encomendas/ResumoFinanceiroVendedorEncomenda';
 import { FeedbackPilotoDialog } from '@/componentes/FeedbackPilotoDialog';
+import { FeedbackPilotoConvite } from '@/componentes/FeedbackPilotoConvite';
 import { useAuth } from '@/contextos/AuthContexto';
 import { useEncomendasTempoReal } from '@/hooks/useEncomendasTempoReal';
 import { useToast } from '@/hooks/use-toast';
@@ -285,6 +286,7 @@ export default function VendedorEncomendaDetalhe() {
         erro={resumoErro}
       />
       {encomenda.estado === 'concluida' && <section className="rounded-2xl border-2 border-green-200 bg-green-50 p-5"><h2 className="font-titulo text-lg font-bold text-green-950">Encomenda concluída</h2><p className="mt-2 text-sm text-green-900">Ajuda-nos a melhorar a experiência de venda.</p><button type="button" onClick={() => setFeedbackAberto(true)} className="mt-4 rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-900">Dar feedback</button></section>}
+      <FeedbackPilotoConvite contexto="vendedor" encomendaId={encomenda.id} atribuicaoEntregaId={eEntrega ? entrega?.atribuicao_id : null} concluida={encomenda.estado === 'concluida'} bloqueado={recusar || confirmarRecolha || feedbackAberto} aoDarFeedback={() => setFeedbackAberto(true)} />
       <FeedbackPilotoDialog aberto={feedbackAberto} aoFechar={() => setFeedbackAberto(false)} contexto="vendedor" encomendaId={encomenda.id} atribuicaoEntregaId={eEntrega ? entrega?.atribuicao_id : null} />
 
       {eEntrega && (

@@ -20,6 +20,9 @@ vi.mock('@/componentes/encomendas/ResumoFinanceiroVendedorEncomenda', () => ({ R
 vi.mock('@/componentes/FeedbackPilotoDialog', () => ({
   FeedbackPilotoDialog: ({ aberto, contexto, encomendaId, atribuicaoEntregaId }: { aberto: boolean; contexto: string; encomendaId?: string; atribuicaoEntregaId?: string | null }) => aberto ? <div data-testid="feedback-dialog" data-contexto={contexto} data-encomenda={encomendaId ?? ''} data-atribuicao={atribuicaoEntregaId ?? ''} /> : null,
 }));
+vi.mock('@/componentes/FeedbackPilotoConvite', () => ({
+  FeedbackPilotoConvite: ({ contexto, encomendaId, atribuicaoEntregaId, concluida }: { contexto: string; encomendaId?: string; atribuicaoEntregaId?: string | null; concluida: boolean }) => concluida ? <div data-testid="feedback-convite" data-contexto={contexto} data-encomenda={encomendaId ?? ''} data-atribuicao={atribuicaoEntregaId ?? ''} /> : null,
+}));
 
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 function encomenda(estado: string, modalidade: 'entrega' | 'levantamento' = 'entrega'): DetalheEncomenda {
@@ -30,6 +33,14 @@ function renderizar(valor: DetalheEncomenda) {
   return render(<MemoryRouter initialEntries={['/dashboard/encomendas/encomenda-vendedor']}><Routes><Route path="/dashboard/encomendas/:id" element={<VendedorEncomendaDetalhe />} /></Routes></MemoryRouter>);
 }
 describe('feedback contextual do vendedor', () => {
+  it('prepara convite automático contextual para a encomenda concluída', async () => {
+    renderizar(encomenda('concluida'));
+    const convite = await screen.findByTestId('feedback-convite');
+    expect(convite).toHaveAttribute('data-contexto', 'vendedor');
+    expect(convite).toHaveAttribute('data-encomenda', 'encomenda-vendedor');
+    expect(convite).toHaveAttribute('data-atribuicao', 'atribuicao-vendedor');
+  });
+
   it('abre feedback concluído com os IDs da entrega', async () => {
     renderizar(encomenda('concluida'));
     fireEvent.click(await screen.findByRole('button', { name: 'Dar feedback' }));
