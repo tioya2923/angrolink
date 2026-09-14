@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 const migration = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260912010000_criar_feedback_piloto.sql'), 'utf8');
 const correcao = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260914010000_endurecer_integridade_feedback_piloto.sql'), 'utf8');
+const correcaoParceiro = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260914020000_corrigir_coluna_parceiro_feedback_piloto.sql'), 'utf8');
 
 describe('Feedback do piloto V1', () => {
   it('define a tabela isolada, validações e RLS sem acesso direto', () => {
@@ -40,5 +41,16 @@ describe('Feedback do piloto V1', () => {
     expect(correcao).toContain("v_categoria not in ('aplicacao', 'outro')");
     expect(correcao).toContain('security definer');
     expect(correcao).toContain('set search_path = pg_catalog, public');
+  });
+
+  it('usa a coluna real do parceiro e preserva o contrato seguro da RPC', () => {
+    expect(correcaoParceiro).toContain('v_atribuicao.parceiro_entrega_id');
+    expect(correcaoParceiro).not.toContain('v_atribuicao.parceiro_id');
+    expect(correcaoParceiro).toContain('p_contexto text');
+    expect(correcaoParceiro).toContain('p_atribuicao_entrega_id uuid default null');
+    expect(correcaoParceiro).toContain('security definer');
+    expect(correcaoParceiro).toContain('set search_path = pg_catalog, public');
+    expect(correcaoParceiro).toContain('revoke all on function public.criar_feedback_piloto');
+    expect(correcaoParceiro).toContain('grant execute on function public.criar_feedback_piloto');
   });
 });
