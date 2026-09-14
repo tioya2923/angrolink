@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const migration = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260912010000_criar_feedback_piloto.sql'), 'utf8');
+const correcao = readFileSync(resolve(process.cwd(), 'supabase/migrations/20260914010000_endurecer_integridade_feedback_piloto.sql'), 'utf8');
 
 describe('Feedback do piloto V1', () => {
   it('define a tabela isolada, validações e RLS sem acesso direto', () => {
@@ -28,5 +29,16 @@ describe('Feedback do piloto V1', () => {
     expect(migration).toContain("v_encomenda.estado <> 'concluida'");
     expect(migration).toContain("resolvido_em=case when p_estado='resolvido'");
     expect(migration).not.toContain('obter_feedback_piloto_admin');
+  });
+
+  it('fecha associações contextuais incoerentes sem alterar a migration histórica', () => {
+    expect(correcao).toContain('create or replace function public.criar_feedback_piloto');
+    expect(correcao).toContain("if p_encomenda_id is null then raise exception 'O feedback contextual requer encomenda.'");
+    expect(correcao).toContain("if v_encomenda.estado <> 'concluida'");
+    expect(correcao).toContain("if v_atribuicao.encomenda_id <> p_encomenda_id");
+    expect(correcao).toContain("if v_atribuicao.estado <> 'concluida'");
+    expect(correcao).toContain("v_categoria not in ('aplicacao', 'outro')");
+    expect(correcao).toContain('security definer');
+    expect(correcao).toContain('set search_path = pg_catalog, public');
   });
 });

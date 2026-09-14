@@ -49,4 +49,20 @@ describe('FeedbackPilotoDialog', () => {
     const campo = screen.getByPlaceholderText('Conta-nos o que correu bem ou pode melhorar.') as HTMLTextAreaElement; expect(campo.maxLength).toBe(1000); fireEvent.change(campo, { target: { value: 'x'.repeat(20) } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar feedback' })); fireEvent.click(screen.getByRole('button', { name: /A enviar/ })); expect(mocks.criar).toHaveBeenCalledTimes(1); resolver(); await waitFor(() => expect(mocks.toast).toHaveBeenCalled());
   });
+  it('limita as categorias ao tipo de intenção', async () => {
+    const { rerender } = render(<FeedbackPilotoDialog aberto aoFechar={vi.fn()} contexto="cliente" />);
+    fireEvent.click(screen.getByText('Categoria')); expect((await screen.findAllByText('Aplicação')).length).toBeGreaterThan(0); expect(screen.getByText('Outro')).toBeTruthy(); expect(screen.queryByText('Entrega')).toBeNull();
+    rerender(<FeedbackPilotoDialog aberto aoFechar={vi.fn()} contexto="cliente" encomendaId="enc-1" />);
+    fireEvent.click(screen.getByText('Categoria')); expect(screen.getByText('Compra')).toBeTruthy(); expect(screen.queryByText('Entrega')).toBeNull();
+    rerender(<FeedbackPilotoDialog aberto aoFechar={vi.fn()} contexto="cliente" encomendaId="enc-1" atribuicaoEntregaId="atr-1" />);
+    fireEvent.click(screen.getByText('Categoria')); expect(screen.getByText('Entrega')).toBeTruthy();
+  });
+  it('limpa uma intenção aberta quando os IDs contextuais mudam', async () => {
+    const { rerender } = render(<FeedbackPilotoDialog aberto aoFechar={vi.fn()} contexto="cliente" encomendaId="enc-1" atribuicaoEntregaId="atr-1" />);
+    fireEvent.change(screen.getByLabelText('Nota'), { target: { value: '4' } }); fireEvent.change(screen.getByPlaceholderText('Conta-nos o que correu bem ou pode melhorar.'), { target: { value: 'anterior' } }); fireEvent.click(screen.getByText('Podem contactar-me sobre este feedback.'));
+    rerender(<FeedbackPilotoDialog aberto aoFechar={vi.fn()} contexto="vendedor" encomendaId="enc-2" />);
+    expect((screen.getByLabelText('Nota') as HTMLSelectElement).value).toBe(''); expect(screen.queryByDisplayValue('anterior')).toBeNull(); expect(screen.getByText('Aplicação')).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText('Conta-nos o que correu bem ou pode melhorar.'), { target: { value: 'nova' } }); mocks.criar.mockResolvedValue('ok'); fireEvent.click(screen.getByRole('button', { name: 'Enviar feedback' }));
+    await waitFor(()=>expect(mocks.criar).toHaveBeenCalledWith(expect.objectContaining({ contexto:'vendedor',encomendaId:'enc-2',atribuicaoEntregaId:undefined,contactarUtilizador:false,categoria:'aplicacao' })));
+  });
 });
