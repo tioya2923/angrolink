@@ -43,6 +43,8 @@ import ParceiroContaSuspensa from './parceiro/ParceiroContaSuspensa';
 import VendedorDocumentos from './vendedor/VendedorDocumentos';
 import VendedorEncomendas from './vendedor/VendedorEncomendas';
 import VendedorEncomendaDetalhe from './vendedor/VendedorEncomendaDetalhe';
+import FeedbackPiloto from './FeedbackPiloto';
+import AdminFeedbackPiloto from './admin/AdminFeedbackPiloto';
 
 export default function DashboardRouter() {
 
@@ -89,6 +91,7 @@ return(
     <Route path="areas" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="areas" />)} />
     <Route path="documentos" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="documentos" />)} />
     <Route path="apoio" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="apoio" />)} />
+    <Route path="feedback" element={<FeedbackPiloto />} />
   </>
 )}
 
@@ -111,6 +114,7 @@ return(
 <Route path="financeiro" element={<AdminFinanceiro/>}/>
 <Route path="disputas" element={<AdminDisputas/>}/>
 <Route path="disputas/:id" element={<AdminDisputaDetalhe/>}/>
+<Route path="feedback-piloto" element={<AdminFeedbackPiloto/>}/>
 </>
 )}
 
@@ -169,6 +173,7 @@ return(
 <Route path="encomendas/:id" element={<VendedorEncomendaDetalhe/>}/>
 <Route path="compras" element={<ClienteEncomendas titulo="Minhas compras" descricao="Acompanha as encomendas feitas a outros vendedores." rotaDetalhe="/dashboard/compras"/>}/>
 <Route path="compras/:id" element={<ClienteEncomendaDetalhe rotaVoltar="/dashboard/compras"/>}/>
+<Route path="feedback" element={<FeedbackPiloto/>}/>
 </>
 )}
 
@@ -181,6 +186,7 @@ return(
 <Route path="definicoes" element={<ClienteDefinicoes/>}/>
 <Route path="encomendas" element={<ClienteEncomendas/>}/>
 <Route path="encomendas/:id" element={<ClienteEncomendaDetalhe/>}/>
+<Route path="feedback" element={<FeedbackPiloto/>}/>
 </>
 )}
 

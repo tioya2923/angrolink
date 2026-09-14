@@ -1,0 +1,20 @@
+import { supabase } from './supabase';
+
+export type ContextoFeedbackPiloto = 'cliente' | 'vendedor' | 'parceiro_entrega';
+export type CategoriaFeedbackPiloto = 'compra' | 'vendedor' | 'entrega' | 'pagamento' | 'aplicacao' | 'outro';
+export type EstadoFeedbackPiloto = 'novo' | 'em_analise' | 'resolvido';
+export interface CriarFeedbackPiloto { contexto: ContextoFeedbackPiloto; categoria: CategoriaFeedbackPiloto; nota?: number | null; comentario?: string; contactarUtilizador?: boolean; encomendaId?: string | null; atribuicaoEntregaId?: string | null }
+export interface FeedbackPilotoAdmin { id: string; papel: ContextoFeedbackPiloto; categoria: CategoriaFeedbackPiloto; nota: number | null; comentario: string | null; contactarUtilizador: boolean; estado: EstadoFeedbackPiloto; encomendaId: string | null; atribuicaoEntregaId: string | null; criadoEm: string; atualizadoEm: string; resolvidoEm: string | null }
+export interface PaginaFeedbackPiloto { itens: FeedbackPilotoAdmin[]; paginacao: { totalResultados: number; limite: number; offset: number } }
+const erroSeguro = () => new Error('Não foi possível concluir esta operação. Tenta novamente.');
+const obj = (valor: unknown): Record<string, unknown> | null => valor !== null && typeof valor === 'object' && !Array.isArray(valor) ? valor as Record<string, unknown> : null;
+const texto = (objeto: Record<string, unknown>, chave: string): string | null => typeof objeto[chave] === 'string' ? objeto[chave] as string : null;
+const numero = (objeto: Record<string, unknown>, chave: string): number | null => typeof objeto[chave] === 'number' ? objeto[chave] as number : null;
+
+export async function criarFeedbackPiloto(input: CriarFeedbackPiloto): Promise<string> {
+  const { data, error } = await supabase.rpc('criar_feedback_piloto', { p_contexto: input.contexto, p_categoria: input.categoria, p_nota: input.nota ?? null, p_comentario: input.comentario?.trim() || null, p_contactar_utilizador: input.contactarUtilizador ?? false, p_encomenda_id: input.encomendaId ?? null, p_atribuicao_entrega_id: input.atribuicaoEntregaId ?? null });
+  if (error || typeof data !== 'string') throw erroSeguro(); return data;
+}
+function item(valor: unknown): FeedbackPilotoAdmin | null { const v = obj(valor); if (!v) return null; const id=texto(v,'id'), papel=texto(v,'papel'), categoria=texto(v,'categoria'), estado=texto(v,'estado'), criado=texto(v,'criado_em'), atualizado=texto(v,'atualizado_em'); if (!id || !papel || !categoria || !estado || !criado || !atualizado) return null; return { id, papel: papel as ContextoFeedbackPiloto, categoria: categoria as CategoriaFeedbackPiloto, nota: numero(v,'nota'), comentario: texto(v,'comentario'), contactarUtilizador: v.contactar_utilizador === true, estado: estado as EstadoFeedbackPiloto, encomendaId: texto(v,'encomenda_id'), atribuicaoEntregaId: texto(v,'atribuicao_entrega_id'), criadoEm: criado, atualizadoEm: atualizado, resolvidoEm: texto(v,'resolvido_em') }; }
+export async function listarFeedbackPilotoAdmin(filtros: Partial<{ papel: ContextoFeedbackPiloto; categoria: CategoriaFeedbackPiloto; nota: number; estado: EstadoFeedbackPiloto; limite: number; offset: number }> = {}): Promise<PaginaFeedbackPiloto> { const {data,error}=await supabase.rpc('listar_feedback_piloto_admin',{p_papel:filtros.papel??null,p_categoria:filtros.categoria??null,p_nota:filtros.nota??null,p_estado:filtros.estado??null,p_limite:filtros.limite??20,p_offset:filtros.offset??0}); const r=obj(data); const p=obj(r?.paginacao); if(error||!r||!p||!Array.isArray(r.itens)) throw erroSeguro(); const total=numero(p,'total_resultados'),limite=numero(p,'limite'),offset=numero(p,'offset'); if(total===null||limite===null||offset===null) throw erroSeguro(); return {itens:r.itens.map(item).filter((x):x is FeedbackPilotoAdmin=>x!==null),paginacao:{totalResultados:total,limite,offset}}; }
+export async function atualizarEstadoFeedbackPilotoAdmin(id: string, estado: EstadoFeedbackPiloto): Promise<void> { const {error}=await supabase.rpc('atualizar_estado_feedback_piloto_admin',{p_feedback_id:id,p_estado:estado}); if(error) throw erroSeguro(); }

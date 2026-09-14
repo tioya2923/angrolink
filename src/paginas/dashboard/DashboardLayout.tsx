@@ -66,6 +66,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
     { rotulo: 'Cobertura', icone: MapPinned, caminho: '/dashboard/areas' },
     { rotulo: 'Documentos', icone: FileCheck2, caminho: '/dashboard/documentos' },
     { rotulo: 'Apoio ANGROLINK', icone: CircleHelp, caminho: '/dashboard/apoio' },
+    { rotulo: 'Dar feedback', icone: MessageSquare, caminho: '/dashboard/feedback' },
   ],
   admin: [
     {
@@ -123,6 +124,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       icone: Scale,
       caminho: '/dashboard/disputas',
     },
+    { rotulo: 'Feedback do piloto', icone: MessageSquare, caminho: '/dashboard/feedback-piloto' },
   ],
 
   vendedor: [
@@ -168,6 +170,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
     },
     { rotulo: 'Encomendas', icone: ClipboardList, caminho: '/dashboard/encomendas' },
     { rotulo: 'Minhas compras', icone: ShoppingBag, caminho: '/dashboard/compras' },
+    { rotulo: 'Dar feedback', icone: MessageSquare, caminho: '/dashboard/feedback' },
     {
       rotulo: 'Documentos',
       icone: FileCheck2,
@@ -202,6 +205,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       icone: Settings,
       caminho: '/dashboard/definicoes',
     },
+    { rotulo: 'Dar feedback', icone: MessageSquare, caminho: '/dashboard/feedback' },
   ],
 };
 

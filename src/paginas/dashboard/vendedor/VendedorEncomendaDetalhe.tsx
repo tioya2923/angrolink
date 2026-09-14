@@ -12,6 +12,7 @@ import {
 import { EncomendaDetalheConteudo } from '@/componentes/encomendas/EncomendaDetalheConteudo';
 import { MensagensOperacionaisEntrega } from '@/componentes/encomendas/MensagensOperacionaisEntrega';
 import { ResumoFinanceiroVendedorEncomenda } from '@/componentes/encomendas/ResumoFinanceiroVendedorEncomenda';
+import { FeedbackPilotoDialog } from '@/componentes/FeedbackPilotoDialog';
 import { useAuth } from '@/contextos/AuthContexto';
 import { useEncomendasTempoReal } from '@/hooks/useEncomendasTempoReal';
 import { useToast } from '@/hooks/use-toast';
@@ -75,6 +76,7 @@ export default function VendedorEncomendaDetalhe() {
   const [motivo, setMotivo] = useState('');
   const [codigo, setCodigo] = useState('');
   const [acao, setAcao] = useState(false);
+  const [feedbackAberto, setFeedbackAberto] = useState(false);
 
   const carregar = useCallback(async () => {
     if (!id) return;
@@ -282,6 +284,8 @@ export default function VendedorEncomendaDetalhe() {
         carregando={resumoCarregando}
         erro={resumoErro}
       />
+      {encomenda.estado === 'concluida' && <section className="rounded-2xl border-2 border-green-200 bg-green-50 p-5"><h2 className="font-titulo text-lg font-bold text-green-950">Encomenda concluída</h2><p className="mt-2 text-sm text-green-900">Ajuda-nos a melhorar a experiência de venda.</p><button type="button" onClick={() => setFeedbackAberto(true)} className="mt-4 rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-900">Dar feedback</button></section>}
+      <FeedbackPilotoDialog aberto={feedbackAberto} aoFechar={() => setFeedbackAberto(false)} contexto="vendedor" encomendaId={encomenda.id} atribuicaoEntregaId={eEntrega ? entrega?.atribuicao_id : null} />
 
       {eEntrega && (
         <section className="painel-dashboard-form space-y-3">

@@ -1185,6 +1185,72 @@ export type Database = {
           },
         ]
       }
+      feedback_piloto: {
+        Row: {
+          atribuicao_entrega_id: string | null
+          atualizado_em: string
+          categoria: string
+          comentario: string | null
+          contactar_utilizador: boolean
+          criado_em: string
+          encomenda_id: string | null
+          estado: string
+          id: string
+          nota: number | null
+          papel: string
+          resolvido_em: string | null
+          resolvido_por: string | null
+          utilizador_id: string
+        }
+        Insert: {
+          atribuicao_entrega_id?: string | null
+          atualizado_em?: string
+          categoria: string
+          comentario?: string | null
+          contactar_utilizador?: boolean
+          criado_em?: string
+          encomenda_id?: string | null
+          estado?: string
+          id?: string
+          nota?: number | null
+          papel: string
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          utilizador_id: string
+        }
+        Update: {
+          atribuicao_entrega_id?: string | null
+          atualizado_em?: string
+          categoria?: string
+          comentario?: string | null
+          contactar_utilizador?: boolean
+          criado_em?: string
+          encomenda_id?: string | null
+          estado?: string
+          id?: string
+          nota?: number | null
+          papel?: string
+          resolvido_em?: string | null
+          resolvido_por?: string | null
+          utilizador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_piloto_atribuicao_entrega_id_fkey"
+            columns: ["atribuicao_entrega_id"]
+            isOneToOne: false
+            referencedRelation: "atribuicoes_entrega_encomenda"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_piloto_encomenda_id_fkey"
+            columns: ["encomenda_id"]
+            isOneToOne: false
+            referencedRelation: "encomendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historico_contactos: {
         Row: {
           atualizado_em: string | null
@@ -3276,6 +3342,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      atualizar_estado_feedback_piloto_admin: {
+        Args: { p_estado: string; p_feedback_id: string }
+        Returns: undefined
+      }
       atualizar_estado_prestador_servico_admin: {
         Args: { p_estado: string; p_prestador_id: string }
         Returns: undefined
@@ -3636,6 +3706,18 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      criar_feedback_piloto: {
+        Args: {
+          p_atribuicao_entrega_id?: string
+          p_categoria: string
+          p_comentario?: string
+          p_contactar_utilizador?: boolean
+          p_contexto: string
+          p_encomenda_id?: string
+          p_nota?: number
+        }
+        Returns: string
       }
       criar_notificacao: {
         Args: {
@@ -4005,6 +4087,17 @@ export type Database = {
       }
       listar_entregas_parceiro_admin: {
         Args: { p_limite?: number; p_offset?: number; p_parceiro_id: string }
+        Returns: Json
+      }
+      listar_feedback_piloto_admin: {
+        Args: {
+          p_categoria?: string
+          p_estado?: string
+          p_limite?: number
+          p_nota?: number
+          p_offset?: number
+          p_papel?: string
+        }
         Returns: Json
       }
       listar_financeiro_admin: {
