@@ -33,6 +33,8 @@ describe('contratos de acesso de vendedor', () => {
     expect(perfilPublico).not.toContain('vendedor.plano');
     expect(seloPublico).not.toContain('vendedor.plano');
     expect(seloPublico).not.toContain('vendedor.pode_destacar');
+    expect(seloPublico).toContain('vendedor?.verificado !== true');
+    expect(seloPublico).not.toContain('status_aprovacao');
     expect(migration).toMatch(/grant select \([^;]*criado_em[^;]*\) on public\.vendedores to anon, authenticated;/);
   });
 

@@ -1,53 +1,15 @@
-import { ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
-type Props = {
-  vendedor?: any;
-  compacto?: boolean;
-};
+interface VendedorComVerificacao { verificado?: boolean | null; }
+interface SeloVendedorProps { vendedor?: VendedorComVerificacao | null; compacto?: boolean; }
 
-export default function SeloVendedor({ vendedor, compacto = false }: Props) {
-  if (!vendedor) return null;
+const explicacao = 'A ANGROLINK confirmou a identidade e os dados cadastrais deste vendedor.';
+const limite = 'A verificação não representa garantia sobre produtos, entregas ou transações.';
 
-  // Perfis públicos são filtrados no servidor para vendedores aprovados e
-  // ativos. O estado administrativo não integra o contrato público.
-  const status = vendedor.status_aprovacao || 'aprovado';
-  const verificado = vendedor.verificado === true;
+export default function SeloVendedor({ vendedor, compacto = false }: SeloVendedorProps) {
+  if (vendedor?.verificado !== true) return null;
 
-  if (status === 'suspenso' || status === 'rejeitado') {
-    return (
-      <span className="inline-flex items-center gap-1 border border-red-500/30 bg-red-50 text-red-700 px-2 py-0.5 text-[10px] font-medium">
-        <AlertTriangle size={12} />
-        {compacto ? 'Indisponível' : 'Vendedor indisponível'}
-      </span>
-    );
-  }
+  if (compacto) return <span aria-label="Identidade do vendedor verificada pela ANGROLINK" className="inline-flex shrink-0 items-center gap-1 rounded-full border border-green-700/20 bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700"><ShieldCheck aria-hidden="true" size={12} />Verificado</span>;
 
-  if (status === 'pendente') {
-    return (
-      <span className="inline-flex items-center gap-1 border border-yellow-500/30 bg-yellow-50 text-yellow-700 px-2 py-0.5 text-[10px] font-medium">
-        <Clock size={12} />
-        {compacto ? 'Em análise' : 'Vendedor em análise'}
-      </span>
-    );
-  }
-
-  if (status === 'aprovado' && verificado) {
-    return (
-      <span className="inline-flex items-center gap-1 border border-green-700/20 bg-green-50 text-green-700 px-2 py-0.5 text-[10px] font-semibold">
-        <ShieldCheck size={12} />
-        {compacto ? 'Verificado' : 'Vendedor verificado'}
-      </span>
-    );
-  }
-
-  if (status === 'aprovado') {
-    return (
-      <span className="inline-flex items-center gap-1 border border-green-700/10 bg-green-50/40 text-green-700 px-2 py-0.5 text-[10px] font-medium">
-        <ShieldCheck size={12} />
-        {compacto ? 'Ativo' : 'Vendedor ativo'}
-      </span>
-    );
-  }
-
-  return null;
+  return <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm text-green-800"><span aria-label="Identidade do vendedor verificada pela ANGROLINK" title={explicacao} tabIndex={0} className="inline-flex items-center gap-1 rounded-full border border-green-700/20 bg-green-50 px-2 py-0.5 text-xs font-semibold"><ShieldCheck aria-hidden="true" size={14} />Identidade verificada</span><span className="sr-only">{explicacao}</span><span className="text-xs text-muted-foreground">{limite}</span></span>;
 }

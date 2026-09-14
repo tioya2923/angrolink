@@ -278,7 +278,7 @@ export default function PaginaServico() {
                     className="font-titulo text-sm hover:text-primary flex items-center gap-2"
                   >
                     {nomePrestador}
-                    <SeloVendedor vendedor={vendedor} compacto />
+                    <SeloVendedor vendedor={vendedor} />
                   </Link>
                 ) : (
                   <span className="font-titulo text-sm">

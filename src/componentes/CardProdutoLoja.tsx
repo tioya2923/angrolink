@@ -5,6 +5,7 @@ import { Produto } from "@/tipos";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
 import { obterPromocao } from '@/lib/precos';
 import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
+import SeloVendedor from '@/componentes/SeloVendedor';
 
 interface Props {
   produto: Produto;
@@ -65,6 +66,7 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
         <h3 className="font-bold text-lg">
           {produto.nome_produto}
         </h3>
+        {vendedor?.nome_comercial && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><span className="truncate">{vendedor.nome_comercial}</span><SeloVendedor vendedor={vendedor} compacto /></p>}
 
         {promocao ? (
           <div className="mt-2">

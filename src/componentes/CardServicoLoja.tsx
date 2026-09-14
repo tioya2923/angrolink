@@ -9,6 +9,7 @@ import {
 import { Servico } from "@/tipos";
 import { gerarLinkWhatsApp } from "@/lib/whatsapp";
 import { obterPromocao } from '@/lib/precos';
+import SeloVendedor from '@/componentes/SeloVendedor';
 
 interface Props {
   servico: Servico;
@@ -91,6 +92,8 @@ export default function CardServicoLoja({
             {servico.nome_servico}
 
           </h3>
+
+          {vendedor?.nome_comercial && <span className="flex items-center gap-1 text-xs text-muted-foreground"><span className="truncate">{vendedor.nome_comercial}</span><SeloVendedor vendedor={vendedor} compacto /></span>}
 
         </div>
 
