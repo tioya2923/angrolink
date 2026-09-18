@@ -129,6 +129,7 @@ export interface ItemEncomendaSolicitado {
 export interface CriarEncomendaLevantamentoInput {
   itens: ItemEncomendaSolicitado[];
   idempotencyKey: string;
+  conversaPreCompraId?: string;
   modalidade?: ModalidadeRecebimentoEncomenda;
   nomeDestinatario?: string;
   telefoneDestinatario?: string;
@@ -137,6 +138,7 @@ export interface CriarEncomendaLevantamentoInput {
 
 export interface CriarEncomendaEntregaInput {
   itens: ItemEncomendaSolicitado[]; idempotencyKey: string; nomeDestinatario: string; telefoneDestinatario: string;
+  conversaPreCompraId?: string;
   provincia: string; municipio: string; bairro: string; enderecoDetalhado: string;
   pontoReferencia?: string; instrucoesEntrega?: string; observacoesCliente?: string;
 }

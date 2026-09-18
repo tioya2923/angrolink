@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
-import { Eye, MapPin, MessageCircle } from "lucide-react";
+import { Eye, MapPin } from "lucide-react";
 
 import { Produto } from "@/tipos";
-import { gerarLinkWhatsApp } from "@/lib/whatsapp";
+import { ChatPreCompraProduto } from '@/componentes/ChatPreCompraProduto';
 import { obterPromocao } from '@/lib/precos';
 import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
 import SeloVendedor from '@/componentes/SeloVendedor';
@@ -16,16 +16,6 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
   const imagem =
     produto.imagem_url || "/placeholder.png";
 
-  const telefone =
-    vendedor?.telefone_whatsapp ||
-    vendedor?.whatsapp;
-
-  const linkWhatsapp = telefone
-    ? gerarLinkWhatsApp(
-        telefone,
-        produto.nome_produto
-      )
-    : "#";
   const promocao = obterPromocao(produto.preco_aproximado, produto.preco_promocional);
 
   return (
@@ -109,11 +99,6 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
             {produto.visualizacoes || 0}
           </div>
 
-          <div className="flex items-center gap-2">
-            <MessageCircle size={16} />
-
-            {produto.cliques_whatsapp || 0}
-          </div>
         </div>
 
         <div className="grid gap-2 mt-6">
@@ -131,25 +116,7 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
             Ver detalhes
           </Link>
 
-          {telefone && (
-            <a
-              href={linkWhatsapp}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="
-                bg-green-600
-                hover:bg-green-700
-                text-white
-                rounded-xl
-                py-3
-                text-center
-                font-semibold
-                transition
-              "
-            >
-              WhatsApp
-            </a>
-          )}
+          {produto.vendedor_id && <ChatPreCompraProduto produto={produto} produtoId={produto.id} produtoNome={produto.nome_produto} vendedorId={produto.vendedor_id} className="w-full py-3" />}
           <AcoesCompraProduto produto={produto} vendedorNome={vendedor?.nome_comercial} modo="card" />
         </div>
       </div>

@@ -5,15 +5,11 @@
  */
 
 import { Link } from 'react-router-dom';
-import {
-  MessageCircle,
-  Heart,
-  Eye,
-} from 'lucide-react';
+import { Heart, Eye } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Produto, TipoVendedor } from '@/tipos';
 import SeloVendedor from '@/componentes/SeloVendedor';
-import { gerarLinkWhatsApp } from '@/lib/whatsapp';
+import { ChatPreCompraProduto } from '@/componentes/ChatPreCompraProduto';
 import { obterBadgeVendedor } from '@/dados/constantes';
 import { useAuth } from '@/contextos/AuthContexto';
 import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
@@ -21,8 +17,6 @@ import { formatarTempoRelativo }
   from '@/lib/datas';
 import { obterPromocao } from '@/lib/precos';
 import {
-  guardarHistoricoContacto,
-  incrementarCliqueWhatsappProduto,
   adicionarFavoritoProduto,
   removerFavoritoProduto,
   produtoFavoritado,
@@ -115,16 +109,6 @@ export default function CardProduto({
     produto?.preco_promocional,
   );
   const emDesconto = Boolean(promocao);
-
-  // =============================
-  // LINK WHATSAPP
-  // =============================
-  const linkWhatsApp = vendedor
-    ? gerarLinkWhatsApp(
-        vendedor.telefone_whatsapp,
-        produto?.nome_produto || ''
-      )
-    : '#';
 
   useEffect(() => {
     async function verificarFavorito() {
@@ -310,14 +294,6 @@ export default function CardProduto({
 
             </div>
 
-            <div className="flex items-center gap-1">
-
-              <MessageCircle size={14} />
-
-              {produto.cliques_whatsapp || 0}
-
-            </div>
-
           </div>
         </div>
       </Link>
@@ -337,49 +313,7 @@ export default function CardProduto({
           </Link>
         )}
 
-        {mostrarWhatsapp && vendedor && (
-          <a
-            href={linkWhatsApp}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => {
-              const admin = utilizador?.papel === 'admin';
-
-              if (vendedorDono || admin) return;
-
-              if (produto.id?.includes('-')) {
-                incrementarCliqueWhatsappProduto(produto.id);
-              }
-
-              if (utilizador?.id && utilizador?.papel === 'cliente') {
-                guardarHistoricoContacto({
-                  cliente_id: utilizador.id,
-                  produto,
-                });
-              } else {
-                const historicoLocal = JSON.parse(
-                  localStorage.getItem('historico') || '[]'
-                );
-
-                historicoLocal.push({
-                  produto_id: produto.id,
-                  nome_produto: produto.nome_produto,
-                  nome_vendedor: vendedor.nome_comercial,
-                  telefone: vendedor.telefone_whatsapp,
-                  data: new Date().toISOString(),
-                });
-
-                localStorage.setItem(
-                  'historico',
-                  JSON.stringify(historicoLocal)
-                );
-              }
-            }}
-            className="btn-whatsapp w-full flex items-center justify-center gap-1 px-2 py-1.5 text-xs"
-          >
-            Contactar  <MessageCircle size={15} />
-          </a>
-        )}
+        {mostrarWhatsapp && vendedor && produto.vendedor_id && <ChatPreCompraProduto produto={produto} produtoId={produto.id} produtoNome={produto.nome_produto} vendedorId={produto.vendedor_id} className="w-full px-2 py-1.5 text-xs" />}
 
         <AcoesCompraProduto
           produto={produto}

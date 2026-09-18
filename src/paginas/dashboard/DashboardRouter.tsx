@@ -45,6 +45,7 @@ import VendedorEncomendas from './vendedor/VendedorEncomendas';
 import VendedorEncomendaDetalhe from './vendedor/VendedorEncomendaDetalhe';
 import FeedbackPiloto from './FeedbackPiloto';
 import AdminFeedbackPiloto from './admin/AdminFeedbackPiloto';
+import ConversasPreCompra from './ConversasPreCompra';
 
 export default function DashboardRouter() {
 
@@ -173,6 +174,9 @@ return(
 <Route path="encomendas/:id" element={<VendedorEncomendaDetalhe/>}/>
 <Route path="compras" element={<ClienteEncomendas titulo="Minhas compras" descricao="Acompanha as encomendas feitas a outros vendedores." rotaDetalhe="/dashboard/compras"/>}/>
 <Route path="compras/:id" element={<ClienteEncomendaDetalhe rotaVoltar="/dashboard/compras"/>}/>
+<Route path="conversas-produtos" element={<ConversasPreCompra/>}/>
+<Route path="conversas-produtos/:conversaId" element={<ConversasPreCompra/>}/>
+<Route path="mensagens/pre-compra/:conversaId" element={<ConversasPreCompra/>}/>
 <Route path="feedback" element={<FeedbackPiloto/>}/>
 </>
 )}
@@ -186,6 +190,9 @@ return(
 <Route path="definicoes" element={<ClienteDefinicoes/>}/>
 <Route path="encomendas" element={<ClienteEncomendas/>}/>
 <Route path="encomendas/:id" element={<ClienteEncomendaDetalhe/>}/>
+<Route path="conversas-produtos" element={<ConversasPreCompra/>}/>
+<Route path="conversas-produtos/:conversaId" element={<ConversasPreCompra/>}/>
+<Route path="mensagens/pre-compra/:conversaId" element={<ConversasPreCompra/>}/>
 <Route path="feedback" element={<FeedbackPiloto/>}/>
 </>
 )}

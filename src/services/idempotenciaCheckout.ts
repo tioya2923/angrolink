@@ -14,6 +14,7 @@ export type IntencaoCheckoutGrupo = {
   enderecoDetalhado?: string;
   pontoReferencia?: string;
   instrucoesEntrega?: string;
+  conversaPreCompraId?: string;
 };
 
 type EntradaPersistida = { fingerprint: string; chave: string };
@@ -45,6 +46,7 @@ export function criarFingerprintCheckout(intencao: IntencaoCheckoutGrupo) {
     nome_destinatario: textoNormalizado(intencao.nomeDestinatario),
     telefone_destinatario: textoNormalizado(intencao.telefoneDestinatario),
     observacoes_cliente: textoNormalizado(intencao.observacoesCliente),
+    conversa_pre_compra_id: textoNormalizado(intencao.conversaPreCompraId),
     ...(intencao.modalidade === 'entrega' ? {
       provincia: textoNormalizado(intencao.provincia),
       municipio: textoNormalizado(intencao.municipio),
@@ -112,6 +114,7 @@ export function mensagemErroCheckout(erro: unknown) {
   if (normalizada.includes('quantidade') || normalizada.includes('mínimo')) return 'Uma quantidade deste grupo deixou de ser válida. Reveja o carrinho.';
   if (normalizada.includes('território válido')) return 'Selecione uma província e um município válidos para a entrega.';
   if (normalizada.includes('chave de idempotência') || normalizada.includes('payload diferente') || normalizada.includes('intenção')) return 'Os dados desta tentativa foram alterados. Reveja o grupo e tente novamente.';
+  if (normalizada.includes('associar a conversa') || normalizada.includes('encomenda com conversa')) return 'A conversa não é compatível com esta encomenda. Volte ao produto e tente novamente.';
   if (normalizada.includes('sessão inválida') || normalizada.includes('sessao invalida')) return 'A sua sessão expirou. Entre novamente para confirmar a encomenda.';
   return 'Não foi possível confirmar a encomenda. Verifique a ligação e tente novamente.';
 }

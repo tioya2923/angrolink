@@ -46,10 +46,10 @@ describe('métricas comerciais de produtos', () => {
     expect(migration).toContain('before insert on public.historico_contactos');
   });
 
-  it('mantém o guard de UX nas superfícies públicas e não altera o dashboard privado', () => {
+  it('substitui o CTA público de WhatsApp pelo chat pré-compra e não altera o dashboard privado', () => {
     for (const fonte of [paginaProduto, cardProduto]) {
-      expect(fonte).toContain('vendedorDono || admin');
-      expect(fonte).toContain('incrementarCliqueWhatsappProduto');
+      expect(fonte).toContain('ChatPreCompraProduto');
+      expect(fonte).not.toContain('incrementarCliqueWhatsappProduto');
     }
     expect(dashboardVendedor).toContain('fetchProdutosPorVendedor');
   });

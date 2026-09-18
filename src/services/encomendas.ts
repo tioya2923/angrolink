@@ -118,6 +118,26 @@ const rpcCheckoutTemporaria =
   supabase.rpc.bind(supabase) as unknown as RpcCheckoutTemporaria;
 
 export async function criarEncomendaLevantamento(input: CriarEncomendaLevantamentoInput) {
+  validarConversaPreCompraId(input.conversaPreCompraId);
+  if (input.conversaPreCompraId) {
+    const { data, error } = await supabase.rpc('criar_encomenda_levantamento_com_conversa', {
+      p_conversa_pre_compra_id: input.conversaPreCompraId,
+      p_itens: prepararItensEncomenda(input.itens).map(item => ({
+        produto_id: item.produto_id,
+        quantidade: item.quantidade,
+      })),
+      p_modalidade: input.modalidade ?? 'levantamento',
+      p_nome_destinatario: input.nomeDestinatario?.trim() ?? '',
+      p_telefone_destinatario: input.telefoneDestinatario?.trim() ?? '',
+      p_observacoes_cliente: input.observacoesCliente?.trim() ?? '',
+      p_idempotency_key: input.idempotencyKey,
+    });
+    if (error) throw error;
+    if (!data || typeof data.id !== 'string' || typeof data.codigo_publico !== 'string') {
+      throw new Error('Não foi possível interpretar a encomenda criada.');
+    }
+    return data;
+  }
   const parametros = prepararCriacaoEncomenda(input);
   const { data, error } = await rpcCheckoutTemporaria<typeof parametros, EncomendaRow>(
     'criar_encomenda_levantamento',
@@ -145,6 +165,14 @@ type CriarEncomendaEntregaParametrosTemporarios = CriarEncomendaEntregaParametro
   p_idempotency_key: string;
 };
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function validarConversaPreCompraId(conversaPreCompraId: string | undefined) {
+  if (conversaPreCompraId !== undefined && !UUID.test(conversaPreCompraId)) {
+    throw new Error('A conversa associada a esta encomenda é inválida. Volte ao produto e tente novamente.');
+  }
+}
+
 function eEntregaCriada(valor: Json): valor is EntregaCriada {
   return typeof valor === 'object'
     && valor !== null
@@ -158,6 +186,26 @@ function eEntregaCriada(valor: Json): valor is EntregaCriada {
 }
 
 export async function criarEncomendaEntrega(input: CriarEncomendaEntregaInput): Promise<EntregaCriada> {
+  validarConversaPreCompraId(input.conversaPreCompraId);
+  if (input.conversaPreCompraId) {
+    const { data, error } = await supabase.rpc('criar_encomenda_entrega_com_conversa', {
+      p_itens: prepararItensEncomenda(input.itens).map(item => ({ produto_id: item.produto_id, quantidade: item.quantidade })),
+      p_conversa_pre_compra_id: input.conversaPreCompraId,
+      p_destinatario_nome: input.nomeDestinatario.trim(),
+      p_destinatario_telefone: input.telefoneDestinatario.trim(),
+      p_provincia: input.provincia,
+      p_municipio: input.municipio,
+      p_bairro: input.bairro.trim(),
+      p_endereco_detalhado: input.enderecoDetalhado.trim(),
+      p_ponto_referencia: input.pontoReferencia?.trim() ?? '',
+      p_instrucoes_entrega: input.instrucoesEntrega?.trim() ?? '',
+      p_observacoes: input.observacoesCliente?.trim() ?? '',
+      p_idempotency_key: input.idempotencyKey,
+    });
+    if (error) throw error;
+    if (!data || !eEntregaCriada(data)) throw new Error('Não foi possível interpretar a encomenda de entrega criada.');
+    return data;
+  }
   const parametros: CriarEncomendaEntregaParametrosTemporarios = {
     p_itens: prepararItensEncomenda(input.itens).map(item => ({
       produto_id: item.produto_id,

@@ -18,6 +18,8 @@ export type ItemCarrinho = {
   quantidade_minima_grosso: number | null;
   disponivel: boolean;
   atualizado_em: string;
+  /** Conversa pré-compra associada a este produto, quando a compra começou no chat. */
+  conversa_pre_compra_id?: string;
 };
 
 export type CarrinhoPersistido = {
@@ -109,7 +111,8 @@ export function itensCarrinhoEquivalentes(atuais: ItemCarrinho[], proximos: Item
       && atual.tipo_venda === proximo.tipo_venda
       && atual.quantidade_minima === proximo.quantidade_minima
       && atual.quantidade_minima_grosso === proximo.quantidade_minima_grosso
-      && atual.disponivel === proximo.disponivel;
+      && atual.disponivel === proximo.disponivel
+      && atual.conversa_pre_compra_id === proximo.conversa_pre_compra_id;
   });
 }
 

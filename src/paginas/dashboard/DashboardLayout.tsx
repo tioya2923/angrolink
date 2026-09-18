@@ -170,6 +170,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
     },
     { rotulo: 'Encomendas', icone: ClipboardList, caminho: '/dashboard/encomendas' },
     { rotulo: 'Minhas compras', icone: ShoppingBag, caminho: '/dashboard/compras' },
+    { rotulo: 'Conversas sobre produtos', icone: MessageSquare, caminho: '/dashboard/conversas-produtos' },
     { rotulo: 'Dar feedback', icone: MessageSquare, caminho: '/dashboard/feedback' },
     {
       rotulo: 'Documentos',
@@ -185,6 +186,7 @@ const MENUS: Record<PapelUtilizador, ItemMenu[]> = {
       caminho: '/dashboard',
     },
     { rotulo: 'Encomendas', icone: ClipboardList, caminho: '/dashboard/encomendas' },
+    { rotulo: 'Conversas sobre produtos', icone: MessageSquare, caminho: '/dashboard/conversas-produtos' },
     {
       rotulo: 'Histórico',
       icone: Clock,

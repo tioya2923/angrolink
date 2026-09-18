@@ -1,6 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { MessageCircle, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 import Cabecalho from '@/componentes/Cabecalho';
 import Rodape from '@/componentes/Rodape';
@@ -8,15 +8,13 @@ import ListaProdutos from '@/componentes/ListaProdutos';
 
 
 import SeloVendedor from '@/componentes/SeloVendedor';
-import { gerarLinkWhatsApp } from '@/lib/whatsapp';
+import { ChatPreCompraProduto } from '@/componentes/ChatPreCompraProduto';
 import { obterPromocao } from '@/lib/precos';
 
 import {
   fetchProdutoPorId,
   fetchProdutosRelacionados,
   incrementarVisualizacaoProduto,
-  incrementarCliqueWhatsappProduto,
-  guardarHistoricoContacto,
   guardarVisualizacaoProduto,
 } from '@/services/api';
 
@@ -155,59 +153,6 @@ export default function PaginaProduto() {
   );
   const promocao = obterPromocao(produto.preco_aproximado, produto.preco_promocional);
 
-  // =============================
-  // 🔥 CLICK WHATSAPP (CORRIGIDO)
-  // =============================
-  const handleCliqueWhatsapp = async () => {
-    const vendedorDono =
-      utilizador?.papel === 'vendedor' &&
-      utilizador?.vendedor_id === produto.vendedor_id;
-    
-    console.log("Clique WhatsApp Produto");
-
-  const admin = utilizador?.papel === 'admin';
-
-  // ❌ NÃO CONTAR INTERAÇÕES DO PRÓPRIO VENDEDOR NEM DO ADMIN
-  if (vendedorDono || admin) return;
-
-    // Analytics
-    if (produto.id.includes('-')) {
-      await incrementarCliqueWhatsappProduto(produto.id);
-    }
-
-    // =============================
-    // USER LOGADO → BD
-    // =============================
-    if (utilizador?.id && utilizador?.papel === 'cliente') {
-      guardarHistoricoContacto({
-        cliente_id: utilizador.id,
-        produto,
-      });
-    }
-
-    // =============================
-    // USER NÃO LOGADO → LOCAL
-    // =============================
-    else if (vendedor) {
-      const historicoLocal = JSON.parse(
-        localStorage.getItem('historico') || '[]'
-      );
-
-      historicoLocal.push({
-        produto_id: produto.id,
-        nome_produto: produto.nome_produto,
-        nome_vendedor: vendedor.nome_comercial,
-        telefone: vendedor.telefone_whatsapp,
-        data: new Date().toISOString(),
-      });
-
-      localStorage.setItem(
-        'historico',
-        JSON.stringify(historicoLocal)
-      );
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <Cabecalho />
@@ -291,21 +236,7 @@ export default function PaginaProduto() {
                 <AcoesCompraProduto produto={produto} vendedorNome={vendedor.nome_comercial} />
               )}
 
-              {vendedor && (
-                <a
-                  href={gerarLinkWhatsApp(
-                    vendedor.telefone_whatsapp,
-                    produto.nome_produto
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={handleCliqueWhatsapp}
-                  className="btn-whatsapp w-full flex items-center justify-center gap-2 text-lg border-2 border-foreground"
-                >
-                  <MessageCircle size={22} />
-                  Contactar no WhatsApp
-                </a>
-              )}
+{vendedor && produto.vendedor_id && <ChatPreCompraProduto produto={produto} produtoId={produto.id} produtoNome={produto.nome_produto} vendedorId={produto.vendedor_id} className="w-full py-3 text-lg" />}
             </div>
           </div>
 

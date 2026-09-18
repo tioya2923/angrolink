@@ -11,13 +11,14 @@ type Props = {
   produto: Produto;
   vendedorNome?: string | null;
   modo?: 'card' | 'detalhe';
+  conversaPreCompraId?: string;
 };
 
 function paraCentimos(valor?: number | null) {
   return Math.round(Number(valor ?? 0) * 100);
 }
 
-export function AcoesCompraProduto({ produto, vendedorNome, modo = 'detalhe' }: Props) {
+export function AcoesCompraProduto({ produto, vendedorNome, modo = 'detalhe', conversaPreCompraId }: Props) {
   const { utilizador } = useAuth();
   const { adicionarItem } = useCarrinho();
   const { toast } = useToast();
@@ -56,6 +57,7 @@ export function AcoesCompraProduto({ produto, vendedorNome, modo = 'detalhe' }: 
       quantidade_minima_grosso: quantidadeGrosso,
       disponivel: true,
       atualizado_em: new Date().toISOString(),
+      conversa_pre_compra_id: conversaPreCompraId,
     });
   };
 

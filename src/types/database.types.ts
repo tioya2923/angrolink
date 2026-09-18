@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -39,6 +34,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      acessos_telefone_encomenda: {
+        Row: {
+          contraparte_user_id: string
+          criado_em: string
+          encomenda_id: string
+          id: string
+          solicitante_user_id: string
+        }
+        Insert: {
+          contraparte_user_id: string
+          criado_em?: string
+          encomenda_id: string
+          id?: string
+          solicitante_user_id: string
+        }
+        Update: {
+          contraparte_user_id?: string
+          criado_em?: string
+          encomenda_id?: string
+          id?: string
+          solicitante_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acessos_telefone_encomenda_encomenda_id_fkey"
+            columns: ["encomenda_id"]
+            isOneToOne: false
+            referencedRelation: "encomendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       administradores: {
         Row: {
           criado_em: string
@@ -523,6 +550,64 @@ export type Database = {
           prazo_repasse_horas?: number
         }
         Relationships: []
+      }
+      conversas_pre_compra: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          encerrada_em: string | null
+          encomenda_id: string | null
+          estado: string
+          id: string
+          produto_id: string
+          solicitante_user_id: string
+          vendedor_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          encerrada_em?: string | null
+          encomenda_id?: string | null
+          estado?: string
+          id?: string
+          produto_id: string
+          solicitante_user_id: string
+          vendedor_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          encerrada_em?: string | null
+          encomenda_id?: string | null
+          estado?: string
+          id?: string
+          produto_id?: string
+          solicitante_user_id?: string
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversas_pre_compra_encomenda_id_fkey"
+            columns: ["encomenda_id"]
+            isOneToOne: false
+            referencedRelation: "encomendas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_pre_compra_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversas_pre_compra_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "vendedores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       disputas_encomenda: {
         Row: {
@@ -1414,6 +1499,7 @@ export type Database = {
           chave_idempotencia: string
           cliente_id: string
           concluida_em: string | null
+          conversa_pre_compra_id: string | null
           criada_em: string
           encomenda_id: string | null
           id: string
@@ -1424,6 +1510,7 @@ export type Database = {
           chave_idempotencia: string
           cliente_id: string
           concluida_em?: string | null
+          conversa_pre_compra_id?: string | null
           criada_em?: string
           encomenda_id?: string | null
           id?: string
@@ -1434,6 +1521,7 @@ export type Database = {
           chave_idempotencia?: string
           cliente_id?: string
           concluida_em?: string | null
+          conversa_pre_compra_id?: string | null
           criada_em?: string
           encomenda_id?: string | null
           id?: string
@@ -1446,6 +1534,13 @@ export type Database = {
             columns: ["cliente_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "idempotencia_checkout_encomenda_conversa_pre_compra_id_fkey"
+            columns: ["conversa_pre_compra_id"]
+            isOneToOne: false
+            referencedRelation: "conversas_pre_compra"
             referencedColumns: ["id"]
           },
           {
@@ -1695,6 +1790,32 @@ export type Database = {
           },
         ]
       }
+      leituras_mensagens_pre_compra: {
+        Row: {
+          conversa_id: string
+          ultima_leitura_em: string
+          utilizador_id: string
+        }
+        Insert: {
+          conversa_id: string
+          ultima_leitura_em?: string
+          utilizador_id: string
+        }
+        Update: {
+          conversa_id?: string
+          ultima_leitura_em?: string
+          utilizador_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leituras_mensagens_pre_compra_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "conversas_pre_compra"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mensagens_encomenda: {
         Row: {
           atribuicao_entrega_id: string | null
@@ -1736,6 +1857,41 @@ export type Database = {
             columns: ["encomenda_id"]
             isOneToOne: false
             referencedRelation: "encomendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mensagens_pre_compra: {
+        Row: {
+          chave_idempotencia: string
+          conversa_id: string
+          corpo: string
+          criado_em: string
+          id: string
+          remetente_user_id: string
+        }
+        Insert: {
+          chave_idempotencia: string
+          conversa_id: string
+          corpo: string
+          criado_em?: string
+          id?: string
+          remetente_user_id: string
+        }
+        Update: {
+          chave_idempotencia?: string
+          conversa_id?: string
+          corpo?: string
+          criado_em?: string
+          id?: string
+          remetente_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_pre_compra_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "conversas_pre_compra"
             referencedColumns: ["id"]
           },
         ]
@@ -3195,6 +3351,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      abrir_ou_obter_conversa_pre_compra: {
+        Args: { p_produto_id: string }
+        Returns: {
+          atualizado_em: string
+          criado_em: string
+          encerrada_em: string
+          encomenda_id: string
+          estado: string
+          id: string
+          produto_id: string
+          vendedor_id: string
+        }[]
+      }
       aceitar_atribuicao_entrega: {
         Args: { p_atribuicao_id: string }
         Returns: {
@@ -3573,6 +3742,23 @@ export type Database = {
         }
         Returns: Json
       }
+      criar_encomenda_entrega_com_conversa: {
+        Args: {
+          p_bairro: string
+          p_conversa_pre_compra_id: string
+          p_destinatario_nome: string
+          p_destinatario_telefone: string
+          p_endereco_detalhado: string
+          p_idempotency_key: string
+          p_instrucoes_entrega: string
+          p_itens: Json
+          p_municipio: string
+          p_observacoes: string
+          p_ponto_referencia: string
+          p_provincia: string
+        }
+        Returns: Json
+      }
       criar_encomenda_levantamento:
         | {
             Args: {
@@ -3670,6 +3856,52 @@ export type Database = {
           p_nome_destinatario?: string
           p_observacoes_cliente?: string
           p_telefone_destinatario?: string
+        }
+        Returns: {
+          atualizado_em: string
+          bairro: string | null
+          cancelado_em: string | null
+          cliente_id: string
+          codigo_publico: string
+          concluido_em: string | null
+          confirmado_em: string | null
+          criado_em: string
+          desconto_centimos: number
+          destinatario_nome: string
+          destinatario_telefone: string
+          endereco_levantamento: string | null
+          entrega_centimos: number
+          estado: string
+          id: string
+          modalidade_recebimento: string
+          moeda: string
+          motivo_cancelamento: string | null
+          motivo_recusa: string | null
+          municipio: string | null
+          observacoes_cliente: string | null
+          ponto_referencia: string | null
+          provincia: string | null
+          recusado_em: string | null
+          subtotal_centimos: number
+          total_centimos: number
+          vendedor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "encomendas"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      criar_encomenda_levantamento_com_conversa: {
+        Args: {
+          p_conversa_pre_compra_id: string
+          p_idempotency_key: string
+          p_itens: Json
+          p_modalidade: string
+          p_nome_destinatario: string
+          p_observacoes_cliente: string
+          p_telefone_destinatario: string
         }
         Returns: {
           atualizado_em: string
@@ -3850,6 +4082,14 @@ export type Database = {
         }
         Returns: string
       }
+      enviar_mensagem_pre_compra: {
+        Args: {
+          p_conversa_id: string
+          p_corpo: string
+          p_idempotency_key: string
+        }
+        Returns: string
+      }
       expirar_destaques_antigos: { Args: never; Returns: undefined }
       garantir_perfil_comprador: {
         Args: never
@@ -3955,6 +4195,24 @@ export type Database = {
       listar_areas_cobertura_entregador_admin: {
         Args: { p_limite?: number; p_offset?: number; p_parceiro_id: string }
         Returns: Json
+      }
+      listar_caixa_entrada_pre_compra: {
+        Args: { p_antes_de?: string; p_antes_id?: string; p_limite?: number }
+        Returns: {
+          atualizado_em: string
+          contraparte_nome: string
+          criado_em: string
+          encerrada_em: string
+          encomenda_id: string
+          estado: string
+          id: string
+          mensagens_nao_lidas: number
+          produto_id: string
+          produto_nome: string
+          ultima_mensagem_em: string
+          ultima_mensagem_previa: string
+          vendedor_id: string
+        }[]
       }
       listar_categorias_produto_operacionais: {
         Args: { p_provincia_id: string }
@@ -4146,6 +4404,21 @@ export type Database = {
           criado_em: string
           encomenda_id: string
           mensagem_id: string
+          remetente_user_id: string
+        }[]
+      }
+      listar_mensagens_pre_compra: {
+        Args: {
+          p_antes_de?: string
+          p_antes_id?: string
+          p_conversa_id: string
+          p_limite?: number
+        }
+        Returns: {
+          conversa_id: string
+          corpo: string
+          criado_em: string
+          id: string
           remetente_user_id: string
         }[]
       }
@@ -4404,6 +4677,10 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      marcar_conversa_pre_compra_como_lida: {
+        Args: { p_conversa_id: string }
+        Returns: undefined
+      }
       marcar_mensagens_encomenda_como_lidas: {
         Args: {
           p_atribuicao_entrega_id?: string
@@ -4458,6 +4735,19 @@ export type Database = {
         }[]
       }
       obter_comprador_admin: { Args: { p_cliente_id: string }; Returns: Json }
+      obter_conversa_pre_compra: {
+        Args: { p_conversa_id: string }
+        Returns: {
+          atualizado_em: string
+          criado_em: string
+          encerrada_em: string
+          encomenda_id: string
+          estado: string
+          id: string
+          produto_id: string
+          vendedor_id: string
+        }[]
+      }
       obter_disputa_admin: { Args: { p_disputa_id: string }; Returns: Json }
       obter_documentos_legados_vendedor: {
         Args: { p_vendedor_id: string }
@@ -4610,6 +4900,12 @@ export type Database = {
       obter_tarefa_entregador: {
         Args: { p_atribuicao_id: string }
         Returns: Json
+      }
+      obter_telefone_contraparte_encomenda: {
+        Args: { p_encomenda_id: string }
+        Returns: {
+          telefone: string
+        }[]
       }
       obter_vendedor_admin: { Args: { p_vendedor_id: string }; Returns: Json }
       produto_eh_operacional_fase1: {
@@ -4990,6 +5286,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      utilizador_participa_conversa_pre_compra: {
+        Args: { p_conversa_id: string }
+        Returns: boolean
+      }
       utilizador_participa_encomenda_mensagens: {
         Args: {
           p_atribuicao_entrega_id: string
@@ -5028,6 +5328,26 @@ export type Database = {
         Args: { p_itens: Json }
         Returns: undefined
       }
+      validar_participacao_conversa_pre_compra: {
+        Args: { p_conversa_id: string }
+        Returns: {
+          atualizado_em: string
+          criado_em: string
+          encerrada_em: string | null
+          encomenda_id: string | null
+          estado: string
+          id: string
+          produto_id: string
+          solicitante_user_id: string
+          vendedor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "conversas_pre_compra"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       veiculo_compativel_com_encomenda: {
         Args: { p_encomenda_id: string; p_veiculo_id: string }
         Returns: boolean
@@ -5059,6 +5379,10 @@ export type Database = {
           email_existe: boolean
           telefone_existe: boolean
         }[]
+      }
+      vincular_conversa_pre_compra_encomenda: {
+        Args: { p_conversa_id: string; p_encomenda_id: string }
+        Returns: undefined
       }
     }
     Enums: {
