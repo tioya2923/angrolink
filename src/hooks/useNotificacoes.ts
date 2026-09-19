@@ -99,6 +99,10 @@ export function useNotificacoes(utilizadorId?: string, ativo = true) {
     }
   }, []);
 
+  const consumirUltimaRealtime = useCallback((notificacaoId: string) => {
+    setUltimaRealtime(atual => atual?.id === notificacaoId ? null : atual);
+  }, []);
+
   useEffect(() => {
     limpar();
     if (!utilizadorId || !ativo) return undefined;
@@ -139,5 +143,6 @@ export function useNotificacoes(utilizadorId?: string, ativo = true) {
     atualizar,
     marcarLida,
     marcarTodas,
+    consumirUltimaRealtime,
   };
 }

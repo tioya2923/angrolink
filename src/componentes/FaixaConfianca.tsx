@@ -12,22 +12,22 @@ import { Link } from 'react-router-dom';
 const ITENS = [
   {
     Icone: ShieldCheck,
-    texto: 'Vendedores verificados',
+    texto: 'Vendedores aprovados',
     destino: '/como-funciona#verificados',
   },
   {
     Icone: Package,
-    texto: 'Grosso & Retalho',
+    texto: 'Grosso e retalho',
     destino: '/pesquisa',
   },
   {
     Icone: MessageCircle,
-    texto: 'Contacto direto por WhatsApp',
-    destino: '/como-funciona#whatsapp',
+    texto: 'Chat seguro para produtos',
+    destino: '/como-funciona#chat-pre-compra',
   },
   {
     Icone: Truck,
-    texto: 'Entrega em várias províncias',
+    texto: 'Entregas no Huambo',
     destino: '/como-funciona#entrega',
   },
 ];

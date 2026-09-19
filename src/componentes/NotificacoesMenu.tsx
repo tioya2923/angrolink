@@ -1,8 +1,7 @@
 import { forwardRef, type ComponentPropsWithoutRef, useEffect, useState } from 'react';
 import { Bell, CheckCheck, PackageCheck, ShoppingBag, Truck } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useNotificacoesSessao } from '@/contextos/NotificacoesContexto';
-import { eUrlDestinoInterna, type ContextoNotificacao, type Notificacao } from '@/services/notificacoes';
+import { type ContextoNotificacao, type Notificacao } from '@/services/notificacoes';
 import { toast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -138,6 +137,11 @@ function PainelNotificacoes({
             key={notificacao.id}
             type="button"
             onClick={() => aoAbrir(notificacao)}
+            onKeyDown={evento => {
+              if (evento.key !== 'Enter' && evento.key !== ' ') return;
+              evento.preventDefault();
+              aoAbrir(notificacao);
+            }}
             className={`mb-1 flex w-full gap-3 rounded-lg p-3 text-left transition-colors hover:bg-green-50 ${
               notificacao.lida ? 'bg-background' : 'bg-green-50/80'
             }`}
@@ -161,35 +165,19 @@ function PainelNotificacoes({
 
 export default function NotificacoesMenu() {
   const pequeno = useEcrãPequeno();
-  const navigate = useNavigate();
   const [aberto, setAberto] = useState(false);
   const {
     notificacoes,
     naoLidas,
     loading,
     erro,
-    ultimaRealtime,
     atualizar,
-    marcarLida,
     marcarTodas,
     ativo,
+    abrirNotificacao,
   } = useNotificacoesSessao();
 
-  useEffect(() => {
-    if (!ativo || !ultimaRealtime) return;
-    toast({ title: ultimaRealtime.titulo, description: ultimaRealtime.mensagem });
-  }, [ativo, ultimaRealtime]);
-
   if (!ativo) return null;
-
-  const abrirNotificacao = async (notificacao: Notificacao) => {
-    const marcada = await marcarLida(notificacao.id);
-    if (!marcada) {
-      toast({ title: 'Não foi possível marcar a notificação como lida.', variant: 'destructive' });
-    }
-    setAberto(false);
-    if (eUrlDestinoInterna(notificacao.url_destino)) navigate(notificacao.url_destino);
-  };
 
   const painel = (
     <PainelNotificacoes
@@ -199,7 +187,10 @@ export default function NotificacoesMenu() {
       naoLidas={naoLidas}
       atualizar={atualizar}
       marcarTodas={marcarTodas}
-      aoAbrir={notificacao => void abrirNotificacao(notificacao)}
+      aoAbrir={notificacao => {
+        setAberto(false);
+        void abrirNotificacao(notificacao);
+      }}
     />
   );
 

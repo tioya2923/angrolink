@@ -46,6 +46,16 @@ describe('checkout de entrega V1 — interface', () => {
     expect(checkout).not.toContain('Frete incluído');
   });
 
+  it('bloqueia a entrega fora do Huambo antes de criar encomendas e preserva levantamento', () => {
+    const bloqueio = 'Nesta fase, a entrega está disponível apenas no Huambo. Escolha um endereço no Huambo ou selecione levantamento no vendedor.';
+
+    expect(checkout).toContain("territorio.provinciaSelecionada.codigoOficial !== 'HBO'");
+    expect(checkout).toContain(bloqueio);
+    expect(checkout.indexOf('if (entregaForaHuambo)')).toBeLessThan(checkout.indexOf('const confirmar = async'));
+    expect(checkout).toContain('Cobertura atual disponível apenas no Huambo.');
+    expect(checkout).toContain("modalidade: eEntrega ? 'entrega' : 'levantamento'");
+  });
+
   it('distingue entrega no cliente, vendedor, admin e entregador', () => {
     expect(detalhe).toContain('Destino de entrega');
     expect(detalhe).toContain('A aguardar atribuição de entregador.');

@@ -190,6 +190,8 @@ return(
 <Route path="definicoes" element={<ClienteDefinicoes/>}/>
 <Route path="encomendas" element={<ClienteEncomendas/>}/>
 <Route path="encomendas/:id" element={<ClienteEncomendaDetalhe/>}/>
+<Route path="compras" element={<ClienteEncomendas titulo="Minhas compras" descricao="Acompanha as encomendas feitas a vendedores." rotaDetalhe="/dashboard/compras"/>}/>
+<Route path="compras/:id" element={<ClienteEncomendaDetalhe rotaVoltar="/dashboard/compras"/>}/>
 <Route path="conversas-produtos" element={<ConversasPreCompra/>}/>
 <Route path="conversas-produtos/:conversaId" element={<ConversasPreCompra/>}/>
 <Route path="mensagens/pre-compra/:conversaId" element={<ConversasPreCompra/>}/>

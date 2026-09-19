@@ -77,7 +77,15 @@ export function normalizarNotificacao(valor: unknown): Notificacao | null {
 }
 
 export function eUrlDestinoInterna(url: string | null): url is string {
-  return typeof url === 'string' && url.startsWith('/') && !url.startsWith('//');
+  if (typeof url !== 'string') return false;
+
+  const identificadorUuid = '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}';
+
+  return [
+    new RegExp(`^/dashboard/conversas-produtos/${identificadorUuid}$`),
+    new RegExp(`^/dashboard/mensagens/pre-compra/${identificadorUuid}$`),
+    new RegExp(`^/dashboard/(?:encomendas|compras|tarefas)/${identificadorUuid}$`),
+  ].some(padrao => padrao.test(url));
 }
 
 export async function listarNotificacoes(limite = 20, antesDe?: string): Promise<Notificacao[]> {
