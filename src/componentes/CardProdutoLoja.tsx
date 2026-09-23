@@ -116,7 +116,7 @@ export default function CardProdutoLoja({ produto, vendedor }: Props) {
             Ver detalhes
           </Link>
 
-          {produto.vendedor_id && <ChatPreCompraProduto produto={produto} produtoId={produto.id} produtoNome={produto.nome_produto} vendedorId={produto.vendedor_id} className="w-full py-3" />}
+          {produto.vendedor_id && <ChatPreCompraProduto produto={produto} produtoId={produto.id} produtoNome={produto.nome_produto} vendedorId={produto.vendedor_id} className="w-full min-w-0 justify-center gap-1.5 whitespace-normal bg-green-800 py-3 text-center text-sm font-semibold leading-tight text-white hover:bg-green-900 focus-visible:ring-green-700" />}
           <AcoesCompraProduto produto={produto} vendedorNome={vendedor?.nome_comercial} modo="card" />
         </div>
       </div>

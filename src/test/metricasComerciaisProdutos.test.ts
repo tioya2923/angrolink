@@ -7,6 +7,7 @@ const migration = readFileSync(
 );
 const paginaProduto = readFileSync('src/paginas/PaginaProduto.tsx', 'utf8');
 const cardProduto = readFileSync('src/componentes/CardProduto.tsx', 'utf8');
+const cardProdutoLoja = readFileSync('src/componentes/CardProdutoLoja.tsx', 'utf8');
 const dashboardVendedor = readFileSync('src/paginas/dashboard/vendedor/VendedorProdutos.tsx', 'utf8');
 
 const corpoDaFuncao = (nome: string) => {
@@ -52,6 +53,17 @@ describe('métricas comerciais de produtos', () => {
       expect(fonte).not.toContain('incrementarCliqueWhatsappProduto');
     }
     expect(dashboardVendedor).toContain('fetchProdutosPorVendedor');
+  });
+
+  it('mantém os CTAs de chat dos dois cards de produto legíveis em largura móvel', () => {
+    for (const fonte of [cardProduto, cardProdutoLoja]) {
+      expect(fonte).toContain('ChatPreCompraProduto');
+      expect(fonte).toContain('min-w-0 justify-center');
+      expect(fonte).toContain('whitespace-normal');
+      expect(fonte).toContain('bg-green-800');
+      expect(fonte).toContain('hover:bg-green-900');
+      expect(fonte).toContain('focus-visible:ring-green-700');
+    }
   });
 
   it('não toca em checkout, território, entrega, OTP, pagamentos ou stock', () => {

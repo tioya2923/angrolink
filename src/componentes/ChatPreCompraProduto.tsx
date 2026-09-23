@@ -158,7 +158,7 @@ export function ChatPreCompraProduto({ produtoId, produtoNome, vendedorId, produ
   };
 
   return <>
-    {!semBotao && <Button type="button" variant="outline" className={className} onClick={abrir}><MessageCircle className="size-4" />Conversar com o vendedor</Button>}
+    {!semBotao && <Button type="button" variant="outline" className={className} onClick={abrir}><MessageCircle className="size-4 shrink-0" /><span className="min-w-0 break-words">Conversar com o vendedor</span></Button>}
     <Dialog open={aberto} onOpenChange={fechar}><DialogContent className="flex h-[92vh] max-w-2xl flex-col sm:h-[80vh]"><DialogHeader><DialogTitle>Conversar sobre {produtoNome}</DialogTitle><DialogDescription>Conversa privada sobre este produto. O telefone não é partilhado aqui.</DialogDescription></DialogHeader>
       {carregando ? <p className="py-8 text-center text-sm text-muted-foreground" role="status">A carregar conversa…</p> : erro ? <div className="py-8 text-center"><p className="text-sm text-destructive" role="alert">Não foi possível abrir a conversa.</p><Button className="mt-3" variant="outline" onClick={() => void carregar()}>Tentar novamente</Button></div> : <>
         {somenteLeitura && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Esta conversa foi ligada a uma encomenda e está apenas para leitura.{conversa?.encomenda_id && <a className="ml-1 font-semibold underline" href={`/dashboard/encomendas/${conversa.encomenda_id}`}>Ver encomenda</a>}</div>}

@@ -272,7 +272,7 @@ export default function PaginaInicial() {
       {!utilizador && (
         <Link
           to="/anunciar"
-          className="fixed bottom-4 right-4 z-40 btn-whatsapp flex items-center gap-2 font-titulo text-sm px-5 py-3 border-2 border-foreground"
+          className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 btn-whatsapp flex items-center gap-2 font-titulo text-sm px-5 py-3 border-2 border-foreground md:bottom-4"
         >
           <MessageCircle size={18} />
           Quero Anunciar

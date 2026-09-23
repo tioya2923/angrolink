@@ -313,7 +313,7 @@ export default function CardProduto({
           </Link>
         )}
 
-        {mostrarWhatsapp && vendedor && produto.vendedor_id && <ChatPreCompraProduto produto={produto} produtoId={produto.id} produtoNome={produto.nome_produto} vendedorId={produto.vendedor_id} className="w-full px-2 py-1.5 text-xs" />}
+        {mostrarWhatsapp && vendedor && produto.vendedor_id && <ChatPreCompraProduto produto={produto} produtoId={produto.id} produtoNome={produto.nome_produto} vendedorId={produto.vendedor_id} className="w-full min-w-0 justify-center gap-1.5 whitespace-normal bg-green-800 px-2 py-2 text-center text-xs font-semibold leading-tight text-white hover:bg-green-900 focus-visible:ring-green-700" />}
 
         <AcoesCompraProduto
           produto={produto}

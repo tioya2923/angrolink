@@ -35,6 +35,7 @@ import PaginaComoFunciona from "@/paginas/PaginaComoFunciona";
 import PaginaCadastroParceiroEntrega from "@/paginas/PaginaCadastroParceiroEntrega";
 import PaginaCarrinho from "@/paginas/PaginaCarrinho";
 import PaginaCheckoutPendente from "@/paginas/PaginaCheckoutPendente";
+import { BarraCarrinhoMovel } from '@/componentes/carrinho/BarraCarrinhoMovel';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -95,6 +96,7 @@ const App = () => (
               {/* Rota genérica — 404 */}
               <Route path="*" element={<NotFound />} />
               </Routes>
+              <BarraCarrinhoMovel />
               </AtualizacoesTempoReal>
             </NotificacoesProvider>
           </BrowserRouter>
