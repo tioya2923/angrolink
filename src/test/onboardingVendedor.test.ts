@@ -86,4 +86,31 @@ describe('onboarding documental de vendedor', () => {
     expect(fluxo).toContain('if (authError || !authUser || !authData.session)');
     expect(fluxo.match(/signInWithPassword/g)).toHaveLength(1);
   });
+
+  it('explica a falha de disponibilidade antes de iniciar Auth ou criar a candidatura', () => {
+    const inicio = pagina.indexOf('let negociosExistentes:');
+    const fim = pagina.indexOf('const { data: authData, error: authError }', inicio);
+    const verificacao = pagina.slice(inicio, fim);
+
+    expect(verificacao).toContain("operacaoEnvio = 'consultar-vendedores-localizacao'");
+    expect(verificacao).toContain("operacaoEnvio = 'consultar-vendedor-nome-comercial'");
+    expect(verificacao).toContain('error: erroNomeComercial');
+    expect(verificacao).toContain('registarDiagnosticoSeguroCadastroVendedor(');
+    expect(verificacao).toContain("mensagemErroCadastroVendedor('disponibilidade')");
+    expect(verificacao).toContain('return;');
+  });
+
+  it('mantém foto opcional e impede um novo INSERT ao retomar candidatura existente', () => {
+    expect(pagina).toContain('if (fotoPerfil) {');
+    expect(pagina).toContain('fotoPerfilUrl = await uploadImagemVendedor(fotoPerfil);');
+    expect(pagina).toContain('if (perfilExistente) {');
+    expect(pagina).toContain('Já existe um pedido de vendedor associado a esta conta.');
+  });
+
+  it('não regista o formulário completo do comprador no console', () => {
+    expect(pagina).not.toContain('FORM COMPRADOR SUBMITOU');
+    expect(pagina).not.toContain('DADOS COMPRADOR:');
+    expect(pagina).not.toContain('console.log(');
+  });
+
 });

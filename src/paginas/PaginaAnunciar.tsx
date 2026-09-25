@@ -66,6 +66,11 @@ import {
   validarDuplicados,
 } from "@/lib/validacoesConta";
 import {
+  mensagemErroCadastroVendedor,
+  registarDiagnosticoSeguroCadastroVendedor,
+  type EtapaEnvioCadastroVendedor,
+} from "@/lib/errosCadastroVendedor";
+import {
   listarMunicipiosAngola,
   listarProvinciasAngola,
   type MunicipioAngola,
@@ -303,9 +308,6 @@ export default function PaginaAnunciar() {
   const handleSubmitComprador = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("FORM COMPRADOR SUBMITOU");
-    console.log("DADOS COMPRADOR:", formComprador);
-
     const erroTelefone = validarTelefone(
       formComprador.telefone,
       formComprador.indicativo,
@@ -498,6 +500,9 @@ export default function PaginaAnunciar() {
   const handleSubmitPerfilComercial = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    let etapaEnvio: EtapaEnvioCadastroVendedor = 'disponibilidade';
+    let operacaoEnvio = 'validar-formulario';
+
     if (carregando) return;
 
     if (
@@ -532,14 +537,34 @@ export default function PaginaAnunciar() {
       .replace(/\s+/g, " ")
       .toLowerCase();
 
-    const { data: negociosExistentes, error: erroNegocios } = await supabase
-      .from("vendedores")
-      .select("id, nome_comercial")
-      .eq("provincia", provinciaAtividadeNome)
-      .eq("municipio", municipioAtividadeNome);
+    let negociosExistentes: Array<{ id: string; nome_comercial: string | null }> | null;
+    try {
+      operacaoEnvio = 'consultar-vendedores-localizacao';
+      const { data, error: erroNegocios } = await supabase
+        .from("vendedores")
+        .select("id, nome_comercial")
+        .eq("provincia", provinciaAtividadeNome)
+        .eq("municipio", municipioAtividadeNome);
 
-    if (erroNegocios) {
-      console.error(erroNegocios);
+      if (erroNegocios) {
+        registarDiagnosticoSeguroCadastroVendedor(
+          'disponibilidade',
+          operacaoEnvio,
+          erroNegocios,
+        );
+        toast.error(mensagemErroCadastroVendedor('disponibilidade'));
+        return;
+      }
+
+      negociosExistentes = data;
+    } catch (erroNegocios) {
+      registarDiagnosticoSeguroCadastroVendedor(
+        'disponibilidade',
+        operacaoEnvio,
+        erroNegocios,
+      );
+      toast.error(mensagemErroCadastroVendedor('disponibilidade'));
+      return;
     }
 
     const negocioDuplicado = negociosExistentes?.some(
@@ -555,13 +580,37 @@ export default function PaginaAnunciar() {
       return;
     }
 
-    const { data: negocioExistente } = await supabase
-      .from("vendedores")
-      .select("id")
-      .eq("nome_comercial", formPerfil.nome_comercial.trim())
-      .eq("provincia", provinciaAtividadeNome)
-      .eq("municipio", municipioAtividadeNome)
-      .maybeSingle();
+    let negocioExistente: { id: string } | null;
+    try {
+      operacaoEnvio = 'consultar-vendedor-nome-comercial';
+      const { data, error: erroNomeComercial } = await supabase
+        .from("vendedores")
+        .select("id")
+        .eq("nome_comercial", formPerfil.nome_comercial.trim())
+        .eq("provincia", provinciaAtividadeNome)
+        .eq("municipio", municipioAtividadeNome)
+        .maybeSingle();
+
+      if (erroNomeComercial) {
+        registarDiagnosticoSeguroCadastroVendedor(
+          'disponibilidade',
+          operacaoEnvio,
+          erroNomeComercial,
+        );
+        toast.error(mensagemErroCadastroVendedor('disponibilidade'));
+        return;
+      }
+
+      negocioExistente = data;
+    } catch (erroNomeComercial) {
+      registarDiagnosticoSeguroCadastroVendedor(
+        'disponibilidade',
+        operacaoEnvio,
+        erroNomeComercial,
+      );
+      toast.error(mensagemErroCadastroVendedor('disponibilidade'));
+      return;
+    }
 
     if (negocioExistente) {
       toast.error("Já existe um negócio com este nome nesta localização.");
@@ -602,11 +651,23 @@ export default function PaginaAnunciar() {
       // VERIFICAR TELEFONE DUPLICADO
       // =============================
 
-      const erroDuplicados = await validarDuplicados(
-        formVendedor.telefone,
-        formVendedor.indicativo,
-        formPerfil.email,
-      );
+      let erroDuplicados: string | null;
+      try {
+        operacaoEnvio = 'verificar-disponibilidade-cadastro';
+        erroDuplicados = await validarDuplicados(
+          formVendedor.telefone,
+          formVendedor.indicativo,
+          formPerfil.email,
+        );
+      } catch (erroDisponibilidade) {
+        registarDiagnosticoSeguroCadastroVendedor(
+          'disponibilidade',
+          operacaoEnvio,
+          erroDisponibilidade,
+        );
+        toast.error(mensagemErroCadastroVendedor('disponibilidade'));
+        return;
+      }
 
       if (erroDuplicados) {
         toast.error(erroDuplicados);
@@ -630,6 +691,8 @@ export default function PaginaAnunciar() {
       //formPerfil.email?.trim().toLowerCase();
 
       // 1. Criar utilizador no Supabase Auth
+      etapaEnvio = 'conta';
+      operacaoEnvio = 'auth-sign-up';
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: emailLogin,
         password: formVendedor.senha,
@@ -651,6 +714,15 @@ export default function PaginaAnunciar() {
       // conseguiu criar o perfil, a mesma palavra-passe permite concluir o
       // pedido em vez de deixar a conta presa como "já registada".
       if (authError || !authUser || !authData.session) {
+        if (authError) {
+          registarDiagnosticoSeguroCadastroVendedor(
+            'conta',
+            operacaoEnvio,
+            authError,
+          );
+        }
+
+        operacaoEnvio = 'auth-recuperar-sessao-existente';
         const { data: sessaoExistente, error: erroLoginExistente } =
           await supabase.auth.signInWithPassword({
             email: emailLogin,
@@ -658,9 +730,10 @@ export default function PaginaAnunciar() {
           });
 
         if (erroLoginExistente || !sessaoExistente.user) {
-          console.error(
-            "Erro ao criar ou recuperar auth vendedor:",
-            authError || erroLoginExistente,
+          registarDiagnosticoSeguroCadastroVendedor(
+            'conta',
+            operacaoEnvio,
+            erroLoginExistente ?? authError,
           );
           toast.error(
             "Não foi possível concluir a conta. Se já tens uma conta, confirma a palavra-passe ou entra pela página de login.",
@@ -684,6 +757,8 @@ export default function PaginaAnunciar() {
         return;
       }
 
+      etapaEnvio = 'perfil';
+      operacaoEnvio = 'obter-perfil-vendedor-existente';
       const perfilExistente = await fetchMeuVendedor({ lancarErro: true });
 
       if (perfilExistente) {
@@ -697,6 +772,7 @@ export default function PaginaAnunciar() {
       let fotoPerfilUrl: string | null = null;
 
       if (fotoPerfil) {
+        operacaoEnvio = 'enviar-foto-opcional';
         fotoPerfilUrl = await uploadImagemVendedor(fotoPerfil);
       }
 
@@ -760,12 +836,17 @@ export default function PaginaAnunciar() {
         atualizado_em: new Date().toISOString(),
       };
 
+      operacaoEnvio = 'criar-perfil-vendedor';
       const { error: vendedorError } = await supabase
         .from("vendedores")
         .insert(novoVendedor);
 
       if (vendedorError) {
-        console.error("ERRO:", vendedorError);
+        registarDiagnosticoSeguroCadastroVendedor(
+          'perfil',
+          operacaoEnvio,
+          vendedorError,
+        );
 
         if (
           vendedorError.code === "PGRST204" &&
@@ -789,6 +870,7 @@ export default function PaginaAnunciar() {
         return;
       }
 
+      operacaoEnvio = 'recuperar-perfil-vendedor-criado';
       const vendedorCriado = await fetchMeuVendedor({ lancarErro: true });
       if (!vendedorCriado) {
         toast.error(
@@ -813,7 +895,9 @@ export default function PaginaAnunciar() {
           };
         });
 
+      etapaEnvio = 'documentos';
       try {
+        operacaoEnvio = 'submeter-documentos-vendedor';
         const documentosCriados = await submeterDocumentosVendedor(
           vendedorCriado.id,
           documentosParaSubmissao,
@@ -844,6 +928,8 @@ export default function PaginaAnunciar() {
         return;
       }
 
+      etapaEnvio = 'sessao';
+      operacaoEnvio = 'recarregar-perfil-autenticado';
       const perfilAtualizado = await recarregarPerfil();
       if (!perfilAtualizado) {
         throw new Error('A conta foi criada, mas não foi possível atualizar a sessão. Entre novamente para continuar.');
@@ -852,8 +938,12 @@ export default function PaginaAnunciar() {
       toast.success("Pedido enviado para análise. A concluir o cadastro...");
       navigate('/dashboard', { replace: true });
     } catch (error) {
-      console.error(error);
-      toast.error("Não foi possível enviar o pedido de vendedor.");
+      registarDiagnosticoSeguroCadastroVendedor(
+        etapaEnvio,
+        operacaoEnvio,
+        error,
+      );
+      toast.error(mensagemErroCadastroVendedor(etapaEnvio));
     } finally {
       setCarregando(false);
     }
