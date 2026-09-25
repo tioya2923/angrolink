@@ -125,6 +125,8 @@ describe('provider de notificações', () => {
     `/dashboard/compras/${id}`,
     `/dashboard/encomendas/${id}`,
     `/dashboard/tarefas/${id}`,
+    '/dashboard/pedidos-vendedores',
+    '/dashboard/pedidos-entregadores',
   ])('abre explicitamente o destino interno permitido: %s', async urlDestino => {
     const notificacao = criarNotificacao(urlDestino);
     renderizar(notificacao);
@@ -250,5 +252,25 @@ describe('provider de notificações', () => {
 
     await waitFor(() => expect(mocks.marcarLida).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId('localizacao')).toHaveTextContent('/dashboard');
+  });
+});
+
+describe('central de notificações administrativa', () => {
+  it('habilita a central privada para Admin', async () => {
+    const notificacao = { ...criarNotificacao('/dashboard/pedidos-vendedores'), utilizador_id: 'admin-1', contexto: 'admin' as const };
+    vi.clearAllMocks();
+    mocks.useAuth.mockReturnValue({ utilizador: { id: 'admin-1', papel: 'admin' } });
+    mocks.useNotificacoes.mockReturnValue(estado(notificacao));
+    mocks.dismiss.mockReturnValue(undefined);
+    mocks.toast.mockReturnValue({ dismiss: mocks.dismiss });
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <NotificacoesProvider><NotificacoesMenu /><Localizacao /></NotificacoesProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('button', { name: 'Notificações: 1 não lidas' })).toBeInTheDocument();
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledTimes(1));
   });
 });

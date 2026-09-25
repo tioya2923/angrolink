@@ -24,7 +24,7 @@ const ler = (ficheiro: string) => readFileSync(resolve(process.cwd(), ficheiro),
 describe('serviço de notificações', () => {
   it('normaliza apenas contratos de notificação completos e seguros para a UI', () => {
     expect(normalizarNotificacao(base)).toMatchObject({ id: 'notificacao-1', contexto: 'compra', lida: false });
-    expect(normalizarNotificacao({ ...base, contexto: 'admin' })).toBeNull();
+    expect(normalizarNotificacao({ ...base, contexto: 'admin' })).toMatchObject({ contexto: 'admin' });
     expect(normalizarNotificacao({ ...base, lida: 'false' })).toBeNull();
     expect(normalizarNotificacao({ ...base, metadata: undefined })).toBeNull();
   });
@@ -37,6 +37,10 @@ describe('serviço de notificações', () => {
     ['compra', `/dashboard/compras/${id}`],
     ['encomenda', `/dashboard/encomendas/${id}`],
     ['tarefa', `/dashboard/tarefas/${id}`],
+    ['pedidos de vendedores', '/dashboard/pedidos-vendedores'],
+    ['pedidos de entregadores', '/dashboard/pedidos-entregadores'],
+    ['detalhe de vendedor Admin', `/dashboard/vendedores/${id}`],
+    ['detalhe de entregador Admin', `/dashboard/entregadores/${id}`],
   ])('aceita individualmente a rota permitida de %s', (_nome, destino) => {
     expect(eUrlDestinoInterna(destino)).toBe(true);
   });

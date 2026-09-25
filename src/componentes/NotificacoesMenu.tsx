@@ -1,5 +1,5 @@
 import { forwardRef, type ComponentPropsWithoutRef, useEffect, useState } from 'react';
-import { Bell, CheckCheck, PackageCheck, ShoppingBag, Truck } from 'lucide-react';
+import { Bell, CheckCheck, PackageCheck, ShieldCheck, ShoppingBag, Truck } from 'lucide-react';
 import { useNotificacoesSessao } from '@/contextos/NotificacoesContexto';
 import { type ContextoNotificacao, type Notificacao } from '@/services/notificacoes';
 import { toast } from '@/hooks/use-toast';
@@ -23,13 +23,14 @@ function useEcrãPequeno() {
 }
 
 function rotuloContexto(contexto: ContextoNotificacao) {
+  if (contexto === 'admin') return 'Administração';
   if (contexto === 'venda') return 'Venda';
   if (contexto === 'entrega') return 'Entrega';
   return 'Compra';
 }
 
 function IconeContexto({ contexto }: { contexto: ContextoNotificacao }) {
-  const Icone = contexto === 'venda' ? PackageCheck : contexto === 'entrega' ? Truck : ShoppingBag;
+  const Icone = contexto === 'admin' ? ShieldCheck : contexto === 'venda' ? PackageCheck : contexto === 'entrega' ? Truck : ShoppingBag;
   return <Icone aria-hidden="true" className="size-4 text-green-700" />;
 }
 

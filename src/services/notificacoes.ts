@@ -2,7 +2,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 import type { Json } from '@/types/database.types';
 import { supabase } from '@/services/supabase';
 
-export type ContextoNotificacao = 'compra' | 'venda' | 'entrega';
+export type ContextoNotificacao = 'compra' | 'venda' | 'entrega' | 'admin';
 
 export interface Notificacao {
   id: string;
@@ -45,7 +45,7 @@ export function normalizarNotificacao(valor: unknown): Notificacao | null {
     || !eTexto(valor.titulo)
     || !eTexto(valor.mensagem)
     || !eTexto(valor.criado_em)
-    || !['compra', 'venda', 'entrega'].includes(String(valor.contexto))
+    || !['compra', 'venda', 'entrega', 'admin'].includes(String(valor.contexto))
     || typeof valor.lida !== 'boolean'
     || !eJson(valor.metadata)) {
     return null;
@@ -85,6 +85,8 @@ export function eUrlDestinoInterna(url: string | null): url is string {
     new RegExp(`^/dashboard/conversas-produtos/${identificadorUuid}$`),
     new RegExp(`^/dashboard/mensagens/pre-compra/${identificadorUuid}$`),
     new RegExp(`^/dashboard/(?:encomendas|compras|tarefas)/${identificadorUuid}$`),
+    /^\/dashboard\/pedidos-(?:vendedores|entregadores)$/,
+    new RegExp(`^/dashboard/(?:vendedores|entregadores)/${identificadorUuid}$`),
   ].some(padrao => padrao.test(url));
 }
 

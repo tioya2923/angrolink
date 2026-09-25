@@ -26,7 +26,8 @@ export function NotificacoesProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const elegivel = utilizador?.papel === 'cliente'
     || utilizador?.papel === 'vendedor'
-    || utilizador?.papel === 'parceiro_entrega';
+    || utilizador?.papel === 'parceiro_entrega'
+    || utilizador?.papel === 'admin';
   const ativo = Boolean(utilizador && elegivel && !ROTAS_SEM_NOTIFICACOES.has(pathname));
   const estado = useNotificacoes(utilizador?.id, ativo);
   const { consumirUltimaRealtime, marcarLida } = estado;
