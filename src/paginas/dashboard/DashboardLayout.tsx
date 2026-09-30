@@ -42,7 +42,7 @@ import { useAuth } from '@/contextos/AuthContexto';
 import { PapelUtilizador } from '@/tipos';
 import { obterUrlDocumentoParceiro } from '@/services/api';
 import { rotuloEstadoVendedor, vendedorPodeOperarComercialmente } from '@/lib/acessoVendedor';
-import { parceiroEstaSuspenso } from '@/lib/acessoParceiroEntrega';
+import { parceiroEstaRestrito } from '@/lib/acessoParceiroEntrega';
 import NotificacoesMenu from '@/componentes/NotificacoesMenu';
 
 interface ItemMenu {
@@ -218,7 +218,7 @@ interface Props {
 export default function DashboardLayout({
   children,
 }: Props) {
-  const { utilizador, logout } = useAuth();
+  const { utilizador, logout, sincronizandoPerfilParceiro } = useAuth();
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -244,8 +244,9 @@ export default function DashboardLayout({
   if (!utilizador) return null;
 
   const vendedorAprovado = utilizador.papel === 'vendedor' && vendedorPodeOperarComercialmente(utilizador);
-  const parceiroSuspenso = utilizador.papel === 'parceiro_entrega'
-    && parceiroEstaSuspenso(utilizador.estado_parceiro_entrega);
+  const parceiroRestrito = utilizador.papel === 'parceiro_entrega'
+    && (sincronizandoPerfilParceiro
+      || parceiroEstaRestrito(utilizador.estado_parceiro_entrega));
 
   const menuBase = MENUS[utilizador.papel];
 
@@ -271,13 +272,18 @@ export default function DashboardLayout({
         ? 'Aprovado'
         : utilizador.estado_parceiro_entrega === 'suspenso'
           ? 'Suspenso'
+          : utilizador.estado_parceiro_entrega === 'rejeitado'
+            ? 'Rejeitada'
           : utilizador.estado_parceiro_entrega === 'documentos_pendentes'
             ? 'Documentos pendentes'
             : 'Em análise'
       : null;
 
-  const menu = utilizador.papel === 'parceiro_entrega' && parceiroSuspenso
-    ? menuBase.filter(item => item.caminho === '/dashboard')
+  const menu = utilizador.papel === 'parceiro_entrega' && parceiroRestrito
+    ? menuBase.filter(item => [
+      '/dashboard',
+      '/dashboard/documentos',
+    ].includes(item.caminho))
     : utilizador.papel === 'vendedor' && !vendedorAprovado
       ? menuBase.filter(item => [
       '/dashboard',
@@ -447,6 +453,8 @@ export default function DashboardLayout({
                         ? 'bg-green-100 text-green-700'
                         : utilizador.estado_parceiro_entrega === 'suspenso'
                           ? 'bg-red-100 text-red-700'
+                          : utilizador.estado_parceiro_entrega === 'rejeitado'
+                            ? 'bg-red-100 text-red-700'
                           : utilizador.estado_parceiro_entrega === 'documentos_pendentes'
                             ? 'bg-orange-100 text-orange-700'
                             : 'bg-yellow-100 text-yellow-700'

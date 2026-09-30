@@ -6,6 +6,7 @@ import {
   AlteracaoTempoReal,
   EVENTO_ATUALIZACAO_TEMPO_REAL,
 } from '@/hooks/useAtualizacaoTempoReal';
+import { EVENTO_SINCRONIZAR_PERFIL_PARCEIRO } from '@/hooks/useSincronizacaoPerfilParceiro';
 
 const TABELAS_TEMPO_REAL = [
   'clientes',
@@ -57,9 +58,18 @@ export default function AtualizacoesTempoReal({ children }: { children: ReactNod
           queryClient.invalidateQueries();
           window.dispatchEvent(new CustomEvent(EVENTO_ATUALIZACAO_TEMPO_REAL, { detail: alteracao }));
 
-          const alteraPerfil = ['clientes', 'vendedores', 'parceiros_entrega'].includes(alteracao.tabela);
+          // parceiros_entrega tambem alimenta a sessao autenticada. Sem este
+          // percurso, a subscricao global recebia a aprovacao mas o menu
+          // continuava a consumir o estado antigo ate um refetch de foco.
+          const alteraPerfil = ['clientes', 'vendedores'].includes(alteracao.tabela);
           const agora = Date.now();
-          if (alteraPerfil && pertenceAoUtilizador(alteracao, utilizador?.id) && agora - ultimoRecarregamentoRef.current > 500) {
+          const alteracaoDoUtilizador = pertenceAoUtilizador(alteracao, utilizador?.id);
+          if (alteracao.tabela === 'parceiros_entrega' && alteracaoDoUtilizador) {
+            // O hook específico é o único coordenador das recargas do parceiro;
+            // assim eventos do canal global e do canal filtrado não aplicam
+            // respostas concorrentes fora da sua fila.
+            window.dispatchEvent(new Event(EVENTO_SINCRONIZAR_PERFIL_PARCEIRO));
+          } else if (alteraPerfil && alteracaoDoUtilizador && agora - ultimoRecarregamentoRef.current > 500) {
             ultimoRecarregamentoRef.current = agora;
             void recarregarPerfilRef.current();
           }

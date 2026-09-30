@@ -9,6 +9,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   ReactNode,
 } from 'react';
 
@@ -20,10 +21,10 @@ import {
 } from '@/lib/verificacoesConta';
 import { verificarAdminNoServidor } from '@/lib/autorizacaoAdmin';
 import { fetchMeuVendedor } from '@/services/api';
+import { useSincronizacaoPerfilParceiro } from '@/hooks/useSincronizacaoPerfilParceiro';
 
 const STORAGE_KEY = 'angrolink_auth_user';
 const STORAGE_TIPO_COMPRADOR = 'angrolink_tipo_comprador';
-const STORAGE_MENSAGEM_REJEICAO = 'angrolink_mensagem_rejeicao';
 
 
 
@@ -49,6 +50,7 @@ interface AuthContextoTipo {
   tipoComprador: TipoComprador;
   atualizarTipoComprador: (tipo: TipoComprador) => void;
   recarregarPerfil: () => Promise<boolean>;
+  sincronizandoPerfilParceiro: boolean;
 }
 
 const AuthContexto = createContext<AuthContextoTipo | null>(null);
@@ -57,8 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [utilizador, setUtilizador] = useState<Utilizador | null>(null);
   const [tipoComprador, setTipoComprador] = useState<TipoComprador>('casa');
   const [pronto, setPronto] = useState(false);
+  const sessaoAtualRef = useRef<string | null>(null);
 
   const guardarUtilizador = (user: Utilizador) => {
+    if (sessaoAtualRef.current !== user.id) return;
+
     setUtilizador(user);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
 
@@ -128,7 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     parceiro_entrega_id: parceiro.id,
     estado_parceiro_entrega: parceiro.estado,
     motivo_suspensao: parceiro.motivo_suspensao || null,
-    conta_ativa: parceiro.estado !== 'suspenso' && parceiro.estado !== 'rejeitado',
+    motivo_rejeicao: parceiro.motivo_rejeicao || null,
+    conta_ativa: parceiro.estado === 'aprovado',
   });
 
   const carregarPerfilSupabase = async (authUser: any): Promise<boolean> => {
@@ -201,13 +207,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (parceiro) {
-      if (parceiro.estado === 'rejeitado') {
-        localStorage.setItem(STORAGE_MENSAGEM_REJEICAO, parceiro.motivo_rejeicao || 'O seu pedido de parceiro de entregas foi rejeitado. Contacte a equipa ANGROLINK.');
-        await supabase.auth.signOut();
-        setUtilizador(null);
-        localStorage.removeItem(STORAGE_KEY);
-        return false;
-      }
       guardarUtilizador(montarUtilizadorParceiroEntrega(parceiro, authUser));
       return true;
     }
@@ -375,7 +374,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) console.error('Erro ao obter sessão:', error);
 
         if (session?.user) {
+          sessaoAtualRef.current = session.user.id;
           await carregarPerfilSupabase(session.user);
+        } else {
+          sessaoAtualRef.current = null;
         }
       } catch (error) {
         console.error('Erro ao iniciar auth:', error);
@@ -392,6 +394,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('AUTH EVENT:', event);
 
       if (!mounted) return;
+
+      sessaoAtualRef.current = session?.user?.id ?? null;
 
       if (session?.user) {
         setTimeout(() => {
@@ -490,6 +494,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastSignInError = error;
 
       if (!error && data.user) {
+        sessaoAtualRef.current = data.user.id;
         const perfilCarregado = await carregarPerfilSupabase(data.user);
         if (!perfilCarregado) {
           console.error('Login autenticou, mas não carregou perfil.');
@@ -558,6 +563,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Erro cadastro:', error);
       return false;
     }
+
+    sessaoAtualRef.current = data.user.id;
 
     let fotoPerfilUrl: string | null = null;
 
@@ -639,6 +646,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
 
   const logout = async () => {
+    sessaoAtualRef.current = null;
     await supabase.auth.signOut();
 
     setUtilizador(null);
@@ -650,8 +658,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const recarregarPerfil = async (): Promise<boolean> => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) return false;
+    if (sessaoAtualRef.current !== data.user.id) return false;
     return carregarPerfilSupabase(data.user);
   };
+
+  const sincronizandoPerfilParceiro = useSincronizacaoPerfilParceiro(
+    utilizador,
+    recarregarPerfil,
+  );
 
   return (
     <AuthContexto.Provider
@@ -665,6 +679,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tipoComprador,
         atualizarTipoComprador,
         recarregarPerfil,
+        sincronizandoPerfilParceiro,
       }}
     >
       {children}

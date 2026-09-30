@@ -102,17 +102,17 @@ export default function AdminEntregadores({ apenasPedidos = false }: { apenasPed
   const atualizar = async (parceiro: Parceiro, estado: EstadoParceiroAdmin, motivoDecisao?: string) => {
     try {
       setAGuardar(true);
-      await atualizarEstadoParceiroEntrega(parceiro.id, estado, motivoDecisao, utilizador?.id);
+      const atualizado = await atualizarEstadoParceiroEntrega(parceiro.id, estado, motivoDecisao, utilizador?.id);
       setParceiros(lista => lista.map(item => item.id === parceiro.id ? {
         ...item,
-        estado,
-        disponibilidade: false,
-        motivo_rejeicao: estado === 'rejeitado' ? motivoDecisao : null,
-        motivo_suspensao: estado === 'suspenso' ? motivoDecisao : null,
+        estado: atualizado.estado,
+        disponibilidade: atualizado.disponibilidade,
+        motivo_rejeicao: atualizado.motivo_rejeicao,
+        motivo_suspensao: atualizado.motivo_suspensao,
       } : item));
       setDecisao(null);
       setMotivo('');
-      toast({ title: estado === 'aprovado' ? 'Parceiro aprovado' : estado === 'suspenso' ? 'Parceiro suspenso' : estado === 'rejeitado' ? 'Pedido rejeitado' : 'Análise reaberta', description: estado === 'aprovado' ? 'O parceiro poderá ativar a disponibilidade após iniciar sessão.' : 'A decisão foi guardada e ficará visível para o parceiro.' });
+      toast({ title: estado === 'aprovado' ? 'Parceiro aprovado' : estado === 'suspenso' ? 'Parceiro suspenso' : estado === 'rejeitado' ? 'Pedido rejeitado' : atualizado.estado === 'documentos_pendentes' ? 'Documentos pendentes de correção' : 'Análise reaberta', description: estado === 'aprovado' ? 'O parceiro poderá ativar a disponibilidade após iniciar sessão.' : 'A decisão foi guardada e ficará visível para o parceiro.' });
     } catch (erro: any) {
       toast({ title: 'Não foi possível atualizar', description: erro.message || 'Tente novamente.', variant: 'destructive' });
     } finally {

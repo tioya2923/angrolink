@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useAuth } from '@/contextos/AuthContexto';
-import { parceiroEstaSuspenso, parceiroPodeAcederAreaOperacional } from '@/lib/acessoParceiroEntrega';
+import { parceiroEstaRestrito, parceiroPodeAcederAreaOperacional } from '@/lib/acessoParceiroEntrega';
 import DashboardLayout from './DashboardLayout';
 
 import AdminResumo from './admin/AdminResumo';
@@ -48,12 +48,12 @@ import AdminFeedbackPiloto from './admin/AdminFeedbackPiloto';
 import ConversasPreCompra from './ConversasPreCompra';
 
 export default function DashboardRouter() {
-
-const {
-utilizador,
-autenticado,
-pronto
-}=useAuth();
+  const {
+    utilizador,
+    autenticado,
+    pronto,
+    sincronizandoPerfilParceiro,
+  } = useAuth();
 
 
 // MUITO IMPORTANTE
@@ -69,10 +69,11 @@ if(!autenticado || !utilizador){
  return <Navigate to="/login" replace />;
 }
 
-const parceiroSuspenso = utilizador.papel === 'parceiro_entrega'
-  && parceiroEstaSuspenso(utilizador.estado_parceiro_entrega);
+const parceiroRestrito = utilizador.papel === 'parceiro_entrega'
+  && parceiroEstaRestrito(utilizador.estado_parceiro_entrega);
 const protegerRotaOperacionalParceiro = (elemento: ReactNode) =>
-  parceiroPodeAcederAreaOperacional(utilizador.estado_parceiro_entrega)
+  !sincronizandoPerfilParceiro
+    && parceiroPodeAcederAreaOperacional(utilizador.estado_parceiro_entrega)
     ? elemento
     : <Navigate to="/dashboard" replace />;
 
@@ -83,14 +84,14 @@ return(
 
 {utilizador.papel === "parceiro_entrega" && (
   <>
-    <Route index element={parceiroSuspenso ? <ParceiroContaSuspensa /> : <ParceiroResumo />} />
-    <Route path="pedidos" element={<Navigate to={parceiroSuspenso ? '/dashboard' : '/dashboard/tarefas'} replace />} />
+    <Route index element={sincronizandoPerfilParceiro || parceiroRestrito ? <ParceiroContaSuspensa /> : <ParceiroResumo />} />
+    <Route path="pedidos" element={<Navigate to={sincronizandoPerfilParceiro || parceiroRestrito ? '/dashboard' : '/dashboard/tarefas'} replace />} />
     <Route path="tarefas" element={protegerRotaOperacionalParceiro(<ParceiroTarefas />)} />
     <Route path="tarefas/:id" element={protegerRotaOperacionalParceiro(<ParceiroTarefaDetalhe />)} />
     <Route path="dados" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="dados" />)} />
     <Route path="veiculo" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="veiculo" />)} />
     <Route path="areas" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="areas" />)} />
-    <Route path="documentos" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="documentos" />)} />
+    <Route path="documentos" element={<ParceiroResumo secao="documentos" />} />
     <Route path="apoio" element={protegerRotaOperacionalParceiro(<ParceiroResumo secao="apoio" />)} />
     <Route path="feedback" element={<FeedbackPiloto />} />
   </>
