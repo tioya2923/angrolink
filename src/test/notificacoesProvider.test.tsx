@@ -256,6 +256,33 @@ describe('provider de notificações', () => {
 });
 
 describe('central de notificações administrativa', () => {
+  it('abre o detalhe administrativo da encomenda a partir de um alerta de entrega', async () => {
+    const notificacao = {
+      ...criarNotificacao(`/dashboard/encomendas/${id}`),
+      utilizador_id: 'admin-1',
+      contexto: 'admin' as const,
+      tipo: 'entrega_pronta_atribuicao',
+      titulo: 'Entrega pronta para atribuição',
+      mensagem: 'Uma entrega está pronta para receber um entregador.',
+    };
+    vi.clearAllMocks();
+    mocks.useAuth.mockReturnValue({ utilizador: { id: 'admin-1', papel: 'admin' } });
+    mocks.useNotificacoes.mockReturnValue(estado(notificacao));
+    mocks.dismiss.mockReturnValue(undefined);
+    mocks.toast.mockReturnValue({ dismiss: mocks.dismiss });
+
+    render(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <NotificacoesProvider><NotificacoesMenu /><AbrirPorContexto notificacao={notificacao} /><Localizacao /></NotificacoesProvider>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir notificação' }));
+
+    await waitFor(() => expect(screen.getByTestId('localizacao')).toHaveTextContent(`/dashboard/encomendas/${id}`));
+    expect(mocks.marcarLida).toHaveBeenCalledWith(notificacao.id);
+  });
+
   it('habilita a central privada para Admin', async () => {
     const notificacao = { ...criarNotificacao('/dashboard/pedidos-vendedores'), utilizador_id: 'admin-1', contexto: 'admin' as const };
     vi.clearAllMocks();
