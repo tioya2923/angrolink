@@ -20,10 +20,9 @@ import {
   fetchProdutosPublicosPorVendedor
 } from '@/services/api';
 
-import { gerarLinkWhatsApp } from '@/lib/whatsapp';
-
 import { Vendedor, Produto } from '@/tipos';
 import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
+import { useAtualizacaoCatalogoPublico } from '@/hooks/useCatalogoQuery';
 
 // =============================
 // HELPERS
@@ -56,6 +55,7 @@ export default function PaginaVendedor() {
   const [erro, setErro] = useState<string | null>(null);
   const [pesquisa, setPesquisa] = useState("");
   const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+  const revisaoCatalogo = useAtualizacaoCatalogoPublico(produtos);
 
   useAtualizacaoTempoReal(['vendedores', 'produtos'], () => setVersaoTempoReal(v => v + 1));
 
@@ -97,7 +97,7 @@ export default function PaginaVendedor() {
     }
 
     carregar();
-  }, [id, versaoTempoReal]);
+  }, [id, versaoTempoReal, revisaoCatalogo]);
 
   const estatisticas = useMemo(() => {
 
@@ -206,7 +206,7 @@ export default function PaginaVendedor() {
 
         
 
-        <div className="mt-10 rounded-2xl border bg-white shadow-sm overflow-hidden">
+        <div id="produtos" className="mt-10 rounded-2xl border bg-white shadow-sm overflow-hidden">
 
           {/* Barra de pesquisa */}
           <div className="relative mb-6">

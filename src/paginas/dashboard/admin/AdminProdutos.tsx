@@ -14,6 +14,13 @@ import {
   fetchProdutosAdmin,
   updateProdutoAdmin,
 } from '@/services/api';
+import {
+  criarDestaqueProdutoEditorialAdmin,
+  listarDestaquesProdutosEditoriaisAdmin,
+  obterEstadoDestaqueEditorial,
+  revogarDestaqueProdutoEditorialAdmin,
+  type DestaqueEditorialAdmin,
+} from '@/services/destaquesEditoriais';
 
 export default function AdminProdutos() {
   const { toast } = useToast();
@@ -21,13 +28,18 @@ export default function AdminProdutos() {
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [atualizandoId, setAtualizandoId] = useState<string | null>(null);
+  const [destaques, setDestaques] = useState<DestaqueEditorialAdmin[]>([]);
 
   async function carregarProdutos() {
     try {
       setLoading(true);
 
-      const data = await fetchProdutosAdmin();
+      const [data, destaquesAtuais] = await Promise.all([
+        fetchProdutosAdmin(),
+        listarDestaquesProdutosEditoriaisAdmin(),
+      ]);
       setProdutos(data || []);
+      setDestaques(destaquesAtuais);
     } catch (err) {
       console.error(err);
 
@@ -50,20 +62,20 @@ export default function AdminProdutos() {
     try {
       setAtualizandoId(produto.id);
 
-      const novoValor = !produto.destaque;
-
-      const atualizado = await updateProdutoAdmin(produto.id, {
-        destaque: novoValor,
-      });
-
-      setProdutos(prev =>
-        prev.map(p =>
-          p.id === produto.id ? atualizado : p
-        )
+      const destaqueAtual = destaques.find(
+        (destaque) => destaque.produtoId === produto.id && obterEstadoDestaqueEditorial(destaque) === 'ativo',
       );
 
+      if (destaqueAtual) {
+        await revogarDestaqueProdutoEditorialAdmin(destaqueAtual.id);
+      } else {
+        await criarDestaqueProdutoEditorialAdmin(produto.id);
+      }
+
+      await carregarProdutos();
+
       toast({
-        title: novoValor ? 'Produto destacado' : 'Destaque removido',
+        title: destaqueAtual ? 'Destaque editorial removido' : 'Produto destacado editorialmente',
       });
     } catch (err) {
       console.error(err);
@@ -131,6 +143,9 @@ export default function AdminProdutos() {
         <div className="space-y-3">
           {produtos.map(p => {
             const vendedor = (p as any).vendedor;
+            const destaqueDoProduto = destaques.find((destaque) => destaque.produtoId === p.id);
+            const estado = destaqueDoProduto ? obterEstadoDestaqueEditorial(destaqueDoProduto) : null;
+            const destaqueAtual = estado === 'ativo';
 
             return (
               <div
@@ -155,11 +170,17 @@ export default function AdminProdutos() {
                       {p.nome_produto}
                     </span>
 
-                    {p.destaque && (
+                    {destaqueAtual && (
                       <Star
                         size={14}
                         className="text-secondary fill-secondary"
                       />
+                    )}
+                    {estado === 'expirado' && (
+                      <span className="text-[10px] text-muted-foreground">Destaque expirado</span>
+                    )}
+                    {estado === 'revogado' && (
+                      <span className="text-[10px] text-muted-foreground">Destaque revogado</span>
                     )}
 
                     <span className={`rounded-full px-2 py-0.5 font-corpo text-xs font-medium ${p.disponivel ? 'bg-primary/10 text-primary' : 'bg-destructive/10 text-destructive'}`}>{p.disponivel ? 'Visível' : 'Oculto'}</span>
@@ -181,7 +202,7 @@ export default function AdminProdutos() {
                     disabled={atualizandoId === p.id}
                     onClick={() => toggleDestaque(p)}
                     className={`font-corpo text-xs border-2 px-3 py-1.5 transition-colors disabled:opacity-50 ${
-                      p.destaque
+                      destaqueAtual
                         ? 'border-secondary text-secondary'
                         : 'border-border hover:border-secondary hover:text-secondary'
                     }`}
@@ -189,9 +210,9 @@ export default function AdminProdutos() {
                     <Star size={12} className="inline mr-1" />
                     {atualizandoId === p.id
                       ? 'A atualizar...'
-                      : p.destaque
+                      : destaqueAtual
                         ? 'Remover Destaque'
-                        : 'Destacar'}
+                        : 'Destacar editorialmente'}
                   </button>
 
                   <button

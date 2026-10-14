@@ -15,31 +15,7 @@ export interface FiltrosProdutosPublicosFase1 {
   limite?: number;
 }
 
-type ResultadoRpc = { data: unknown; error: { message: string } | null };
-type RpcCatalogoPublico = {
-  (
-    nome: 'listar_produtos_publicos_fase1',
-    args: {
-      p_produto_id: string | null;
-      p_produto_ids: string[] | null;
-      p_vendedor_id: string | null;
-      p_categoria_id: string | null;
-      p_categoria_ids: string[] | null;
-      p_provincia: string | null;
-      p_municipio: string | null;
-      p_localizacao_ou: boolean;
-      p_pesquisa: string | null;
-      p_excluir_produto_id: string | null;
-      p_ordenar_por_destaque: boolean;
-      p_limite: number;
-    },
-  ): Promise<ResultadoRpc>;
-};
-
-// A migration local pendente ainda não está em database.types.ts. Este é o
-// único adapter temporário para o contrato público de catálogo; ele deixa a
-// assinatura explicita sem alargar o acesso directo a tabela produtos.
-const rpcCatalogoPublico = supabase.rpc.bind(supabase) as unknown as RpcCatalogoPublico;
+export type ProdutoDestaqueEditorialPublico = Record<string, unknown>;
 
 function linhas(data: unknown): Record<string, unknown>[] {
   return Array.isArray(data)
@@ -50,7 +26,7 @@ function linhas(data: unknown): Record<string, unknown>[] {
 export async function listarProdutosPublicosFase1(
   filtros: FiltrosProdutosPublicosFase1 = {},
 ): Promise<Record<string, unknown>[]> {
-  const { data, error } = await rpcCatalogoPublico('listar_produtos_publicos_fase1', {
+  const { data, error } = await supabase.rpc('listar_produtos_publicos_fase1', {
     p_produto_id: filtros.produtoId ?? null,
     p_produto_ids: filtros.produtoIds?.length ? filtros.produtoIds : null,
     p_vendedor_id: filtros.vendedorId ?? null,
@@ -66,5 +42,17 @@ export async function listarProdutosPublicosFase1(
   });
 
   if (error) throw new Error('Não foi possível carregar os produtos públicos.');
+  return linhas(data);
+}
+
+export async function listarDestaquesProdutosEditoriaisPublicos(
+  limite = 8,
+): Promise<ProdutoDestaqueEditorialPublico[]> {
+  const { data, error } = await supabase.rpc(
+    'listar_destaques_produtos_editoriais_publicos',
+    { p_limite: Math.min(Math.max(limite, 1), 8) },
+  );
+
+  if (error) throw new Error('Não foi possível carregar os produtos em destaque.');
   return linhas(data);
 }

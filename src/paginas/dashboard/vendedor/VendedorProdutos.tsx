@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   PlusCircle,
-  Star,
   Edit,
   Trash2,
   Share2,
@@ -24,8 +23,6 @@ import {
   fetchProdutosPorVendedor,
   deleteProduto,
   updateProduto,
-  destacarProdutoGratis,
-  removerDestaqueProduto,
 } from '@/services/api';
 
 export default function VendedorProdutos() {
@@ -124,50 +121,6 @@ export default function VendedorProdutos() {
       setRemovendoId(null);
     }
   };
-
-  // =============================
-  // ATUALIZAR DESTAQUE
-  // =============================
-  // =============================
-// ATUALIZAR DESTAQUE
-// =============================
-const toggleDestaque = async (produto: Produto) => {
-  if (vendedorPendente) return bloquearAcao();
-
-  try {
-    setAtualizandoId(produto.id);
-
-    if (produto.destaque) {
-      await removerDestaqueProduto(produto.id);
-
-      toast({
-        title: 'Destaque removido',
-        description: 'O produto voltou ao estado normal.',
-      });
-    } else {
-      await destacarProdutoGratis(produto.id);
-
-      toast({
-        title: 'Produto destacado',
-        description:
-          'Este produto ficará em destaque durante 7 dias. Se já tinhas outro produto destacado, ele foi substituído.',
-      });
-    }
-
-    await carregarProdutos();
-  } catch (err: any) {
-    console.error(err);
-
-    toast({
-      title: 'Erro ao atualizar destaque',
-      description:
-        err?.message || 'Não foi possível atualizar o destaque deste produto.',
-      variant: 'destructive',
-    });
-  } finally {
-    setAtualizandoId(null);
-  }
-};
 
   // =============================
   // ATUALIZAR DISPONIBILIDADE
@@ -270,7 +223,7 @@ const toggleDestaque = async (produto: Produto) => {
           </h1>
 
           <p className="relative z-10 font-corpo text-sm text-primary-foreground/80 mt-1">
-            Gere os teus produtos, disponibilidade, destaques e desempenho.
+            Gere os teus produtos, disponibilidade, visibilidade e desempenho.
           </p>
         </div>
 
@@ -351,13 +304,6 @@ const toggleDestaque = async (produto: Produto) => {
                       {produto.nome_produto}
                     </span>
 
-                    {produto.destaque && (
-                      <Star
-                        size={14}
-                        className="text-secondary fill-secondary"
-                      />
-                    )}
-
                     <span
                       className={`text-[10px] px-2 py-0.5 border ${
                         produto.disponivel
@@ -415,18 +361,6 @@ const toggleDestaque = async (produto: Produto) => {
                         : 'Ativar'}
                   </button>
 
-                  <button
-                    disabled={atualizandoId === produto.id}
-                    onClick={() => toggleDestaque(produto)}
-                    className="font-corpo text-xs border-2 border-border px-3 py-1.5 hover:border-secondary hover:text-secondary transition-colors disabled:opacity-50"
-                  >
-                    <Star size={12} className="inline mr-1" />
-                    {atualizandoId === produto.id
-                      ? 'A atualizar...'
-                      : produto.destaque
-                        ? 'Remover'
-                        : 'Destacar'}
-                  </button>
 
                   <button
                     onClick={() => partilharProduto(produto)}

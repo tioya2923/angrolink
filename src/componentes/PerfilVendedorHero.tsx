@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import {
-  MessageCircle,
   MapPin,
   Package,
   Eye,
@@ -10,7 +9,6 @@ import {
 } from "lucide-react";
 
 import SeloVendedor from "@/componentes/SeloVendedor";
-import { gerarLinkWhatsApp } from "@/lib/whatsapp";
 import { obterBadgeVendedor } from "@/dados/constantes";
 
 import {
@@ -250,45 +248,15 @@ export default function PerfilVendedorHero({
 
                         {/* BOTÃO */}
 
-            {vendedor.telefone_whatsapp && (
-
-              <div className="pt-2">
-
-                <a
-                  href={gerarLinkWhatsApp(
-                    vendedor.telefone_whatsapp,
-                    `Loja ${vendedor.nome_comercial}`
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="
-                    inline-flex
-                    items-center
-                    gap-3
-                    rounded-xl
-                    bg-green-600
-                    hover:bg-green-700
-                    text-white
-                    px-6
-                    py-3
-                    w-fit
-                    shadow-lg
-                    transition
-                    font-semibold
-                  "
-                >
-
-                  <MessageCircle size={24} />
-
-                  Contactar no WhatsApp
-
-                </a>
-                
-
-              </div>
-              
-
-            )}
+            <div className="pt-2">
+              <a
+                href="#produtos"
+                className="inline-flex w-fit items-center gap-3 rounded-xl bg-green-600 px-6 py-3 font-semibold text-white shadow-lg transition hover:bg-green-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
+              >
+                <Package size={24} />
+                Ver produtos
+              </a>
+            </div>
 
           </div>
 

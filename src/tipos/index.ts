@@ -195,6 +195,8 @@ export interface Produto {
 
   disponivel?: boolean;
   destaque?: boolean;
+  destaque_posicao?: number | null;
+  destaque_fim_em?: string | null;
 
   status?: StatusProduto;
 

@@ -9,6 +9,7 @@ import SeletorTipoComprador from '@/componentes/SeletorTipoComprador';
 
 import { useAuth } from '@/contextos/AuthContexto';
 import { useMunicipio } from '@/contextos/MunicipioContexto';
+import { useAtualizacaoCatalogoPublico } from '@/hooks/useCatalogoQuery';
 
 import {
   fetchProdutos,
@@ -37,6 +38,7 @@ export default function PaginaPesquisa() {
 
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const revisaoCatalogo = useAtualizacaoCatalogoPublico(produtos);
 
   // =============================
   // CATEGORIAS
@@ -95,7 +97,7 @@ export default function PaginaPesquisa() {
     }
 
     carregarProdutos();
-  }, [categoriaId, tipoComprador, termoPesquisa, municipioNome, provinciaNome]);
+  }, [categoriaId, tipoComprador, termoPesquisa, municipioNome, provinciaNome, revisaoCatalogo]);
 
   // =============================
   // FILTROS + ORDENAÇÃO

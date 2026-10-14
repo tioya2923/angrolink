@@ -37,7 +37,9 @@ describe('Admin logística do parceiro', () => {
   it('usa uma grelha móvel de duas colunas para as cinco ações de produto', () => {
     expect(produtos).toContain('grid grid-cols-2 gap-2 sm:flex sm:flex-col');
     expect(produtos).toContain('col-span-2');
-    for (const acao of ['Editar', 'Pausar', 'Destacar', 'Partilhar', 'Remover']) expect(produtos).toContain(acao);
+    for (const acao of ['Editar', 'Pausar', 'Partilhar', 'Remover']) expect(produtos).toContain(acao);
+    expect(produtos).not.toContain('destacarProdutoGratis');
+    expect(produtos).not.toContain('removerDestaqueProduto');
     expect(produtos).not.toContain('flex sm:flex-col gap-2 shrink-0');
   });
 });

@@ -23,6 +23,7 @@ import {
 import { Produto } from '@/tipos';
 import { useAuth } from '@/contextos/AuthContexto';
 import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
+import { useAtualizacaoCatalogoPublico } from '@/hooks/useCatalogoQuery';
 import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
 
 export default function PaginaProduto() {
@@ -33,6 +34,9 @@ export default function PaginaProduto() {
   const [relacionados, setRelacionados] = useState<Produto[]>([]);
   const [loading, setLoading] = useState(true);
   const [versaoTempoReal, setVersaoTempoReal] = useState(0);
+  const revisaoCatalogo = useAtualizacaoCatalogoPublico(
+    produto ? [produto, ...relacionados] : [],
+  );
 
   useAtualizacaoTempoReal(['produtos', 'vendedores', 'categorias'], () => setVersaoTempoReal(v => v + 1));
 
@@ -112,7 +116,7 @@ export default function PaginaProduto() {
     }
 
     carregarProduto();
-  }, [id, utilizador?.id, utilizador?.papel, utilizador?.vendedor_id, versaoTempoReal]);
+  }, [id, utilizador?.id, utilizador?.papel, utilizador?.vendedor_id, versaoTempoReal, revisaoCatalogo]);
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">

@@ -28,7 +28,7 @@ import {
   SUPABASE_STORAGE_PRODUTOS_URL,
 } from "./supabase";
 import { COLUNAS_VENDEDOR_PUBLICAS, listarVendedoresPublicos } from './vendedores';
-import { listarProdutosPublicosFase1 } from './catalogoPublicoProdutos';
+import { listarDestaquesProdutosEditoriaisPublicos, listarProdutosPublicosFase1 } from './catalogoPublicoProdutos';
 
 // Get the active vendor ID from localStorage or session storage
 const getVendedorAtivoId = (): string | null => {
@@ -250,6 +250,15 @@ export async function fetchProdutosRelacionados(
     })).map(normalizarProduto);
   } catch (error) {
     console.error("Erro ao buscar relacionados:", error);
+    return [];
+  }
+}
+
+export async function fetchDestaquesProdutosEditoriais(): Promise<Produto[]> {
+  try {
+    return (await listarDestaquesProdutosEditoriaisPublicos()).map(normalizarProduto);
+  } catch (error) {
+    console.error('Erro ao carregar destaques editoriais:', error);
     return [];
   }
 }

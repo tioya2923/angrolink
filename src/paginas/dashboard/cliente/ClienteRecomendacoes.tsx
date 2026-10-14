@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, MessageSquare, Eye, Sparkles } from 'lucide-react';
 
 import { useAuth } from '@/contextos/AuthContexto';
+import { useAtualizacaoCatalogoPublico } from '@/hooks/useCatalogoQuery';
 import { supabase } from '@/services/supabase';
 import {
   guardarHistoricoContacto,
@@ -58,6 +59,7 @@ export default function ClienteRecomendacoes() {
   const [recomendados, setRecomendados] = useState<ProdutoRecomendado[]>([]);
   const [loading, setLoading] = useState(true);
   const [motivo, setMotivo] = useState('Produtos recomendados para si');
+  const revisaoCatalogo = useAtualizacaoCatalogoPublico(recomendados);
 
   useEffect(() => {
     async function carregarRecomendacoes() {
@@ -170,7 +172,7 @@ export default function ClienteRecomendacoes() {
     }
 
     carregarRecomendacoes();
-  }, [utilizador?.id, utilizador?.municipio, utilizador?.provincia]);
+  }, [utilizador?.id, utilizador?.municipio, utilizador?.provincia, revisaoCatalogo]);
 
   const handleContacto = (produto: ProdutoRecomendado) => {
     if (produto.id?.includes('-')) {

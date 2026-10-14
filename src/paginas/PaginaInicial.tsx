@@ -7,6 +7,7 @@
  * - Filtros só aplicados quando utilizador escolhe
  */
 
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { MessageCircle, Megaphone, Star } from "lucide-react";
 
@@ -17,7 +18,7 @@ import ListaProdutos from "@/componentes/ListaProdutos";
 
 import { useAuth } from "@/contextos/AuthContexto";
 import { useMunicipio } from "@/contextos/MunicipioContexto";
-import { useProdutosQuery } from "@/hooks/useCatalogoQuery";
+import { useAtualizacaoCatalogoPublico, useDestaquesProdutosEditoriaisQuery, useProdutosQuery } from "@/hooks/useCatalogoQuery";
 import ListaDestaques from "@/componentes/ListaDestaques";
 import CarrosselProdutos from "@/componentes/CarrosselProdutos";
 import FaixaConfianca from "@/componentes/FaixaConfianca";
@@ -27,6 +28,7 @@ export default function PaginaInicial() {
   const { utilizador } = useAuth();
 
   const produtosQuery = useProdutosQuery();
+  const { data: dadosDestaques, refetch: refetchDestaques } = useDestaquesProdutosEditoriaisQuery();
   const produtos = produtosQuery.data ?? [];
   const loading = produtosQuery.isLoading;
   const erro = produtosQuery.isError
@@ -63,22 +65,18 @@ export default function PaginaInicial() {
   const porDataDesc = (a: { criado_em?: string }, b: { criado_em?: string }) =>
     new Date(b.criado_em ?? 0).getTime() - new Date(a.criado_em ?? 0).getTime();
 
-  const produtosDestaque = produtos
-    .filter((p) => {
-      const destaqueValido =
-        !(p as any).destaque_ate ||
-        new Date((p as any).destaque_ate).getTime() > Date.now();
-
-      return p.destaque && p.disponivel && destaqueValido;
-    })
-    .sort(porDataDesc)
-    .slice(0, 30);
+  const produtosDestaque = useMemo(() => dadosDestaques ?? [], [dadosDestaques]);
+  const revisaoDestaques = useAtualizacaoCatalogoPublico(produtosDestaque);
 
   // Destaques exclusivamente de produtos durante a Fase 1.
   const destaquesAngrolink = produtosDestaque.map((produto) => ({
     tipo: "produto" as const,
     item: produto,
   }));
+
+  useEffect(() => {
+    if (revisaoDestaques > 0) void refetchDestaques();
+  }, [revisaoDestaques, refetchDestaques]);
 
   /**
    * ===============================
@@ -175,9 +173,11 @@ export default function PaginaInicial() {
                     <span className="text-white/30">|</span>
                   </>
                 )}
-                <a href="#destaques" className="flex items-center gap-1 hover:text-secondary transition-colors">
-                  <Star size={13} /> Produtos em destaque
-                </a>
+                {destaquesAngrolink.length > 0 && (
+                  <a href="#destaques" className="flex items-center gap-1 hover:text-secondary transition-colors">
+                    <Star size={13} /> Produtos em destaque
+                  </a>
+                )}
               </div>
             </div>
 

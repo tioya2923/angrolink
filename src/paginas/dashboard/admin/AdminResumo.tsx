@@ -5,7 +5,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useAtualizacaoTempoReal } from '@/hooks/useAtualizacaoTempoReal';
-import { Users, Package, Star, ShieldCheck, MapPin } from 'lucide-react';
+import { Users, Package, ShieldCheck, MapPin } from 'lucide-react';
 
 import {
   fetchVendedoresAdmin,
@@ -61,7 +61,6 @@ export default function AdminResumo() {
     const totalVendedores = vendedores.length;
     const totalProdutos = produtos.length;
 
-    const produtosDestaque = produtos.filter(p => p.destaque).length;
     const vendedoresVerificados = vendedores.filter(v => v.verificado).length;
 
     const vendedoresPendentes = vendedores.filter(
@@ -82,7 +81,6 @@ export default function AdminResumo() {
     return {
       totalVendedores,
       totalProdutos,
-      produtosDestaque,
       vendedoresVerificados,
       vendedoresPendentes,
       produtosDisponiveis,
@@ -131,12 +129,6 @@ export default function AdminResumo() {
         />
 
         <CardMetrica
-          icone={Star}
-          rotulo="Em Destaque"
-          valor={metricas.produtosDestaque}
-        />
-
-        <CardMetrica
           icone={ShieldCheck}
           rotulo="Verificados"
           valor={metricas.vendedoresVerificados}
@@ -164,10 +156,6 @@ export default function AdminResumo() {
               valor={metricas.produtosDisponiveis}
             />
 
-            <LinhaResumo
-              rotulo="Produtos em destaque"
-              valor={metricas.produtosDestaque}
-            />
           </div>
         </div>
 

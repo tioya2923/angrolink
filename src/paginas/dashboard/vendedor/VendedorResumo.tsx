@@ -104,9 +104,9 @@ export default function VendedorResumo() {
       0
     );
 
-    const destacados =
-      produtos.filter(p => p.destaque).length +
-      servicos.filter(s => s.destaque).length;
+    // Destaques de produtos são exclusivamente editoriais e não são
+    // revelados pelo flag legado no painel do vendedor.
+    const destacados = servicos.filter(s => s.destaque).length;
 
     return {
       produtosAtivos,

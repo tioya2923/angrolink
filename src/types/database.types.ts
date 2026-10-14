@@ -609,6 +609,66 @@ export type Database = {
           },
         ]
       }
+      destaques_produtos_editoriais: {
+        Row: {
+          criado_em: string
+          criado_por: string
+          fim_em: string
+          id: string
+          inicio_em: string
+          motivo_revogacao_interno: string | null
+          periodo: unknown
+          posicao: number
+          produto_id: string
+          revogado_em: string | null
+          revogado_por: string | null
+          vendedor_id: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por: string
+          fim_em: string
+          id?: string
+          inicio_em?: string
+          motivo_revogacao_interno?: string | null
+          periodo?: never
+          posicao: number
+          produto_id: string
+          revogado_em?: string | null
+          revogado_por?: string | null
+          vendedor_id: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por?: string
+          fim_em?: string
+          id?: string
+          inicio_em?: string
+          motivo_revogacao_interno?: string | null
+          periodo?: never
+          posicao?: number
+          produto_id?: string
+          revogado_em?: string | null
+          revogado_por?: string | null
+          vendedor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "destaques_produtos_editoriais_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "destaques_produtos_editoriais_vendedor_id_fkey"
+            columns: ["vendedor_id"]
+            isOneToOne: false
+            referencedRelation: "vendedores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       disputas_encomenda: {
         Row: {
           analisado_em: string | null
@@ -1038,6 +1098,41 @@ export type Database = {
             columns: ["encomenda_id"]
             isOneToOne: true
             referencedRelation: "encomendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eventos_destaques_produtos_editoriais: {
+        Row: {
+          acao: string
+          ator_admin_id: string
+          destaque_id: string
+          detalhes_internos: NonNullable<Json>
+          id: string
+          ocorrido_em: string
+        }
+        Insert: {
+          acao: string
+          ator_admin_id: string
+          destaque_id: string
+          detalhes_internos?: NonNullable<Json>
+          id?: string
+          ocorrido_em?: string
+        }
+        Update: {
+          acao?: string
+          ator_admin_id?: string
+          destaque_id?: string
+          detalhes_internos?: NonNullable<Json>
+          id?: string
+          ocorrido_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_destaques_produtos_editoriais_destaque_id_fkey"
+            columns: ["destaque_id"]
+            isOneToOne: false
+            referencedRelation: "destaques_produtos_editoriais"
             referencedColumns: ["id"]
           },
         ]
@@ -3677,6 +3772,29 @@ export type Database = {
         }[]
       }
       contar_notificacoes_nao_lidas: { Args: never; Returns: number }
+      criar_destaque_produto_editorial_admin: {
+        Args: { p_produto_id: string }
+        Returns: {
+          criado_em: string
+          criado_por: string
+          fim_em: string
+          id: string
+          inicio_em: string
+          motivo_revogacao_interno: string | null
+          periodo: unknown
+          posicao: number
+          produto_id: string
+          revogado_em: string | null
+          revogado_por: string | null
+          vendedor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "destaques_produtos_editoriais"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       criar_area_cobertura_entrega: {
         Args: { p_bairro?: string; p_municipio: string; p_provincia: string }
         Returns: {
@@ -4283,6 +4401,14 @@ export type Database = {
           vendedor_id: string
         }[]
       }
+      listar_destaques_produtos_editoriais_admin: {
+        Args: never
+        Returns: Json[]
+      }
+      listar_destaques_produtos_editoriais_publicos: {
+        Args: { p_limite?: number }
+        Returns: Json[]
+      }
       listar_disputas_admin: {
         Args: { p_estado?: string }
         Returns: {
@@ -4357,6 +4483,10 @@ export type Database = {
           p_papel?: string
         }
         Returns: Json
+      }
+      listar_eventos_destaque_produto_editorial_admin: {
+        Args: { p_destaque_id: string }
+        Returns: Json[]
       }
       listar_financeiro_admin: {
         Args: never
@@ -5074,6 +5204,29 @@ export type Database = {
       remover_destaque_servico: {
         Args: { servico_uuid: string }
         Returns: undefined
+      }
+      revogar_destaque_produto_editorial_admin: {
+        Args: { p_destaque_id: string; p_motivo_interno?: string }
+        Returns: {
+          criado_em: string
+          criado_por: string
+          fim_em: string
+          id: string
+          inicio_em: string
+          motivo_revogacao_interno: string | null
+          periodo: unknown
+          posicao: number
+          produto_id: string
+          revogado_em: string | null
+          revogado_por: string | null
+          vendedor_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "destaques_produtos_editoriais"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       resolver_disputa_reembolso_parcial_admin: {
         Args: {

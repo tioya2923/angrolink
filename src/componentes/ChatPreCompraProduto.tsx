@@ -9,6 +9,7 @@ import { useAuth } from '@/contextos/AuthContexto';
 import { useToast } from '@/hooks/use-toast';
 import { gerarUuidV4 } from '@/lib/uuid';
 import { supabase } from '@/services/supabase';
+import { fetchProdutoPorId } from '@/services/api';
 import type { Produto } from '@/tipos';
 import {
   abrirOuObterConversaPreCompra,
@@ -57,34 +58,61 @@ export function ChatPreCompraProduto({ produtoId, produtoNome, vendedorId, produ
   const [carregandoAnteriores, setCarregandoAnteriores] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [temMais, setTemMais] = useState(false);
+  const [produtoDaConversa, setProdutoDaConversa] = useState<Produto | null>(null);
+  const [estadoProduto, setEstadoProduto] = useState<'ocioso' | 'disponivel' | 'indisponivel' | 'erro'>('ocioso');
   const chavePendente = useRef<string | null>(null);
+  const versaoCarregamento = useRef(0);
+  const produtoAtualRef = useRef(produto);
   const listaRef = useRef<HTMLDivElement>(null);
   const pertoDoFimRef = useRef(true);
   const carregamentoAnteriorRef = useRef<{ altura: number; topo: number } | null>(null);
   const conversaId = conversa?.id ?? conversaIdInicial ?? null;
   const somenteLeitura = conversa?.estado === 'somente_leitura';
 
+  useEffect(() => { produtoAtualRef.current = produto; }, [produto]);
+
   const limpar = useCallback(() => {
+    versaoCarregamento.current += 1;
     chavePendente.current = null;
     setConversa(null); setMensagens([]); setTexto(''); setErro(false); setTemMais(false);
+    setProdutoDaConversa(null); setEstadoProduto('ocioso');
   }, []);
 
   const carregar = useCallback(async () => {
     if (!utilizador) return;
+    const versao = ++versaoCarregamento.current;
     setCarregando(true); setErro(false);
     try {
       const conversaAtual = conversaIdInicial
         ? await obterConversaPreCompra(conversaIdInicial)
         : produtoId ? await abrirOuObterConversaPreCompra(produtoId) : null;
       if (!conversaAtual) throw new Error('Conversa indisponível.');
+      const produtoDaProp = produtoAtualRef.current;
+      let produtoResolvido = produtoDaProp?.id === conversaAtual.produto_id ? produtoDaProp : null;
+      let estadoProdutoResolvido: 'disponivel' | 'indisponivel' | 'erro' = produtoResolvido ? 'disponivel' : 'indisponivel';
+      if (!produtoResolvido) {
+        try {
+          produtoResolvido = await fetchProdutoPorId(conversaAtual.produto_id);
+          estadoProdutoResolvido = produtoResolvido ? 'disponivel' : 'indisponivel';
+        } catch {
+          estadoProdutoResolvido = 'erro';
+        }
+      }
       const lista = await listarMensagensPreCompra(conversaAtual.id, { limite: LIMITE_MENSAGENS });
+      if (versao !== versaoCarregamento.current) return;
       setConversa(conversaAtual);
       setMensagens(ordenarMensagens(lista));
       setTemMais(lista.length === LIMITE_MENSAGENS);
+      setProdutoDaConversa(produtoResolvido);
+      setEstadoProduto(estadoProdutoResolvido);
       await marcarConversaPreCompraComoLida(conversaAtual.id);
-      aoLer?.(conversaAtual.id);
-    } catch { setErro(true); } finally { setCarregando(false); }
-  }, [conversaIdInicial, produtoId, utilizador]);
+      if (versao === versaoCarregamento.current) aoLer?.(conversaAtual.id);
+    } catch {
+      if (versao === versaoCarregamento.current) setErro(true);
+    } finally {
+      if (versao === versaoCarregamento.current) setCarregando(false);
+    }
+  }, [conversaIdInicial, produtoId, utilizador, aoLer]);
 
   const abrir = () => {
     if (!utilizador) { navigate('/login', { state: { destino: location.pathname } }); return; }
@@ -166,7 +194,12 @@ export function ChatPreCompraProduto({ produtoId, produtoNome, vendedorId, produ
           {temMais && <div className="text-center"><Button type="button" size="sm" variant="ghost" disabled={carregandoAnteriores} onClick={() => void carregarAnteriores()}><ChevronUp className="size-4" />{carregandoAnteriores ? 'A carregar…' : 'Carregar mensagens anteriores'}</Button></div>}
           {mensagens.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Ainda não existem mensagens. Inicie a conversa.</p> : mensagens.map(mensagem => <div key={mensagem.id} className={mensagem.remetente_user_id === utilizador?.id ? 'ml-auto max-w-[85%] rounded-lg bg-green-800 px-3 py-2 text-sm text-white' : 'mr-auto max-w-[85%] rounded-lg bg-muted px-3 py-2 text-sm'}>{mensagem.corpo}</div>)}
         </div>
-        {produto && conversa?.estado === 'aberta' && <AcoesCompraProduto produto={produto} conversaPreCompraId={conversa.id} />}
+        {conversa?.estado === 'aberta' && (
+          produtoDaConversa ? <AcoesCompraProduto produto={produtoDaConversa} conversaPreCompraId={conversa.id} />
+            : estadoProduto === 'erro' ? <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm"><p role="alert">Não foi possível confirmar a disponibilidade deste produto.</p><Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => void carregar()}>Tentar carregar produto</Button></div>
+              : estadoProduto === 'indisponivel' ? <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Este produto já não está disponível ou acessível para compra.</p>
+                : null
+        )}
         <div className="space-y-2"><Textarea aria-label="Mensagem" value={texto} maxLength={1000} disabled={enviando || somenteLeitura} onChange={evento => setTexto(evento.target.value)} onKeyDown={evento => { if (evento.key === 'Enter' && !evento.shiftKey) { evento.preventDefault(); void enviar(); } }} placeholder={somenteLeitura ? 'Esta conversa está encerrada.' : 'Escreva uma mensagem'} /><div className="flex items-center justify-between text-xs text-muted-foreground"><span>{texto.length}/1000</span><Button type="button" disabled={enviando || somenteLeitura || !texto.trim()} onClick={() => void enviar()}>{enviando ? 'A enviar…' : <><Send className="size-4" />Enviar</>}</Button></div></div></>}
     </DialogContent></Dialog>
   </>;
