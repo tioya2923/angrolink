@@ -8,15 +8,11 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, MessageSquare, Eye, Sparkles } from 'lucide-react';
+import { MapPin, Eye, Sparkles } from 'lucide-react';
 
 import { useAuth } from '@/contextos/AuthContexto';
 import { useAtualizacaoCatalogoPublico } from '@/hooks/useCatalogoQuery';
 import { supabase } from '@/services/supabase';
-import {
-  guardarHistoricoContacto,
-  incrementarCliqueWhatsappProduto,
-} from '@/services/api';
 import { listarProdutosPublicosFase1 } from '@/services/catalogoPublicoProdutos';
 import { Produto } from '@/tipos';
 import { AcoesCompraProduto } from '@/componentes/carrinho/AcoesCompraProduto';
@@ -25,8 +21,6 @@ type ProdutoRecomendado = Produto & {
   vendedor?: {
     id: string;
     nome_comercial?: string | null;
-    telefone_whatsapp?: string | null;
-    whatsapp?: string | null;
     verificado?: boolean | null;
   } | null;
 };
@@ -40,17 +34,6 @@ function normalizarProdutoRecomendado(p: any): ProdutoRecomendado {
     disponivel: p.disponivel === true || p.disponivel === 'true',
     destaque: p.destaque === true || p.destaque === 'true',
   } as ProdutoRecomendado;
-}
-
-function gerarLinkWhatsApp(numero?: string | null, produto?: string) {
-  if (!numero) return '#';
-
-  const numeroLimpo = numero.replace(/\D/g, '');
-  const mensagem = encodeURIComponent(
-    `Olá! Vi o produto "${produto}" na ANGROLINK e gostaria de saber mais detalhes.`
-  );
-
-  return `https://wa.me/${numeroLimpo}?text=${mensagem}`;
 }
 
 export default function ClienteRecomendacoes() {
@@ -174,36 +157,6 @@ export default function ClienteRecomendacoes() {
     carregarRecomendacoes();
   }, [utilizador?.id, utilizador?.municipio, utilizador?.provincia, revisaoCatalogo]);
 
-  const handleContacto = (produto: ProdutoRecomendado) => {
-    if (produto.id?.includes('-')) {
-      incrementarCliqueWhatsappProduto(produto.id);
-    }
-
-    if (utilizador?.id) {
-      guardarHistoricoContacto({
-        cliente_id: utilizador.id,
-        produto,
-      });
-    } else {
-      const historicoLocal = JSON.parse(
-        localStorage.getItem('historico') || '[]'
-      );
-
-      historicoLocal.push({
-        produto_id: produto.id,
-        nome_produto: produto.nome_produto,
-        nome_vendedor: produto.vendedor?.nome_comercial || 'Vendedor',
-        telefone:
-          produto.vendedor?.telefone_whatsapp ||
-          produto.vendedor?.whatsapp ||
-          '',
-        data: new Date().toISOString(),
-      });
-
-      localStorage.setItem('historico', JSON.stringify(historicoLocal));
-    }
-  };
-
   if (loading) {
     return (
       <div className="painel-dashboard-form font-corpo text-sm text-muted-foreground">A carregar recomendações...</div>
@@ -243,10 +196,6 @@ export default function ClienteRecomendacoes() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {recomendados.map(produto => {
-            const telefone =
-              produto.vendedor?.telefone_whatsapp ||
-              produto.vendedor?.whatsapp;
-
             return (
               <div
                 key={produto.id}
@@ -301,18 +250,13 @@ export default function ClienteRecomendacoes() {
                       Ver detalhes
                     </Link>
 
-                    {telefone && (
-                      <a
-                        href={gerarLinkWhatsApp(telefone, produto.nome_produto)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => handleContacto(produto)}
+                    <Link
+                        to={`/produto/${produto.id}`}
                         className="flex items-center gap-1 font-corpo text-xs text-green-700 hover:underline"
                       >
-                        <MessageSquare size={14} />
-                        Contactar
-                      </a>
-                    )}
+                        <Eye size={14} />
+                        Ver produto
+                    </Link>
                   </div>
                   <AcoesCompraProduto produto={produto} vendedorNome={produto.vendedor?.nome_comercial} modo="card" />
                 </div>

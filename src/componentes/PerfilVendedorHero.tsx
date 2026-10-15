@@ -3,7 +3,6 @@ import {
   MapPin,
   Package,
   Eye,
-  Phone,
   Calendar,
   Star
 } from "lucide-react";
@@ -41,20 +40,11 @@ export default function PerfilVendedorHero({
         0
       );
 
-    const contactos =
-      produtos.reduce(
-        (total, item) =>
-          total + Number(item.cliques_whatsapp || 0),
-        0
-      );
-
     return {
 
       produtos: produtos.length,
 
       visualizacoes,
-
-      contactos,
 
     };
 
@@ -268,7 +258,7 @@ export default function PerfilVendedorHero({
 
       {/* ESTATÍSTICAS */}
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 mt-10">
+      <div className="grid grid-cols-2 gap-5 mt-10">
 
         <div className="rounded-xl border bg-white shadow-sm hover:shadow-md transition p-7 text-center">
 
@@ -307,27 +297,6 @@ export default function PerfilVendedorHero({
           <p className="text-sm text-gray-500 mt-2">
 
             Visualizações
-
-          </p>
-
-        </div>
-
-        <div className="rounded-xl border bg-white shadow-sm hover:shadow-md transition p-7 text-center">
-
-          <Phone
-            className="mx-auto mb-3 text-green-700"
-            size={30}
-          />
-
-          <p className="text-3xl font-bold">
-
-            {estatisticas.contactos}
-
-          </p>
-
-          <p className="text-sm text-gray-500 mt-2">
-
-            Contactos
 
           </p>
 

@@ -13,5 +13,8 @@ describe('perfil público do vendedor', () => {
 
     expect(screen.getByRole('link', { name: 'Ver produtos' })).toHaveAttribute('href', '#produtos');
     expect(screen.queryByRole('link', { name: /WhatsApp/i })).toBeNull();
+    expect(screen.queryByText('Contactos')).toBeNull();
+    expect(screen.getByText('Produtos')).toBeInTheDocument();
+    expect(screen.getByText('Visualizações')).toBeInTheDocument();
   });
 });

@@ -1064,8 +1064,8 @@ export default function PaginaAnunciar() {
                   </div>
                   <h2 className="mb-2 min-h-14 font-titulo text-lg">Comprar</h2>
                   <p className="font-corpo text-sm text-muted-foreground leading-relaxed">
-                    Encontre produtos e contacte vendedores diretamente via
-                    WhatsApp.
+                    Descubra produtos, converse com vendedores no chat da plataforma
+                    e faça encomendas pelo carrinho.
                   </p>
                   <span className="mt-auto inline-block pt-4 font-corpo text-sm font-semibold text-green-700">
                     Criar conta de comprador →
