@@ -548,7 +548,7 @@ function DadosPedido({ dados }: { dados: Record<string, any> }) {
     ['Tipos de produtos', dados.tipos_produtos],
     ['Compra a produtores', dados.compra_produtores == null ? null : dados.compra_produtores ? 'Sim' : 'Não'],
     ['Volume mínimo', dados.volume_minimo],
-    ['Entrega noutras províncias', dados.entrega_outras_provincias == null ? null : dados.entrega_outras_provincias ? 'Sim' : 'Não'],
+    ['Entrega para outras províncias — declaração legada', dados.entrega_outras_provincias == null ? null : dados.entrega_outras_provincias ? 'Sim' : 'Não'],
     ['Tipo de loja', dados.tipo_loja],
     ['Mercado localizado', dados.mercado_localizado],
     ['Venda presencial', dados.venda_presencial == null ? null : dados.venda_presencial ? 'Sim' : 'Não'],
@@ -565,6 +565,10 @@ function DadosPedido({ dados }: { dados: Record<string, any> }) {
           </div>
         ))}
       </dl>
+
+      <p className="font-corpo text-xs text-muted-foreground">
+        A declaração legada não define a cobertura operacional da ANGROLINK.
+      </p>
 
       <DocumentosPedidoVendedor vendedorId={dados.id} />
     </div>

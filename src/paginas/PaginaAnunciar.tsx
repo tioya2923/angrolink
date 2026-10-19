@@ -2266,22 +2266,9 @@ function CamposPorTipo({
               maxLength={100}
             />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.entrega_outras_provincias}
-              onChange={(e) =>
-                setForm((p: any) => ({
-                  ...p,
-                  entrega_outras_provincias: e.target.checked,
-                }))
-              }
-              className="w-4 h-4 accent-primary"
-            />
-            <span className="font-corpo text-sm">
-              Entrega para outras províncias
-            </span>
-          </label>
+          <p className="font-corpo text-sm text-muted-foreground">
+            Nesta fase, a entrega pela ANGROLINK está disponível apenas no Huambo e depende da cobertura operacional.
+          </p>
         </div>
       )}
 

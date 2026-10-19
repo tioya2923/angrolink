@@ -993,15 +993,9 @@ export default function VendedorPerfil() {
               placeholder="Volume mínimo de venda. Ex: 10 sacos, 1 palete"
             />
 
-            <label className="flex items-center gap-2 font-corpo text-sm">
-              <input
-                type="checkbox"
-                checked={entregaOutrasProvincias}
-                onChange={e => setEntregaOutrasProvincias(e.target.checked)}
-                className="accent-green-700 w-4 h-4"
-              />
-              Entrega para outras províncias
-            </label>
+            <p className="font-corpo text-sm text-muted-foreground">
+              Nesta fase, a entrega pela ANGROLINK está disponível apenas no Huambo e depende da cobertura operacional.
+            </p>
           </CardDadosTipo>
         )}
 
