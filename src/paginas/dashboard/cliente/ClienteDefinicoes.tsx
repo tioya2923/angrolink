@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/services/supabase';
+import { alterarPasswordDaSessao } from '@/services/auth';
 import { separarIndicativo } from '@/dados/paises';
 import { telefoneCompleto } from '@/lib/verificacoesConta';
 import { listarMunicipiosAngola, listarProvinciasAngola, resolverSelecaoTerritorialExistente, type EstadoSelecaoTerritorial, type MunicipioAngola, type ProvinciaAngola } from '@/services/territorioAngola';
@@ -285,10 +286,10 @@ export default function ClienteDefinicoes() {
   }
 
   async function handleAlterarPassword() {
-    if (!utilizador?.email) {
+    if (!utilizador?.id) {
       toast({
         title: 'Erro',
-        description: 'Email do utilizador não encontrado.',
+        description: 'Sessão do utilizador não encontrada.',
         variant: 'destructive',
       });
       return;
@@ -324,25 +325,24 @@ export default function ClienteDefinicoes() {
     try {
       setAlterandoSenha(true);
 
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: utilizador.email,
-        password: senhaAtual,
-      });
+      const resultado = await alterarPasswordDaSessao(
+        utilizador.id,
+        senhaAtual,
+        novaSenha,
+      );
 
-      if (loginError) {
+      if (!resultado.sucesso) {
         toast({
-          title: 'Palavra-passe atual incorreta',
-          description: 'Confirma a tua palavra-passe atual e tenta novamente.',
+          title: resultado.motivo === 'senha_atual_incorreta'
+            ? 'Palavra-passe atual incorreta'
+            : 'Sessão inválida',
+          description: resultado.motivo === 'senha_atual_incorreta'
+            ? 'Confirma a tua palavra-passe atual e tenta novamente.'
+            : 'Inicia sessão novamente antes de alterar a palavra-passe.',
           variant: 'destructive',
         });
         return;
       }
-
-      const { error } = await supabase.auth.updateUser({
-        password: novaSenha,
-      });
-
-      if (error) throw error;
 
       toast({
         title: 'Palavra-passe alterada!',
