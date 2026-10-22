@@ -24,6 +24,7 @@ import PaginaProduto from "@/paginas/PaginaProduto";
 import PaginaVendedor from "@/paginas/PaginaVendedor";
 import PaginaAnunciar from "@/paginas/PaginaAnunciar";
 import PaginaLogin from "@/paginas/PaginaLogin";
+import PaginaResetPassword from "@/paginas/PaginaResetPassword";
 import DashboardRouter from "@/paginas/dashboard/DashboardRouter";
 import ScrollToTop from "@/componentes/ScrollToTop";
 import MensagensValidacaoNativas from "@/componentes/MensagensValidacaoNativas";
@@ -89,6 +90,7 @@ const App = () => (
               <Route path="/checkout" element={<PaginaCheckoutPendente />} />
               {/* Autenticação */}
               <Route path="/login" element={<PaginaLogin />} />
+              <Route path="/reset-password" element={<PaginaResetPassword />} />
               
               {/* Dashboard unificado (admin/vendedor/cliente) */}
               <Route path="/dashboard/*" element={<DashboardRouter />} />

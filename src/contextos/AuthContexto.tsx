@@ -22,6 +22,7 @@ import {
 import { verificarAdminNoServidor } from '@/lib/autorizacaoAdmin';
 import { fetchMeuVendedor } from '@/services/api';
 import { useSincronizacaoPerfilParceiro } from '@/hooks/useSincronizacaoPerfilParceiro';
+import { limparRecuperacaoSenha, marcarRecuperacaoSenha, obterRecuperacaoSenha } from '@/lib/recuperacaoSenha';
 
 const STORAGE_KEY = 'angrolink_auth_user';
 const STORAGE_TIPO_COMPRADOR = 'angrolink_tipo_comprador';
@@ -394,6 +395,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('AUTH EVENT:', event);
 
       if (!mounted) return;
+
+      if (event === 'PASSWORD_RECOVERY' && session?.user) {
+        marcarRecuperacaoSenha(session.user.id);
+      } else if (
+        event !== 'TOKEN_REFRESHED' ||
+        obterRecuperacaoSenha()?.userId !== session?.user?.id
+      ) {
+        limparRecuperacaoSenha();
+      }
 
       sessaoAtualRef.current = session?.user?.id ?? null;
 
