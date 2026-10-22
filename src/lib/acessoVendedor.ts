@@ -13,6 +13,23 @@ export function vendedorPodeOperarComercialmente(estado: EstadoAcessoVendedor) {
   return contaVendedorPodeAutenticar(estado) && estado.status_aprovacao === 'aprovado';
 }
 
+const caminhosVendedorRestrito = new Set([
+  '/dashboard',
+  '/dashboard/encomendas',
+  '/dashboard/compras',
+  '/dashboard/perfil',
+  '/dashboard/documentos',
+]);
+
+export function filtrarLinksVendedorPorAcesso<T extends { to: string }>(
+  links: T[],
+  vendedor: EstadoAcessoVendedor,
+): T[] {
+  return vendedorPodeOperarComercialmente(vendedor)
+    ? links
+    : links.filter(({ to }) => caminhosVendedorRestrito.has(to));
+}
+
 export function vendedorEstaEmModoRestrito(estado: EstadoAcessoVendedor) {
   return contaVendedorPodeAutenticar(estado) && !vendedorPodeOperarComercialmente(estado);
 }

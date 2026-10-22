@@ -49,7 +49,9 @@ describe('Serviços legados ficam dormentes na Fase 1', () => {
     expect(heroPublico).not.toContain('Serviços');
     expect(heroPublico).toContain('estatisticas.produtos');
     expect(heroPublico).toContain('estatisticas.visualizacoes');
-    expect(heroPublico).toContain('estatisticas.contactos');
+    // Contactos eram apenas cliques WhatsApp legados; permanecem fora
+    // do perfil público, sem alterar o fluxo próprio de serviços.
+    expect(heroPublico).not.toContain('estatisticas.contactos');
   });
 
   it('não consulta nem apresenta serviços na entrada pública ou no perfil vendedor', () => {

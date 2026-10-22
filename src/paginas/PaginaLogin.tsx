@@ -8,7 +8,10 @@ import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contextos/AuthContexto';
-import { enviarRecuperacaoSenha } from '@/services/auth';
+import {
+  enviarRecuperacaoSenha,
+  normalizarEmailAcessoParaRecuperacao,
+} from '@/services/auth';
 
 export default function PaginaLogin() {
   const navigate = useNavigate();
@@ -48,8 +51,6 @@ export default function PaginaLogin() {
 
       const entrada = identificador.trim();
 
-      console.log('LOGIN:', entrada);
-
       const sucesso =
       await login(
         entrada,
@@ -78,9 +79,7 @@ export default function PaginaLogin() {
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      console.error(error);
-
+    } catch {
       toast({
         title: 'Erro ao entrar',
         description: 'Tenta novamente.',
@@ -98,9 +97,12 @@ export default function PaginaLogin() {
   const handleRecuperar = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!identificador) {
+    const emailAcesso = normalizarEmailAcessoParaRecuperacao(identificador);
+
+    if (!emailAcesso) {
       toast({
-        title: 'Insere um email ou telefone válido.',
+        title: 'Insere um email de acesso válido.',
+        description: 'A recuperação automática ainda não está disponível para contas que usam apenas telefone.',
         variant: 'destructive',
       });
       return;
@@ -110,22 +112,20 @@ export default function PaginaLogin() {
       setCarregando(true);
 
       await enviarRecuperacaoSenha(
-        identificador,
+        emailAcesso,
         `${window.location.origin}/reset-password`,
       );
 
       toast({
-        title: 'Email enviado!',
-        description: 'Verifica a tua caixa de entrada.',
+        title: 'Pedido de recuperação registado',
+        description: 'Se o email de acesso estiver associado a uma conta e o envio estiver disponível, receberás instruções.',
       });
 
       setModo('login');
-    } catch (error) {
-      console.error(error);
-
+    } catch {
       toast({
-        title: 'Erro ao enviar recuperação',
-        description: 'Não foi possível enviar o email.',
+        title: 'Não foi possível processar o pedido',
+        description: 'Tenta novamente mais tarde.',
         variant: 'destructive',
       });
     } finally {
@@ -177,7 +177,7 @@ export default function PaginaLogin() {
             <p className="font-corpo text-sm text-muted-foreground mt-2">
               {modo === 'login'
                 ? 'Acede à tua conta de vendedor ou comprador'
-                : 'Insere o teu email para receber o link de recuperação'}
+                : 'Usa o email de acesso para pedir a recuperação'}
             </p>
 
             
@@ -191,11 +191,12 @@ export default function PaginaLogin() {
               <form onSubmit={handleLogin} className="space-y-5">
 
                 <div className="space-y-2">
-                  <Label className="font-corpo text-sm font-medium">
+                  <Label htmlFor="identificador-login" className="font-corpo text-sm font-medium">
                     Email ou Telefone
                   </Label>
 
                   <Input
+                    id="identificador-login"
                     type="text"
                     placeholder="exemplo@email.com ou 923456789"
                     value={identificador}
@@ -203,15 +204,19 @@ export default function PaginaLogin() {
                     required
                     className="border-2 border-border"
                   />
+                  <p className="font-corpo text-xs text-muted-foreground">
+                    Se criou a conta com telefone, entre com esse número. O email de contacto do perfil não fica automaticamente disponível para iniciar sessão.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-corpo text-sm font-medium">
+                  <Label htmlFor="senha-login" className="font-corpo text-sm font-medium">
                     Senha
                   </Label>
 
                   <div className="relative">
                     <Input
+                      id="senha-login"
                       type={mostrarSenha ? 'text' : 'password'}
                       placeholder="••••••••"
                       value={senha}
@@ -283,18 +288,23 @@ export default function PaginaLogin() {
               <form onSubmit={handleRecuperar} className="space-y-5">
 
                 <div className="space-y-2">
-                  <Label className="font-corpo text-sm font-medium">
-                    Email ou Telefone
+                  <Label htmlFor="email-recuperacao" className="font-corpo text-sm font-medium">
+                    Email de acesso
                   </Label>
 
                   <Input
+                    id="email-recuperacao"
                     type="text"
-                    placeholder="923456789 ou exemplo@email.com"
+                    inputMode="email"
+                    placeholder="exemplo@email.com"
                     value={identificador}
                     onChange={e => setIdentificador(e.target.value)}
                     required
                     className="border-2 border-border"
                   />
+                  <p className="font-corpo text-xs text-muted-foreground">
+                    O email de contacto do perfil não habilita recuperação por si só. Se criou a conta apenas com telefone, a recuperação automática ainda não está disponível nesta fase.
+                  </p>
                 </div>
 
                 <Button

@@ -892,14 +892,19 @@ export async function updateVendedor(vendedorId: string, dados: any) {
     throw new Error('Não tens permissão para atualizar este perfil.');
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("vendedores")
     .update(dados)
-    .eq("id", vendedorId);
+    .eq("id", vendedorId)
+    .select("id");
 
   if (error) {
     console.error("Erro ao atualizar vendedor:", error);
     throw error;
+  }
+
+  if (data?.length !== 1 || data[0]?.id !== vendedorId) {
+    throw new Error('Não foi possível confirmar a atualização do perfil.');
   }
 
   const atualizado = await fetchMeuVendedor();

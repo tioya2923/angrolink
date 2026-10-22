@@ -21,6 +21,11 @@ import { Button } from '@/components/ui/button';
 import SeletorTelefone from '@/componentes/SeletorTelefone';
 import { separarIndicativo } from '@/dados/paises';
 import { telefoneCompleto } from '@/lib/verificacoesConta';
+import {
+  normalizarEmailContacto,
+  tipoVendedorExigeEmailContacto,
+  validarEmailContactoVendedor,
+} from '@/lib/emailContactoVendedor';
 import PerfilResumoCard from "@/componentes/perfil/PerfilResumoCard";
 import CardInformacaoPrincipal from "@/componentes/perfil/CardInformacaoPrincipal";
 import { Textarea } from "@/components/ui/textarea";
@@ -303,6 +308,20 @@ export default function VendedorPerfil() {
       return;
     }
 
+    const emailOriginal = normalizarEmailContacto(vendedor?.email);
+    const emailNormalizado = normalizarEmailContacto(email);
+    const emailFoiAlterado = emailNormalizado !== emailOriginal;
+    if (emailFoiAlterado) {
+      const erroEmailContacto = validarEmailContactoVendedor(
+        tipoVendedor,
+        emailNormalizado,
+      );
+      if (erroEmailContacto) {
+        toast({ title: erroEmailContacto, variant: 'destructive' });
+        return;
+      }
+    }
+
     const provinciaSelecionada = filtroTerritorial.provinciaSelecionada;
     const municipioSelecionado = filtroTerritorial.municipioSelecionado;
     if (territorioAlterado && (!provinciaSelecionada || !municipioSelecionado)) {
@@ -345,7 +364,7 @@ export default function VendedorPerfil() {
         // Campos permitidos para o vendedor editar
         nome_comercial: nomeComercial,
         nome_responsavel: nomeResponsavel.trim() || null,
-        email: email.trim() || null,
+        ...(emailFoiAlterado ? { email: emailNormalizado } : {}),
         descricao,
         provincia: territorioAlterado ? provinciaSelecionada?.nome ?? null : provinciaOriginal,
         municipio: territorioAlterado ? municipioSelecionado?.nome ?? null : municipioOriginal,
@@ -676,7 +695,7 @@ export default function VendedorPerfil() {
 
               <div className="space-y-2">
                 <Label className="font-corpo text-sm">
-                  Email profissional
+                  Email de contacto{tipoVendedorExigeEmailContacto(tipoVendedor) ? ' *' : ''}
                 </Label>
 
                 <Input
@@ -686,6 +705,15 @@ export default function VendedorPerfil() {
                   className="border-2 border-border"
                   placeholder="empresa@email.com"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Este email é usado para contacto. Alterá-lo não altera os dados de acesso à conta.
+                </p>
+                {tipoVendedorExigeEmailContacto(tipoVendedor) &&
+                  validarEmailContactoVendedor(tipoVendedor, email) && (
+                    <p className="text-xs text-amber-700">
+                      Este tipo de vendedor precisa de um email de contacto válido antes da próxima submissão documental ou aprovação.
+                    </p>
+                  )}
               </div>
             </div>
           </div>

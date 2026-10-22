@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contextos/AuthContexto';
+import { filtrarLinksVendedorPorAcesso } from '@/lib/acessoVendedor';
 import CategoriaSidebar from '@/componentes/CategoriaSidebar';
 import { useCarrinho } from '@/hooks/useCarrinho';
 import NotificacoesMenu from '@/componentes/NotificacoesMenu';
@@ -91,8 +92,8 @@ export default function Cabecalho() {
           { to: '/dashboard/financeiro', label: 'Financeiro', icone: Banknote },
           { to: '/dashboard/disputas', label: 'Disputas', icone: Scale },
         ];
-      case 'vendedor':
-        return [
+      case 'vendedor': {
+        const links = [
           { to: '/dashboard', label: 'Menu', icone: LayoutDashboard },
           { to: '/dashboard/produtos', label: 'Meus Produtos', icone: Package },
           { to: '/dashboard/favoritos', label: 'Favoritos', icone: Heart },
@@ -105,6 +106,8 @@ export default function Cabecalho() {
           { to: '/dashboard/compras', label: 'Minhas compras', icone: ShoppingBag },
           { to: '/dashboard/documentos', label: 'Documentos', icone: FileCheck2 },
         ];
+        return filtrarLinksVendedorPorAcesso(links, utilizador);
+      }
       case 'parceiro_entrega':
         return [
           { to: '/dashboard', label: 'Resumo', icone: LayoutDashboard },

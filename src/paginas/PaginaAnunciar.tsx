@@ -57,8 +57,12 @@ import {
   verificarDuplicados,
   telefoneCompleto,
   gerarEmailInterno,
-  normalizarEmail,
 } from "@/lib/verificacoesConta";
+import {
+  normalizarEmailContacto,
+  tipoVendedorExigeEmailContacto,
+  validarEmailContactoVendedor,
+} from "@/lib/emailContactoVendedor";
 
 import {
   validarSenha,
@@ -178,6 +182,9 @@ export default function PaginaAnunciar() {
 
   const tipoVendedorInfo = TIPOS_VENDEDOR.find(
     (tipo) => tipo.valor === tipoVendedorSelecionado,
+  );
+  const emailContactoObrigatorio = tipoVendedorExigeEmailContacto(
+    tipoVendedorSelecionado,
   );
 
   const tituloContaProfissional =
@@ -519,6 +526,15 @@ export default function PaginaAnunciar() {
       return;
     }
 
+    const erroEmailContacto = validarEmailContactoVendedor(
+      tipoVendedorSelecionado,
+      formPerfil.email,
+    );
+    if (erroEmailContacto) {
+      toast.error(erroEmailContacto);
+      return;
+    }
+
     const territorioAtividade = obterTerritorioCanonico(
       formPerfil.provincia_atividade, formPerfil.municipio_atividade, municipiosAtividade,
     );
@@ -645,7 +661,7 @@ export default function PaginaAnunciar() {
         formVendedor.indicativo,
       );
 
-      const emailOpcional = normalizarEmail(formPerfil.email);
+      const emailOpcional = normalizarEmailContacto(formPerfil.email);
 
       // =============================
       // VERIFICAR TELEFONE DUPLICADO
@@ -1337,7 +1353,7 @@ export default function PaginaAnunciar() {
 
                     <div className="space-y-2">
                       <Label className="font-corpo text-sm font-medium">
-                        Email (opcional)
+                        Email de contacto (opcional)
                       </Label>
 
                       <Input
@@ -1353,6 +1369,9 @@ export default function PaginaAnunciar() {
                         className="border-2 border-border"
                         maxLength={255}
                       />
+                      <p className="font-corpo text-xs text-muted-foreground">
+                        Este email é usado para contacto. Adicioná-lo ao perfil não altera os dados de acesso à conta.
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1804,6 +1823,28 @@ export default function PaginaAnunciar() {
                   </div>
                 </div>
 
+                {emailContactoObrigatorio && (
+                  <div className="space-y-2">
+                    <Label className="font-corpo text-sm font-medium">
+                      Email de contacto *
+                    </Label>
+                    <Input
+                      type="email"
+                      value={formPerfil.email}
+                      onChange={(e) =>
+                        setFormPerfil((p) => ({ ...p, email: e.target.value }))
+                      }
+                      placeholder="empresa@email.com"
+                      required
+                      className="border-2 border-border"
+                      maxLength={255}
+                    />
+                    <p className="font-corpo text-xs text-muted-foreground">
+                      Este email é usado para contacto. Não altera os dados de acesso à conta.
+                    </p>
+                  </div>
+                )}
+
                 {(erroTerritorio || erroMunicipioAtividade) && <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"><span>{erroTerritorio || erroMunicipioAtividade}</span><button type="button" onClick={erroTerritorio ? () => void carregarProvincias() : tentarNovamenteAtividade} className="font-semibold underline">Tentar novamente</button></div>}
 
                 {/* Campos opcionais gerais */}
@@ -1826,9 +1867,9 @@ export default function PaginaAnunciar() {
                   {mostrarOpcionais && (
                     <div className="space-y-4">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
+                        {!emailContactoObrigatorio && <div className="space-y-2">
                           <Label className="font-corpo text-sm font-medium">
-                            Email (opcional)
+                            Email de contacto (opcional)
                           </Label>
 
                           <Input
@@ -1844,7 +1885,10 @@ export default function PaginaAnunciar() {
                             className="border-2 border-border"
                             maxLength={255}
                           />
-                        </div>
+                          <p className="font-corpo text-xs text-muted-foreground">
+                            Este email é usado para contacto. Adicioná-lo ao perfil não altera os dados de acesso à conta.
+                          </p>
+                        </div>}
                         <div className="space-y-2">
                           <Label className="font-corpo text-sm font-medium">
                             Ano de início da atividade
