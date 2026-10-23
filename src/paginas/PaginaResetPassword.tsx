@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, KeyRound, Leaf } from 'lucide-react';
 
@@ -11,6 +11,10 @@ import {
   marcarRecuperacaoSenha,
   obterRecuperacaoSenha,
 } from '@/lib/recuperacaoSenha';
+import {
+  normalizarEmailAcessoParaRecuperacao,
+  verificarCodigoRecuperacaoSenha,
+} from '@/services/auth';
 import { supabase } from '@/services/supabase';
 
 type EstadoRecuperacao = 'a_validar' | 'pronto' | 'invalido';
@@ -22,42 +26,45 @@ export default function PaginaResetPassword() {
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [emailCodigo, setEmailCodigo] = useState('');
+  const [codigo, setCodigo] = useState('');
+  const [verificandoCodigo, setVerificandoCodigo] = useState(false);
   const userIdRecuperacaoRef = useRef<string | null>(null);
   const submissaoEmCursoRef = useRef(false);
+  const verificacaoCodigoEmCursoRef = useRef(false);
   const contextoConsumidoRef = useRef(false);
 
+  const invalidarRecuperacao = useCallback(() => {
+    limparRecuperacaoSenha();
+    userIdRecuperacaoRef.current = null;
+    contextoConsumidoRef.current = true;
+    setEstado('invalido');
+  }, []);
+
+  const validarSessaoRecuperacao = useCallback(async (userIdEsperado: string) => {
+    const contexto = obterRecuperacaoSenha();
+    if (contexto?.userId !== userIdEsperado || contextoConsumidoRef.current) {
+      invalidarRecuperacao();
+      return false;
+    }
+
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user || data.user.id !== userIdEsperado) {
+      invalidarRecuperacao();
+      return false;
+    }
+
+    userIdRecuperacaoRef.current = userIdEsperado;
+    setEstado('pronto');
+    return true;
+  }, [invalidarRecuperacao]);
+
   useEffect(() => {
-    let ativo = true;
-
-    const invalidar = () => {
-      limparRecuperacaoSenha();
-      userIdRecuperacaoRef.current = null;
-      contextoConsumidoRef.current = true;
-      if (ativo) setEstado('invalido');
-    };
-
-    const validarSessao = async (userIdEsperado: string) => {
-      const contexto = obterRecuperacaoSenha();
-      if (contexto?.userId !== userIdEsperado || contextoConsumidoRef.current) {
-        invalidar();
-        return;
-      }
-
-      const { data, error } = await supabase.auth.getUser();
-      if (error || !data.user || data.user.id !== userIdEsperado) {
-        invalidar();
-        return;
-      }
-
-      userIdRecuperacaoRef.current = userIdEsperado;
-      if (ativo) setEstado('pronto');
-    };
-
     const contextoExistente = obterRecuperacaoSenha();
     if (contextoExistente) {
-      void validarSessao(contextoExistente.userId);
+      void validarSessaoRecuperacao(contextoExistente.userId);
     } else {
-      invalidar();
+      invalidarRecuperacao();
     }
 
     const {
@@ -66,7 +73,7 @@ export default function PaginaResetPassword() {
       if (evento === 'PASSWORD_RECOVERY' && sessao?.user) {
         contextoConsumidoRef.current = false;
         marcarRecuperacaoSenha(sessao.user.id);
-        void validarSessao(sessao.user.id);
+        void validarSessaoRecuperacao(sessao.user.id);
         return;
       }
 
@@ -77,18 +84,60 @@ export default function PaginaResetPassword() {
         contexto?.userId === sessao.user.id &&
         !contextoConsumidoRef.current
       ) {
-        void validarSessao(sessao.user.id);
+        void validarSessaoRecuperacao(sessao.user.id);
         return;
       }
 
-      invalidar();
+      invalidarRecuperacao();
     });
 
     return () => {
-      ativo = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [invalidarRecuperacao, validarSessaoRecuperacao]);
+
+  const handleVerificarCodigo = async (event: FormEvent) => {
+    event.preventDefault();
+
+    const email = normalizarEmailAcessoParaRecuperacao(emailCodigo);
+    const codigoNormalizado = codigo.replace(/\s+/g, '');
+
+    if (!email || !/^\d{6,10}$/.test(codigoNormalizado)) {
+      toast({
+        title: 'Dados de recuperacao invalidos',
+        description: 'Insere um email de acesso valido e o codigo numerico recebido.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (verificacaoCodigoEmCursoRef.current) return;
+
+    try {
+      verificacaoCodigoEmCursoRef.current = true;
+      setVerificandoCodigo(true);
+      setCodigo('');
+
+      const userId = await verificarCodigoRecuperacaoSenha(email, codigoNormalizado);
+      contextoConsumidoRef.current = false;
+      marcarRecuperacaoSenha(userId);
+
+      const sessaoValida = await validarSessaoRecuperacao(userId);
+      if (!sessaoValida) {
+        throw new Error('RECUPERACAO_OTP_SESSAO_TROCADA');
+      }
+    } catch {
+      invalidarRecuperacao();
+      toast({
+        title: 'Codigo de recuperacao invalido ou expirado',
+        description: 'Pede um novo codigo e tenta novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      verificacaoCodigoEmCursoRef.current = false;
+      setVerificandoCodigo(false);
+    }
+  };
 
   const handleSubmeter = async (event: FormEvent) => {
     event.preventDefault();
@@ -191,12 +240,47 @@ export default function PaginaResetPassword() {
           )}
 
           {estado === 'invalido' && (
-            <div className="space-y-4 text-center">
+            <div className="space-y-5">
               <p className="font-corpo text-sm text-muted-foreground">
                 Este link de recuperação é inválido, expirou ou já foi utilizado.
               </p>
-              <Button asChild className="w-full font-corpo font-semibold">
-                <Link to="/login">Pedir novo link</Link>
+              <form onSubmit={handleVerificarCodigo} className="space-y-4 text-left">
+                <div className="space-y-2">
+                  <Label htmlFor="email-codigo-recuperacao">Email de acesso</Label>
+                  <Input
+                    id="email-codigo-recuperacao"
+                    type="email"
+                    autoComplete="email"
+                    value={emailCodigo}
+                    onChange={(event) => setEmailCodigo(event.target.value)}
+                    disabled={verificandoCodigo}
+                    required
+                    className="border-2 border-border"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="codigo-recuperacao">Codigo de recuperacao</Label>
+                  <Input
+                    id="codigo-recuperacao"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={codigo}
+                    onChange={(event) => setCodigo(event.target.value)}
+                    disabled={verificandoCodigo}
+                    required
+                    className="border-2 border-border"
+                  />
+                </div>
+                <p className="font-corpo text-xs text-muted-foreground">
+                  Introduz o codigo recebido no email de acesso. O email de contacto do perfil nao e usado para recuperar a palavra-passe.
+                </p>
+                <Button type="submit" disabled={verificandoCodigo} className="w-full font-corpo font-semibold">
+                  {verificandoCodigo ? 'A verificar…' : 'Verificar codigo'}
+                </Button>
+              </form>
+              <Button asChild variant="outline" className="w-full font-corpo font-semibold">
+                <Link to="/login">Voltar ao login</Link>
               </Button>
             </div>
           )}

@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 const mocks = vi.hoisted(() => ({
   callbackAuth: null as null | ((evento: string, sessao: { user: { id: string } } | null) => void),
   getUser: vi.fn(),
+  verifyOtp: vi.fn(),
   updateUser: vi.fn(),
   signOut: vi.fn(),
   unsubscribe: vi.fn(),
@@ -17,6 +18,7 @@ vi.mock('@/services/supabase', () => ({
   supabase: {
     auth: {
       getUser: mocks.getUser,
+      verifyOtp: mocks.verifyOtp,
       updateUser: mocks.updateUser,
       signOut: mocks.signOut,
       onAuthStateChange: (callback: typeof mocks.callbackAuth) => {
@@ -57,10 +59,107 @@ describe('recuperação segura de palavra-passe', () => {
     window.sessionStorage.clear();
     mocks.callbackAuth = null;
     mocks.getUser.mockReset();
+    mocks.verifyOtp.mockReset();
     mocks.updateUser.mockReset();
     mocks.signOut.mockReset().mockResolvedValue({ error: null });
     mocks.unsubscribe.mockReset();
     mocks.toast.mockReset();
+  });
+
+  it('verifica OTP, remove espacos e habilita apenas a identidade devolvida pelo Auth', async () => {
+    mocks.verifyOtp.mockResolvedValue({
+      data: { user: { id: 'auth-otp' }, session: { user: { id: 'auth-otp' } } },
+      error: null,
+    });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-otp' } }, error: null });
+    renderizar();
+    await screen.findByLabelText('Email de acesso');
+
+    fireEvent.change(screen.getByLabelText('Email de acesso'), { target: { value: '  TESTE@EXEMPLO.COM ' } });
+    fireEvent.change(screen.getByLabelText('Codigo de recuperacao'), { target: { value: '123 456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar codigo' }));
+
+    await waitFor(() => expect(mocks.verifyOtp).toHaveBeenCalledWith({
+      email: 'teste@exemplo.com',
+      token: '123456',
+      type: 'recovery',
+    }));
+    expect(await screen.findByLabelText('Nova palavra-passe')).toBeTruthy();
+    expect(JSON.parse(window.sessionStorage.getItem(CHAVE_RECUPERACAO) || '{}')).toMatchObject({
+      userId: 'auth-otp',
+    });
+  });
+
+  it('rejeita email sintetico, formato invalido e codigo nao numerico antes de chamar o Auth', async () => {
+    renderizar();
+    await screen.findByLabelText('Email de acesso');
+
+    fireEvent.change(screen.getByLabelText('Email de acesso'), { target: { value: '123@TELEFONE.ANGROLINK' } });
+    fireEvent.change(screen.getByLabelText('Codigo de recuperacao'), { target: { value: '12 3x' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar codigo' }));
+
+    expect(mocks.verifyOtp).not.toHaveBeenCalled();
+    expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Dados de recuperacao invalidos',
+      variant: 'destructive',
+    }));
+  });
+
+  it('rejeita OTP invalido ou expirado sem habilitar a atualizacao', async () => {
+    mocks.verifyOtp.mockResolvedValue({ data: { user: null, session: null }, error: new Error('expired') });
+    renderizar();
+    await screen.findByLabelText('Email de acesso');
+
+    fireEvent.change(screen.getByLabelText('Email de acesso'), { target: { value: 'teste@exemplo.com' } });
+    fireEvent.change(screen.getByLabelText('Codigo de recuperacao'), { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar codigo' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Codigo de recuperacao invalido ou expirado',
+      variant: 'destructive',
+    })));
+    expect(screen.queryByLabelText('Nova palavra-passe')).toBeNull();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('nao atualiza se a sessao devolvida pelo OTP for substituida antes da revalidacao', async () => {
+    mocks.verifyOtp.mockResolvedValue({
+      data: { user: { id: 'auth-a' }, session: { user: { id: 'auth-a' } } },
+      error: null,
+    });
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-b' } }, error: null });
+    renderizar();
+    await screen.findByLabelText('Email de acesso');
+
+    fireEvent.change(screen.getByLabelText('Email de acesso'), { target: { value: 'teste@exemplo.com' } });
+    fireEvent.change(screen.getByLabelText('Codigo de recuperacao'), { target: { value: '123456' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar codigo' }));
+
+    expect(await screen.findByLabelText('Email de acesso')).toBeTruthy();
+    expect(screen.queryByLabelText('Nova palavra-passe')).toBeNull();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('nao envia duas verificacoes OTP concorrentes', async () => {
+    let concluirVerificacao: ((value: unknown) => void) | undefined;
+    mocks.verifyOtp.mockReturnValue(new Promise((resolve) => { concluirVerificacao = resolve; }));
+    renderizar();
+    await screen.findByLabelText('Email de acesso');
+
+    fireEvent.change(screen.getByLabelText('Email de acesso'), { target: { value: 'teste@exemplo.com' } });
+    fireEvent.change(screen.getByLabelText('Codigo de recuperacao'), { target: { value: '123456' } });
+    const botao = screen.getByRole('button', { name: 'Verificar codigo' });
+    fireEvent.click(botao);
+    fireEvent.click(botao);
+
+    await waitFor(() => expect(mocks.verifyOtp).toHaveBeenCalledTimes(1));
+    concluirVerificacao?.({
+      data: { user: null, session: null },
+      error: new Error('expired'),
+    });
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Codigo de recuperacao invalido ou expirado',
+    })));
   });
 
   it('não aceita uma sessão de login normal como contexto de recuperação', async () => {

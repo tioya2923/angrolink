@@ -19,6 +19,30 @@ export async function enviarRecuperacaoSenha(email: string, redirectTo: string) 
   if (error) throw error;
 }
 
+/**
+ * Valida no Auth um codigo recebido por email. O codigo nao e guardado: a
+ * autorizacao seguinte depende exclusivamente da sessao devolvida pelo Auth,
+ * que a pagina revalida antes de atualizar a palavra-passe.
+ */
+export async function verificarCodigoRecuperacaoSenha(email: string, codigo: string) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token: codigo,
+    type: 'recovery',
+  });
+
+  if (
+    error ||
+    !data.user ||
+    !data.session?.user ||
+    data.user.id !== data.session.user.id
+  ) {
+    throw error || new Error('RECUPERACAO_OTP_SESSAO_INVALIDA');
+  }
+
+  return data.user.id;
+}
+
 export type ResultadoAlteracaoPassword =
   | { sucesso: true }
   | { sucesso: false; motivo: 'sessao_invalida' | 'senha_atual_incorreta' };
