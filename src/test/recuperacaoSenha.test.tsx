@@ -90,6 +90,52 @@ describe('recuperação segura de palavra-passe', () => {
     });
   });
 
+  it('preserva a recuperacao quando USER_UPDATED da mesma identidade ocorre durante updateUser', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-recuperacao' } }, error: null });
+    let concluirAtualizacao: ((value: unknown) => void) | undefined;
+    mocks.updateUser.mockReturnValue(new Promise((resolve) => { concluirAtualizacao = resolve; }));
+    renderizar();
+    emitirRecuperacao();
+    await screen.findByLabelText('Nova palavra-passe');
+
+    fireEvent.change(screen.getByLabelText('Nova palavra-passe'), { target: { value: 'senha-nova' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova palavra-passe'), { target: { value: 'senha-nova' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar palavra-passe' }));
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      mocks.callbackAuth?.('USER_UPDATED', { user: { id: 'auth-recuperacao' } });
+    });
+    expect(screen.getByLabelText('Nova palavra-passe')).toBeTruthy();
+
+    concluirAtualizacao?.({ data: { user: { id: 'auth-recuperacao' } }, error: null });
+    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledTimes(1));
+    expect(window.sessionStorage.getItem(CHAVE_RECUPERACAO)).toBeNull();
+    expect(await screen.findByTestId('destino-login')).toHaveTextContent('/login');
+  });
+
+  it('invalida a recuperacao se USER_UPDATED for de outra identidade durante updateUser', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-recuperacao' } }, error: null });
+    let concluirAtualizacao: ((value: unknown) => void) | undefined;
+    mocks.updateUser.mockReturnValue(new Promise((resolve) => { concluirAtualizacao = resolve; }));
+    renderizar();
+    emitirRecuperacao();
+    await screen.findByLabelText('Nova palavra-passe');
+
+    fireEvent.change(screen.getByLabelText('Nova palavra-passe'), { target: { value: 'senha-nova' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova palavra-passe'), { target: { value: 'senha-nova' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar palavra-passe' }));
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      mocks.callbackAuth?.('USER_UPDATED', { user: { id: 'outra-identidade' } });
+    });
+    expect(await screen.findByLabelText('Email de acesso')).toBeTruthy();
+
+    concluirAtualizacao?.({ data: { user: { id: 'auth-recuperacao' } }, error: null });
+    await waitFor(() => expect(mocks.signOut).not.toHaveBeenCalled());
+  });
+
   it('rejeita email sintetico, formato invalido e codigo nao numerico antes de chamar o Auth', async () => {
     renderizar();
     await screen.findByLabelText('Email de acesso');
@@ -225,7 +271,7 @@ describe('recuperação segura de palavra-passe', () => {
     expect(await screen.findByTestId('destino-login')).toHaveTextContent('/login');
   });
 
-  it('não consome o contexto quando updateUser falha', async () => {
+  it('consome o contexto quando updateUser falha', async () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-recuperacao' } }, error: null });
     mocks.updateUser.mockResolvedValue({ data: { user: null }, error: new Error('falha') });
     renderizar();
@@ -241,9 +287,7 @@ describe('recuperação segura de palavra-passe', () => {
       variant: 'destructive',
     })));
     expect(mocks.signOut).not.toHaveBeenCalled();
-    expect(JSON.parse(window.sessionStorage.getItem(CHAVE_RECUPERACAO) || '{}')).toMatchObject({
-      userId: 'auth-recuperacao',
-    });
+    expect(window.sessionStorage.getItem(CHAVE_RECUPERACAO)).toBeNull();
   });
 
   it('não atualiza a palavra-passe quando a sessão A foi substituída por B antes da submissão', async () => {

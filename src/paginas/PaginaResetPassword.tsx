@@ -78,6 +78,18 @@ export default function PaginaResetPassword() {
       }
 
       const contexto = obterRecuperacaoSenha();
+      const atualizacaoDaRecuperacaoEmCurso =
+        evento === 'USER_UPDATED' &&
+        submissaoEmCursoRef.current &&
+        !contextoConsumidoRef.current &&
+        sessao?.user?.id === userIdRecuperacaoRef.current;
+
+      // O SDK emite USER_UPDATED antes de updateUser() devolver. Neste
+      // intervalo, a identidade acabou de ser revalidada por handleSubmeter;
+      // invalidar a referencia aqui transformaria uma atualizacao bem-sucedida
+      // num falso erro. USER_UPDATED nunca cria nem renova esta autorizacao.
+      if (atualizacaoDaRecuperacaoEmCurso) return;
+
       if (
         evento === 'TOKEN_REFRESHED' &&
         sessao?.user?.id === userIdRecuperacaoRef.current &&
@@ -200,6 +212,9 @@ export default function PaginaResetPassword() {
       });
       navigate('/login', { replace: true });
     } catch {
+      // Depois de uma tentativa de updateUser com resultado de erro, nao e
+      // seguro permitir nova submissao com o mesmo contexto de recuperacao.
+      invalidarRecuperacao();
       toast({
         title: 'Não foi possível atualizar a palavra-passe',
         description: 'O link pode ter expirado. Pede um novo link e tenta novamente.',
