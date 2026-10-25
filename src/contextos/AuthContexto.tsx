@@ -19,6 +19,10 @@ import {
   gerarEmailInterno,
   normalizarIdentificadorLogin,
 } from '@/lib/verificacoesConta';
+import {
+  deveLerClienteProprioAposFalhaCriacao,
+  textoOpcionalParaCliente,
+} from '@/lib/provisionamentoCliente';
 import { verificarAdminNoServidor } from '@/lib/autorizacaoAdmin';
 import { fetchMeuVendedor } from '@/services/api';
 import { useSincronizacaoPerfilParceiro } from '@/hooks/useSincronizacaoPerfilParceiro';
@@ -304,7 +308,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       id: authUser.id,
       nome: authUser.user_metadata?.nome || authUser.email?.split('@')[0] || '',
       email: authUser.email || '',
-      telefone: authUser.user_metadata?.telefone || '',
+      telefone: textoOpcionalParaCliente(authUser.user_metadata?.telefone),
       provincia: authUser.user_metadata?.provincia || '',
       municipio: authUser.user_metadata?.municipio || '',
       tipo_comprador:
@@ -314,11 +318,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: clienteCriado, error: erroCriar } = await supabase
       .from('clientes')
-      .upsert(novoCliente)
+      .insert(novoCliente)
       .select()
       .single();
 
     if (erroCriar) {
+      // Duas inicializações da mesma sessão podem tentar criar o perfil ao
+      // mesmo tempo. Só reutilizamos a linha se ela for da própria
+      // identidade; conflitos de telefone ou email de outra conta mantêm-se
+      // como erro de criação.
+      if (deveLerClienteProprioAposFalhaCriacao(erroCriar)) {
+        const { data: clienteExistente, error: erroExistente } = await supabase
+          .from('clientes')
+          .select('*')
+          .eq('id', authUser.id)
+          .maybeSingle();
+
+        if (clienteExistente && !erroExistente) {
+          const userFinal = montarUtilizadorCliente(clienteExistente, authUser);
+          guardarUtilizador(userFinal);
+          return true;
+        }
+      }
+
       console.error('Erro ao criar cliente automaticamente:', erroCriar);
       return false;
     }

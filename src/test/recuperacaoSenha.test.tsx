@@ -290,6 +290,72 @@ describe('recuperação segura de palavra-passe', () => {
     expect(window.sessionStorage.getItem(CHAVE_RECUPERACAO)).toBeNull();
   });
 
+  it('mantém a recuperação para o erro Auth comprovado de password igual', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-recuperacao' } }, error: null });
+    mocks.updateUser.mockResolvedValue({
+      data: { user: null },
+      error: Object.assign(new Error('New password should be different from the old password.'), { status: 422 }),
+    });
+    renderizar();
+    emitirRecuperacao();
+    await screen.findByLabelText('Nova palavra-passe');
+
+    fireEvent.change(screen.getByLabelText('Nova palavra-passe'), { target: { value: 'senha-atual' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova palavra-passe'), { target: { value: 'senha-atual' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar palavra-passe' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'A nova palavra-passe deve ser diferente da atual',
+      variant: 'destructive',
+    })));
+    expect(window.sessionStorage.getItem(CHAVE_RECUPERACAO)).not.toBeNull();
+    expect(screen.getByLabelText('Nova palavra-passe')).toBeTruthy();
+    expect(mocks.signOut).not.toHaveBeenCalled();
+  });
+
+  it('mantém a recuperação quando o Auth identifica a password igual pelo código estável', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-recuperacao' } }, error: null });
+    mocks.updateUser.mockResolvedValue({
+      data: { user: null },
+      error: Object.assign(new Error('Mensagem do servidor pode variar.'), { status: 422, code: 'same_password' }),
+    });
+    renderizar();
+    emitirRecuperacao();
+    await screen.findByLabelText('Nova palavra-passe');
+
+    fireEvent.change(screen.getByLabelText('Nova palavra-passe'), { target: { value: 'senha-atual' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova palavra-passe'), { target: { value: 'senha-atual' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar palavra-passe' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'A nova palavra-passe deve ser diferente da atual',
+      variant: 'destructive',
+    })));
+    expect(window.sessionStorage.getItem(CHAVE_RECUPERACAO)).not.toBeNull();
+    expect(mocks.signOut).not.toHaveBeenCalled();
+  });
+
+  it('continua a consumir o contexto para outro erro 422', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: 'auth-recuperacao' } }, error: null });
+    mocks.updateUser.mockResolvedValue({
+      data: { user: null },
+      error: Object.assign(new Error('Outro erro de validação.'), { status: 422 }),
+    });
+    renderizar();
+    emitirRecuperacao();
+    await screen.findByLabelText('Nova palavra-passe');
+
+    fireEvent.change(screen.getByLabelText('Nova palavra-passe'), { target: { value: 'senha-nova' } });
+    fireEvent.change(screen.getByLabelText('Confirmar nova palavra-passe'), { target: { value: 'senha-nova' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar palavra-passe' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Não foi possível atualizar a palavra-passe',
+      variant: 'destructive',
+    })));
+    expect(window.sessionStorage.getItem(CHAVE_RECUPERACAO)).toBeNull();
+  });
+
   it('não atualiza a palavra-passe quando a sessão A foi substituída por B antes da submissão', async () => {
     mocks.getUser
       .mockResolvedValueOnce({ data: { user: { id: 'auth-a' } }, error: null })

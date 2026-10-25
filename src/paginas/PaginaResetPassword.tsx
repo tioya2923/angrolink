@@ -19,6 +19,22 @@ import { supabase } from '@/services/supabase';
 
 type EstadoRecuperacao = 'a_validar' | 'pronto' | 'invalido';
 
+function erroPasswordIgualAAtual(erro: unknown) {
+  if (!erro || typeof erro !== 'object') return false;
+
+  const erroAuth = erro as { status?: unknown; code?: unknown; message?: unknown };
+  return (
+    erroAuth.status === 422 &&
+    (
+      erroAuth.code === 'same_password' ||
+      (
+        erroAuth.code === undefined &&
+        erroAuth.message === 'New password should be different from the old password.'
+      )
+    )
+  );
+}
+
 export default function PaginaResetPassword() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -211,13 +227,19 @@ export default function PaginaResetPassword() {
         description: 'Entra novamente com a tua nova palavra-passe.',
       });
       navigate('/login', { replace: true });
-    } catch {
+    } catch (erro) {
       // Depois de uma tentativa de updateUser com resultado de erro, nao e
       // seguro permitir nova submissao com o mesmo contexto de recuperacao.
-      invalidarRecuperacao();
+      const passwordIgualAAtual = erroPasswordIgualAAtual(erro);
+      if (!passwordIgualAAtual) invalidarRecuperacao();
+
       toast({
-        title: 'Não foi possível atualizar a palavra-passe',
-        description: 'O link pode ter expirado. Pede um novo link e tenta novamente.',
+        title: passwordIgualAAtual
+          ? 'A nova palavra-passe deve ser diferente da atual'
+          : 'Não foi possível atualizar a palavra-passe',
+        description: passwordIgualAAtual
+          ? 'Escolhe uma palavra-passe diferente para continuar.'
+          : 'O link pode ter expirado. Pede um novo link e tenta novamente.',
         variant: 'destructive',
       });
     } finally {
