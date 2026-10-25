@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     id: authUser.id,
     nome: cliente?.nome || authUser.user_metadata?.nome || '',
     email: cliente?.email || authUser.email || '',
-    telefone: cliente?.telefone || authUser.user_metadata?.telefone || '',
+    telefone: cliente?.telefone ?? '',
     provincia: cliente?.provincia || authUser.user_metadata?.provincia || '',
     municipio: cliente?.municipio || authUser.user_metadata?.municipio || '',
     papel: 'cliente',

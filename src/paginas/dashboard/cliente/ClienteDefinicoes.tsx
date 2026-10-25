@@ -260,14 +260,28 @@ export default function ClienteDefinicoes() {
       if (error) throw error;
 
       telefoneOriginalRef.current = { numero: telefone, indicativo };
-      await recarregarPerfil();
+      setFotoFile(null);
+
+      let perfilRecarregado = false;
+      try {
+        perfilRecarregado = await recarregarPerfil();
+      } catch {
+        // A gravação já terminou; uma falha de recarga não a desfaz.
+      }
+
+      if (!perfilRecarregado) {
+        toast({
+          title: 'Dados guardados, perfil por atualizar',
+          description: 'Os dados foram guardados, mas não foi possível atualizar a informação nesta sessão. Atualiza a página para voltar a carregar o perfil.',
+        });
+        return;
+      }
 
       toast({
         title: 'Definições guardadas!',
         description: 'Os teus dados foram atualizados com sucesso.',
       });
 
-      setFotoFile(null);
     } catch (error) {
       console.error('Erro ao guardar definições:', error);
 

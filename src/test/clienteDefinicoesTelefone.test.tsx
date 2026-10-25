@@ -66,7 +66,7 @@ async function guardar() {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.upsert.mockResolvedValue({ error: null });
-  mocks.recarregarPerfil.mockResolvedValue(undefined);
+  mocks.recarregarPerfil.mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -146,5 +146,17 @@ describe('telefone opcional nas definições do comprador', () => {
     await guardar();
     expect(mocks.upsert.mock.calls[1][0].telefone).toBe('+244923456789');
     expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Definições guardadas!' }));
+  });
+
+  it.each(['false', 'excecao'])('distingue gravação concluída de falha de recarga (%s)', async modo => {
+    if (modo === 'false') mocks.recarregarPerfil.mockResolvedValue(false);
+    else mocks.recarregarPerfil.mockRejectedValue(new Error('falha de recarga'));
+    await abrir('+244923456789');
+    editar('');
+    await guardar();
+    expect(mocks.upsert.mock.calls[0][0].telefone).toBeNull();
+    expect(mocks.toast).toHaveBeenCalledTimes(1);
+    expect(mocks.toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Dados guardados, perfil por atualizar' }));
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Erro ao guardar' }));
   });
 });
