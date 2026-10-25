@@ -15,6 +15,7 @@ import { supabase } from '@/services/supabase';
 import { alterarPasswordDaSessao } from '@/services/auth';
 import { separarIndicativo } from '@/dados/paises';
 import { telefoneCompleto } from '@/lib/verificacoesConta';
+import { textoOpcionalParaCliente } from '@/lib/provisionamentoCliente';
 import { listarMunicipiosAngola, listarProvinciasAngola, resolverSelecaoTerritorialExistente, type EstadoSelecaoTerritorial, type MunicipioAngola, type ProvinciaAngola } from '@/services/territorioAngola';
 
 export default function ClienteDefinicoes() {
@@ -31,6 +32,7 @@ export default function ClienteDefinicoes() {
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
   const [indicativo, setIndicativo] = useState('244');
+  const telefoneOriginalRef = useRef<{ numero: string; indicativo: string } | null>(null);
   const [email, setEmail] = useState('');
   const [provincia, setProvincia] = useState('');
   const [municipio, setMunicipio] = useState('');
@@ -116,6 +118,7 @@ export default function ClienteDefinicoes() {
       console.error('Erro ao carregar cliente:', error);
 
       const { indicativo: ind, numero } = separarIndicativo(utilizador?.telefone || '');
+      telefoneOriginalRef.current = { numero, indicativo: ind };
       setNome(utilizador?.nome || '');
       setIndicativo(ind);
       setTelefone(numero);
@@ -127,6 +130,7 @@ export default function ClienteDefinicoes() {
     }
 
     const { indicativo: indCarregado, numero } = separarIndicativo(data.telefone || '');
+    telefoneOriginalRef.current = { numero, indicativo: indCarregado };
     setNome(data.nome || '');
     setIndicativo(indCarregado);
     setTelefone(numero);
@@ -233,13 +237,19 @@ export default function ClienteDefinicoes() {
       }
 
       const fotoFinal = await uploadFotoPerfil();
+      const telefoneAlterado = telefone !== telefoneOriginalRef.current?.numero
+        || indicativo !== telefoneOriginalRef.current?.indicativo;
 
       const { error } = await supabase
         .from('clientes')
         .upsert({
           id: utilizador.id,
           nome,
-          telefone: telefone ? telefoneCompleto(telefone, indicativo) : '',
+          // Omitir o campo intocado preserva o valor persistido, inclusive NULL.
+          // Limpar deliberadamente o número remove o contacto, não a identidade Auth.
+          ...(telefoneAlterado ? {
+            telefone: textoOpcionalParaCliente(telefone) ? telefoneCompleto(telefone, indicativo) : null,
+          } : {}),
           email,
           provincia: territorioAlterado ? provinciaSelecionada?.nome ?? null : provinciaOriginal,
           municipio: territorioAlterado ? municipioSelecionado?.nome ?? null : municipioOriginal,
@@ -249,6 +259,7 @@ export default function ClienteDefinicoes() {
 
       if (error) throw error;
 
+      telefoneOriginalRef.current = { numero: telefone, indicativo };
       await recarregarPerfil();
 
       toast({
