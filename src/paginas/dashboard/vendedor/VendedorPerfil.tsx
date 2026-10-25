@@ -479,7 +479,7 @@ export default function VendedorPerfil() {
         novaSenha,
       );
 
-      if (!resultado.sucesso) {
+      if (resultado.sucesso === false) {
         toast({
           title: resultado.motivo === 'senha_atual_incorreta'
             ? 'Palavra-passe atual incorreta'

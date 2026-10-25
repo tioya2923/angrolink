@@ -145,7 +145,7 @@ describe('useSincronizacaoPerfilParceiro', () => {
   it('limpa o canal antigo ao mudar de conta e ignora o parceiro nao autenticado', () => {
     const recarregar = vi.fn().mockResolvedValue(true);
     const { rerender } = renderHook(
-      ({ perfil }) => useSincronizacaoPerfilParceiro(perfil, recarregar),
+      ({ perfil }: { perfil: Parameters<typeof useSincronizacaoPerfilParceiro>[0] }) => useSincronizacaoPerfilParceiro(perfil, recarregar),
       { initialProps: { perfil: parceiro('parceiro-1') } },
     );
 
