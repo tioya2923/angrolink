@@ -20,11 +20,25 @@ export default function PaginaCheckoutPendente() {
   const { utilizador, pronto } = useAuth(); const { toast } = useToast(); const navigate = useNavigate();
   const { itens, atualizarItens, removerItens } = useCarrinho(); const territorio = useFiltroTerritorialAngola();
   const [modalidadeRecebimento, setModalidadeRecebimento] = useState<ModalidadeRecebimentoEncomenda>('levantamento');
-  const [nome, setNome] = useState(''); const [telefone, setTelefone] = useState(''); const [bairro, setBairro] = useState(''); const [enderecoDetalhado, setEnderecoDetalhado] = useState(''); const [pontoReferencia, setPontoReferencia] = useState(''); const [instrucoesEntrega, setInstrucoesEntrega] = useState(''); const [observacoes, setObservacoes] = useState('');
+  const [nome, setNome] = useState(''); const [telefone, setTelefoneAutomatico] = useState(''); const [bairro, setBairro] = useState(''); const [enderecoDetalhado, setEnderecoDetalhado] = useState(''); const [pontoReferencia, setPontoReferencia] = useState(''); const [instrucoesEntrega, setInstrucoesEntrega] = useState(''); const [observacoes, setObservacoes] = useState('');
   const [locais, setLocais] = useState<Map<string, LocalLevantamentoVendedor>>(new Map()); const [aValidar, setAValidar] = useState(false); const [aConfirmar, setAConfirmar] = useState(false); const [resultados, setResultados] = useState<ResultadoGrupo[]>([]);
   const confirmacaoEmCurso = useRef(false);
+  const telefoneEditadoManualmenteRef = useRef(false);
+  const setTelefone = (valor: string) => {
+    telefoneEditadoManualmenteRef.current = true;
+    setTelefoneAutomatico(valor);
+  };
 
-  useEffect(() => { setNome(atual => atual || utilizador?.nome || ''); setTelefone(atual => atual || utilizador?.telefone || ''); }, [utilizador?.nome, utilizador?.telefone]);
+  useEffect(() => {
+    setNome(atual => atual || utilizador?.nome || '');
+    if (utilizador?.papel !== 'cliente') {
+      // Preservar o percurso existente de vendedor como comprador.
+      setTelefoneAutomatico(atual => atual || utilizador?.telefone || '');
+    } else if (!telefoneEditadoManualmenteRef.current) {
+      // NULL/vazio no perfil significa ausência de contacto, não um fallback Auth.
+      setTelefoneAutomatico(utilizador.telefone ?? '');
+    }
+  }, [utilizador?.nome, utilizador?.telefone, utilizador?.papel]);
   useEffect(() => { if (territorio.provinciaId || !utilizador?.provincia || !territorio.provincias.length) return; const provincia = territorio.provincias.find(item => item.nome === utilizador.provincia); if (provincia) territorio.selecionarProvincia(provincia.id); }, [territorio, utilizador?.provincia]);
   useEffect(() => { if (territorio.municipioId || !utilizador?.municipio || !territorio.municipios.length) return; const municipio = territorio.municipios.find(item => item.nome === utilizador.municipio); if (municipio) territorio.selecionarMunicipio(municipio.id); }, [territorio, utilizador?.municipio]);
 
