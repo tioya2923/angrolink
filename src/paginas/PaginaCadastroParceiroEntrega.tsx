@@ -488,14 +488,19 @@ export default function PaginaCadastroParceiroEntrega() {
                   rotulo="Foto de perfil do entregador"
                 />
               </div>
-              <Campo label="Email (opcional)">
+              <Campo label="Email (opcional)" htmlFor="parceiro-cadastro-email">
                 <Input
+                  id="parceiro-cadastro-email"
+                  aria-describedby="parceiro-cadastro-email-ajuda"
                   type="email"
                   value={form.email}
                   onChange={(e) => set("email", e.target.value)}
                   placeholder="exemplo@email.com"
                   maxLength={255}
                 />
+                <p id="parceiro-cadastro-email-ajuda" className="text-xs text-muted-foreground">
+                  Ao criar uma nova conta, este email poderá ser usado para iniciar sessão e recuperar a palavra-passe. Usa um endereço verdadeiro que controlas, nunca um email inventado ou de outra pessoa. Introduzir o email não comprova a sua titularidade. Sem email, o acesso inicial segue o telefone. Se reutilizares uma conta existente, mantém os seus dados de acesso.
+                </p>
               </Campo>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Campo label="Palavra-passe *">
@@ -805,13 +810,15 @@ export default function PaginaCadastroParceiroEntrega() {
 function Campo({
   label,
   children,
+  htmlFor,
 }: {
   label: string;
   children: React.ReactNode;
+  htmlFor?: string;
 }) {
   return (
     <div className="space-y-1">
-      <Label className="text-sm">{label}</Label>
+      <Label htmlFor={htmlFor} className="text-sm">{label}</Label>
       {children}
     </div>
   );

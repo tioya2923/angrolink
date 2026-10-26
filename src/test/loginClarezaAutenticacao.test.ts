@@ -24,8 +24,16 @@ vi.mock('@/contextos/AuthContexto', () => ({
   useAuth: () => ({ autenticado: false, login: mocks.login }),
 }));
 vi.mock('@/hooks/use-toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+vi.mock('@/componentes/Cabecalho', () => ({ default: () => null }));
+vi.mock('@/componentes/Rodape', () => ({ default: () => null }));
+vi.mock('@/services/territorioAngola', () => ({
+  listarProvinciasAngola: vi.fn().mockResolvedValue([]),
+  listarMunicipiosAngola: vi.fn().mockResolvedValue([]),
+}));
+vi.mock('@/services/supabase', () => ({ supabase: {} }));
 
 import PaginaLogin from '@/paginas/PaginaLogin';
+import PaginaCadastroParceiroEntrega from '@/paginas/PaginaCadastroParceiroEntrega';
 
 const login = readFileSync(resolve(process.cwd(), 'src/paginas/PaginaLogin.tsx'), 'utf8');
 const anunciar = readFileSync(resolve(process.cwd(), 'src/paginas/PaginaAnunciar.tsx'), 'utf8');
@@ -53,9 +61,51 @@ describe('clareza de autenticação e email de contacto', () => {
 
     await waitFor(() => expect(mocks.login).toHaveBeenCalledWith('923456789', 'senha-segura'));
     expect(login).toContain('Email ou Telefone');
-    expect(login).toContain('Se criou a conta com telefone, entre com esse número.');
     expect(login).not.toMatch(/console\.(log|debug|info|error)\(/i);
   });
+
+  it('apresenta ajuda visível e associada ao campo sem alterar as suas propriedades', () => {
+    render(createElement(MemoryRouter, null, createElement(PaginaLogin)));
+    const campo = screen.getByLabelText('Email ou Telefone');
+    expect(campo).toHaveAttribute('type', 'text');
+    expect(campo).toHaveAttribute('required');
+    expect(campo).toHaveAttribute('placeholder', 'exemplo@email.com ou 923456789');
+    expect(campo).toHaveAttribute('aria-describedby', 'identificador-login-ajuda');
+    const ajuda = document.getElementById('identificador-login-ajuda');
+    expect(ajuda).toBeVisible();
+    expect(campo).toHaveAccessibleDescription('Angola: 9 dígitos sem indicativo são interpretados com +244 (ex.: 923456789).');
+    expect(screen.getByText('Acede à tua conta ANGROLINK')).toBeVisible();
+    expect(screen.queryByText('Acede à tua conta de vendedor ou comprador')).not.toBeInTheDocument();
+    const resumo = screen.getByText('Como entrar com email ou telefone');
+    expect(resumo.tagName).toBe('SUMMARY');
+    expect(resumo).toBeVisible();
+    const detalhes = resumo.closest('details');
+    expect(detalhes).not.toHaveAttribute('open');
+    expect(screen.getByText(/Para outros países, inclui o indicativo internacional/)).not.toBeVisible();
+    fireEvent.click(resumo);
+    expect(detalhes).toHaveAttribute('open');
+    expect(screen.getByText(/Para outros países, inclui o indicativo internacional/)).toBeVisible();
+    expect(screen.getByText(/Para outros países, inclui o indicativo internacional/)).toHaveTextContent('+351912345678');
+    expect(detalhes).toHaveTextContent('com ou sem + inicial');
+    expect(detalhes).toHaveTextContent('número original de acesso à conta, não um contacto alterado no perfil');
+    expect(detalhes).toHaveTextContent('Se a conta foi criada com email como identificador de acesso, usa esse email.');
+    expect(detalhes).toHaveTextContent('Se foi criada apenas com telefone');
+    expect(detalhes).toHaveTextContent('Alterar contactos do perfil não modifica o login');
+    expect(detalhes).toHaveTextContent('email de contacto não permite automaticamente iniciar sessão');
+    fireEvent.click(resumo);
+    expect(detalhes).not.toHaveAttribute('open');
+    expect(mocks.login).not.toHaveBeenCalled();
+  });
+
+  it.each(['+244923456789', '+351912345678', 'conta@example.test'])(
+    'preserva a entrada %s encaminhada para o login', async (entrada) => {
+      render(createElement(MemoryRouter, null, createElement(PaginaLogin)));
+      fireEvent.change(screen.getByLabelText('Email ou Telefone'), { target: { value: entrada } });
+      fireEvent.change(screen.getByLabelText('Senha'), { target: { value: 'senha-de-teste' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+      await waitFor(() => expect(mocks.login).toHaveBeenCalledExactlyOnceWith(entrada, 'senha-de-teste'));
+    },
+  );
 
   it.each(['923456789', '244923456789@telefone.angrolink'])('não chama recuperação para %s', (entrada) => {
     abrirRecuperacao();
@@ -117,5 +167,26 @@ describe('clareza de autenticação e email de contacto', () => {
   it('mantém o email opcional do parceiro como email Auth, sem o reclassificar como contacto', () => {
     expect(parceiro).toContain('const authEmail = emailOpcional || emailLogin;');
     expect(parceiro).toContain('email: authEmail,');
+  });
+
+  it('explica o acesso no cadastro de parceiros com ajuda visível e acessível, sem submeter', async () => {
+    render(createElement(MemoryRouter, null, createElement(PaginaCadastroParceiroEntrega)));
+    const campo = screen.getByLabelText('Email (opcional)');
+    expect(campo).toHaveAttribute('type', 'email');
+    expect(campo).toHaveAttribute('maxLength', '255');
+    expect(campo).not.toBeRequired();
+    expect(campo).toHaveAttribute('aria-describedby', 'parceiro-cadastro-email-ajuda');
+    const ajuda = document.getElementById('parceiro-cadastro-email-ajuda');
+    expect(ajuda).toBeVisible();
+    expect(campo).toHaveAccessibleDescription(ajuda!.textContent!);
+    expect(ajuda).toHaveTextContent('iniciar sessão e recuperar a palavra-passe');
+    expect(ajuda).toHaveTextContent('endereço verdadeiro que controlas');
+    expect(ajuda).toHaveTextContent('nunca um email inventado ou de outra pessoa');
+    expect(ajuda).toHaveTextContent('Introduzir o email não comprova a sua titularidade');
+    expect(ajuda).toHaveTextContent('Sem email, o acesso inicial segue o telefone');
+    expect(ajuda).toHaveTextContent('Se reutilizares uma conta existente, mantém os seus dados de acesso');
+    await waitFor(() => expect(screen.queryByText('A carregar províncias...')).not.toBeInTheDocument());
+    expect(mocks.login).not.toHaveBeenCalled();
+    expect(mocks.enviarRecuperacaoSenha).not.toHaveBeenCalled();
   });
 });

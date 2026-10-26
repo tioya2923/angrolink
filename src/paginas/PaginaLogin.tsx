@@ -176,7 +176,7 @@ export default function PaginaLogin() {
 
             <p className="font-corpo text-sm text-muted-foreground mt-2">
               {modo === 'login'
-                ? 'Acede à tua conta de vendedor ou comprador'
+                ? 'Acede à tua conta ANGROLINK'
                 : 'Usa o email de acesso para pedir a recuperação'}
             </p>
 
@@ -197,6 +197,7 @@ export default function PaginaLogin() {
 
                   <Input
                     id="identificador-login"
+                    aria-describedby="identificador-login-ajuda"
                     type="text"
                     placeholder="exemplo@email.com ou 923456789"
                     value={identificador}
@@ -204,9 +205,14 @@ export default function PaginaLogin() {
                     required
                     className="border-2 border-border"
                   />
-                  <p className="font-corpo text-xs text-muted-foreground">
-                    Se criou a conta com telefone, entre com esse número. O email de contacto do perfil não fica automaticamente disponível para iniciar sessão.
+                  <p id="identificador-login-ajuda" className="font-corpo text-xs text-muted-foreground">
+                    Angola: 9 dígitos sem indicativo são interpretados com +244 (ex.: 923456789).
                   </p>
+                  <details className="space-y-2 font-corpo text-xs text-muted-foreground">
+                    <summary className="cursor-pointer rounded-sm py-1 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Como entrar com email ou telefone</summary>
+                    <p>Para outros países, inclui o indicativo internacional (ex.: +351912345678). Usa apenas dígitos, com ou sem + inicial.</p>
+                    <p>Se a conta foi criada com email como identificador de acesso, usa esse email. Se foi criada apenas com telefone, usa o número original de acesso à conta, não um contacto alterado no perfil. Alterar contactos do perfil não modifica o login; o email de contacto não permite automaticamente iniciar sessão.</p>
+                  </details>
                 </div>
 
                 <div className="space-y-2">
