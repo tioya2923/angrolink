@@ -26,6 +26,7 @@ interface SeletorTelefoneProps {
   placeholder?: string;
   required?: boolean;
   id?: string;
+  'aria-describedby'?: string;
   maxLength?: number;
   className?: string;
 }
@@ -38,6 +39,7 @@ export default function SeletorTelefone({
   placeholder,
   required,
   id,
+  'aria-describedby': ariaDescribedby,
   maxLength = 9,
   className,
 }: SeletorTelefoneProps) {
@@ -88,6 +90,7 @@ export default function SeletorTelefone({
 
       <Input
         id={id}
+        aria-describedby={ariaDescribedby}
         type="tel"
         value={valor}
         onChange={e => onValorChange(e.target.value.replace(/\D/g, '').slice(0, maxLength))}

@@ -653,14 +653,19 @@ function Dados({ parceiro, fotoPerfilUrl, atualizarParceiro, aGuardar }: any) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-3">
-          <Label>Telefone</Label>
+          <Label htmlFor="parceiro-telefone-contacto">Telefone de contacto</Label>
           <SeletorTelefone
+            id="parceiro-telefone-contacto"
+            aria-describedby="parceiro-telefone-ajuda"
             indicativo={telefoneIndicativo}
             onIndicativoChange={setTelefoneIndicativo}
             valor={telefone}
             onValorChange={setTelefone}
             required
           />
+          <p id="parceiro-telefone-ajuda" className="text-xs text-muted-foreground">
+            Este número é usado para contacto no perfil e nas entregas. Alterar este campo não muda o número ou email usado para iniciar sessão.
+          </p>
         </div>
         <div className="space-y-3">
           <Label>Contacto de emergência</Label>

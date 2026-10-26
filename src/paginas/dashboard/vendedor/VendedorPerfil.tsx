@@ -845,8 +845,10 @@ export default function VendedorPerfil() {
         <CardFuncionamento>
 
           <div className="space-y-2">
-            <Label className="font-corpo text-sm">WhatsApp</Label>
+            <Label htmlFor="vendedor-telefone-contacto" className="font-corpo text-sm">WhatsApp de contacto</Label>
             <SeletorTelefone
+              id="vendedor-telefone-contacto"
+              aria-describedby="vendedor-telefone-ajuda"
               indicativo={indicativoWhatsapp}
               onIndicativoChange={setIndicativoWhatsapp}
               valor={whatsapp}
@@ -854,6 +856,9 @@ export default function VendedorPerfil() {
               placeholder="923000000"
               maxLength={indicativoWhatsapp === '244' ? 9 : 14}
             />
+            <p id="vendedor-telefone-ajuda" className="font-corpo text-xs text-muted-foreground">
+              Este número é usado para contacto por WhatsApp. Alterar este campo não muda o número ou email usado para iniciar sessão.
+            </p>
             <p className="font-corpo text-xs text-muted-foreground">
               {indicativoWhatsapp === '244'
                 ? 'Coloque apenas os 9 dígitos do número angolano.'

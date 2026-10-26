@@ -524,9 +524,11 @@ export default function ClienteDefinicoes() {
         </div>
 
         <div className="space-y-2">
-          <Label className="font-corpo text-sm">Telefone</Label>
+          <Label htmlFor="cliente-telefone-contacto" className="font-corpo text-sm">Telefone de contacto</Label>
 
           <SeletorTelefone
+            id="cliente-telefone-contacto"
+            aria-describedby="cliente-telefone-ajuda"
             indicativo={indicativo}
             onIndicativoChange={setIndicativo}
             valor={telefone}
@@ -534,6 +536,9 @@ export default function ClienteDefinicoes() {
             placeholder="923000000"
             maxLength={indicativo === '244' ? 9 : 14}
           />
+          <p id="cliente-telefone-ajuda" className="font-corpo text-xs text-muted-foreground">
+            Este número é usado para contacto no teu perfil, checkout e futuras encomendas. Alterar este campo não muda o número ou email usado para iniciar sessão.
+          </p>
 
           <p className="font-corpo text-xs text-muted-foreground">
             {indicativo === '244'
@@ -543,15 +548,17 @@ export default function ClienteDefinicoes() {
         </div>
 
         <div className="space-y-2">
-          <Label className="font-corpo text-sm">Email</Label>
+          <Label htmlFor="cliente-email-contacto" className="font-corpo text-sm">Email de contacto</Label>
           <Input
+            id="cliente-email-contacto"
+            aria-describedby="cliente-email-ajuda"
             value={email}
             type="email"
             disabled
             className="border-2 border-border bg-muted cursor-not-allowed"
           />
-          <p className="font-corpo text-xs text-muted-foreground">
-            O email deve ser alterado através da autenticação da conta.
+          <p id="cliente-email-ajuda" className="font-corpo text-xs text-muted-foreground">
+            Email apresentado no perfil, sem edição neste formulário. Não é necessariamente o email de acesso da conta. Alterar o telefone de contacto não modifica o login.
           </p>
         </div>
 
