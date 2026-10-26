@@ -164,17 +164,19 @@ describe('clareza de autenticação e email de contacto', () => {
     expect(campo).not.toContain('required');
   });
 
-  it('mantém o email opcional do parceiro como email Auth, sem o reclassificar como contacto', () => {
-    expect(parceiro).toContain('const authEmail = emailOpcional || emailLogin;');
+  it('preserva a reutilização de identidade e exige email real na criação Auth nova', () => {
+    expect(parceiro).toContain('const authEmail = emailNormalizado || emailLogin;');
     expect(parceiro).toContain('email: authEmail,');
+    expect(parceiro).toContain('email: emailNormalizado,');
+    expect(parceiro).toContain('Para criar uma nova conta, indique um email válido que controle.');
   });
 
   it('explica o acesso no cadastro de parceiros com ajuda visível e acessível, sem submeter', async () => {
     render(createElement(MemoryRouter, null, createElement(PaginaCadastroParceiroEntrega)));
-    const campo = screen.getByLabelText('Email (opcional)');
+    const campo = screen.getByLabelText('Email *');
     expect(campo).toHaveAttribute('type', 'email');
     expect(campo).toHaveAttribute('maxLength', '255');
-    expect(campo).not.toBeRequired();
+    expect(campo).toBeRequired();
     expect(campo).toHaveAttribute('aria-describedby', 'parceiro-cadastro-email-ajuda');
     const ajuda = document.getElementById('parceiro-cadastro-email-ajuda');
     expect(ajuda).toBeVisible();
@@ -183,7 +185,8 @@ describe('clareza de autenticação e email de contacto', () => {
     expect(ajuda).toHaveTextContent('endereço verdadeiro que controlas');
     expect(ajuda).toHaveTextContent('nunca um email inventado ou de outra pessoa');
     expect(ajuda).toHaveTextContent('Introduzir o email não comprova a sua titularidade');
-    expect(ajuda).toHaveTextContent('Sem email, o acesso inicial segue o telefone');
+    expect(ajuda).toHaveTextContent('O email é obrigatório nas novas candidaturas');
+    expect(ajuda).not.toHaveTextContent('Sem email, o acesso inicial segue o telefone');
     expect(ajuda).toHaveTextContent('Se reutilizares uma conta existente, mantém os seus dados de acesso');
     await waitFor(() => expect(screen.queryByText('A carregar províncias...')).not.toBeInTheDocument());
     expect(mocks.login).not.toHaveBeenCalled();

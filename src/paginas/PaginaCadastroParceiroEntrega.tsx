@@ -16,6 +16,7 @@ import {
 } from "@/services/territorioAngola";
 import { supabase } from "@/services/supabase";
 import { normalizarEmail, telefoneCompleto } from "@/lib/verificacoesConta";
+import { normalizarEmailAcessoParaRecuperacao } from "@/services/auth";
 import {
   validarDuplicados,
   validarSenha,
@@ -103,6 +104,7 @@ export default function PaginaCadastroParceiroEntrega() {
   const navigate = useNavigate();
   const location = useLocation();
   const { utilizador, pronto, recarregarPerfil } = useAuth();
+  const parceiroExistente = utilizador?.papel === "parceiro_entrega";
   const modoCorrecao =
     new URLSearchParams(location.search).get("corrigir") === "1";
 
@@ -177,6 +179,13 @@ export default function PaginaCadastroParceiroEntrega() {
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
+    const emailNormalizado = normalizarEmail(form.email);
+    if (!parceiroExistente && !emailNormalizado) {
+      return toast.error("Indique um email para a nova candidatura de parceiro.");
+    }
+    if (emailNormalizado && !normalizarEmailAcessoParaRecuperacao(emailNormalizado)) {
+      return toast.error("Indique um email válido que controle, diferente do endereço interno de telefone.");
+    }
     const erroTelefone = validarTelefone(form.telefone, form.indicativo);
     if (erroTelefone) return toast.error(erroTelefone);
     const erroEmergencia = validarTelefone(
@@ -185,12 +194,10 @@ export default function PaginaCadastroParceiroEntrega() {
     );
     if (erroEmergencia)
       return toast.error(`Contacto de emergência inválido. ${erroEmergencia}`);
-    const emailOpcional = normalizarEmail(form.email);
-    if (form.email && !emailOpcional) return toast.error("Email inválido.");
     const erroDuplicados = await validarDuplicados(
       form.telefone,
       form.indicativo,
-      emailOpcional,
+      emailNormalizado,
     );
     if (erroDuplicados) return toast.error(erroDuplicados);
     const erroSenha = validarSenha(form.senha, form.confirmarSenha);
@@ -243,8 +250,7 @@ export default function PaginaCadastroParceiroEntrega() {
     try {
       const telefone = telefoneCompleto(form.telefone, form.indicativo);
       const emailLogin = `${form.indicativo}${form.telefone}@telefone.angrolink`;
-      const emailOpcional = normalizarEmail(form.email);
-      const authEmail = emailOpcional || emailLogin;
+      const authEmail = emailNormalizado || emailLogin;
       let authUser: { id: string; email?: string | null } | null = null;
 
       // Uma conta de comprador pode tornar-se também parceira. Primeiro usamos
@@ -266,7 +272,7 @@ export default function PaginaCadastroParceiroEntrega() {
 
         if (loginExistente.user) {
           authUser = loginExistente.user;
-        } else if (emailOpcional) {
+        } else if (emailNormalizado) {
           const { data: loginExistenteTelefone } =
             await supabase.auth.signInWithPassword({
               email: emailLogin,
@@ -279,10 +285,13 @@ export default function PaginaCadastroParceiroEntrega() {
         }
 
         if (!authUser) {
+          if (!emailNormalizado) {
+            throw new Error("Para criar uma nova conta, indique um email válido que controle.");
+          }
           // O trigger de auth.users cria o perfil técnico com o papel próprio
           // de parceiro; a migração de profiles permite este valor.
           const { data: auth, error: erroAuth } = await supabase.auth.signUp({
-            email: authEmail,
+            email: emailNormalizado,
             password: form.senha,
             options: {
               data: { nome: form.nome, telefone, papel: "parceiro_entrega" },
@@ -367,7 +376,7 @@ export default function PaginaCadastroParceiroEntrega() {
         {
           p_dados: {
             nome_completo: form.nome,
-            email: form.email || null,
+            email: emailNormalizado,
             telefone,
             provincia,
             municipio,
@@ -488,18 +497,19 @@ export default function PaginaCadastroParceiroEntrega() {
                   rotulo="Foto de perfil do entregador"
                 />
               </div>
-              <Campo label="Email (opcional)" htmlFor="parceiro-cadastro-email">
+              <Campo label={parceiroExistente ? "Email (opcional)" : "Email *"} htmlFor="parceiro-cadastro-email">
                 <Input
                   id="parceiro-cadastro-email"
                   aria-describedby="parceiro-cadastro-email-ajuda"
                   type="email"
+                  required={!parceiroExistente}
                   value={form.email}
                   onChange={(e) => set("email", e.target.value)}
                   placeholder="exemplo@email.com"
                   maxLength={255}
                 />
                 <p id="parceiro-cadastro-email-ajuda" className="text-xs text-muted-foreground">
-                  Ao criar uma nova conta, este email poderá ser usado para iniciar sessão e recuperar a palavra-passe. Usa um endereço verdadeiro que controlas, nunca um email inventado ou de outra pessoa. Introduzir o email não comprova a sua titularidade. Sem email, o acesso inicial segue o telefone. Se reutilizares uma conta existente, mantém os seus dados de acesso.
+                  O email é obrigatório nas novas candidaturas. Ao criar uma nova conta com este endereço, será usado para iniciar sessão e recuperar a palavra-passe. Usa um endereço verdadeiro que controlas, nunca um email inventado ou de outra pessoa. Introduzir o email não comprova a sua titularidade. Se reutilizares uma conta existente, mantém os seus dados de acesso. Parceiros já existentes podem manter o acesso anterior sem adicionar email neste formulário.
                 </p>
               </Campo>
               <div className="grid gap-4 sm:grid-cols-2">
